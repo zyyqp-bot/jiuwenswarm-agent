@@ -1,0 +1,22 @@
+{
+  "review_date": "2026-10-11",
+  "timezone": "Asia/Shanghai",
+  "jiuwenswarm": {
+    "url": "https://github.com/openJiuwen-ai/jiuwenswarm.git",
+    "branch": "develop",
+    "commit": "3fea8d1623a13646e935df9e96100ab7ad470aa4",
+    "package": "workswarm",
+    "version": "0.2.5.beta1"
+  },
+  "agent_core": {
+    "url": "https://github.com/openJiuwen-ai/agent-core.git",
+    "commit": "6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+    "selection_reason": "Exact commit pinned by JiuwenSwarm pyproject.toml; available from official GitHub mirror",
+    "original_dependency_url": "https://gitcode.com/openJiuwen/agent-core.git"
+  },
+  "gateway_protocol": {
+    "commit": "6edf9e36f8de8448b14339712217a263808626bb",
+    "status": "Dependency recorded from pyproject.toml; not cloned or audited"
+  },
+  "verification": "Static source review plus isolated function/AST probes; no dependency installation or real model end-to-end run"
+}

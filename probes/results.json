@@ -1,0 +1,43 @@
+{
+  "scope": "isolated extracted-function and AST probes; no SDK imports, model calls or full runtime tests",
+  "passed": 7,
+  "observations": [
+    {
+      "id": "P01",
+      "result": "pass",
+      "observation": "Swarm app mock embeddings are nonzero 128-dimensional pseudorandom vectors."
+    },
+    {
+      "id": "P02",
+      "result": "pass",
+      "observation": "Team core lite memory retains keyword hit at 0.2 when vector unavailable (keyword floor 0.1)."
+    },
+    {
+      "id": "P03",
+      "result": "pass",
+      "observation": "Swarm app path with vector failure weights keyword 0.2 by 0.3 => 0.06, then filters it at minScore 0.3."
+    },
+    {
+      "id": "P04",
+      "result": "pass",
+      "observation": "HybridRetriever.retrieve ignores supplied filters and calls store with filters=None."
+    },
+    {
+      "id": "P05",
+      "result": "pass",
+      "observation": "Skill declarations compose by allow union and deny union; empty effective allow remains unfiltered."
+    },
+    {
+      "id": "P06",
+      "result": "pass",
+      "kind": "static",
+      "observation": "COMPLETED and CANCELLED share downstream dependency resolution in termination helper."
+    },
+    {
+      "id": "P07",
+      "result": "pass",
+      "kind": "static",
+      "observation": "Harness preset uses forked compressor; min_target_context_ratio guards minimum compressible span, not output ratio."
+    }
+  ]
+}

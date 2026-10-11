@@ -1,0 +1,24 @@
+# Local Python environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Upstream reference checkouts.
+# These are the official JiuwenSwarm / agent-core source trees, pinned by
+# source-lock.json. Do not commit them; reproduce with the commands recorded
+# in PROJECT.md section 13.
+upstream/
+
+# Project runtime data (design target; not yet implemented)
+project-data/
+
+# Framework log output from local probes/experiments
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
