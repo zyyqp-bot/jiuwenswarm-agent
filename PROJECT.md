@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.8 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本、Dependency 门禁、Completion 门禁）。
+版本：0.9 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本、Dependency 门禁、Completion 门禁、PlanValidator）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -22,6 +22,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-B Execution 账本 | 已执行：`app/execution.py`，只有当前 execution 可提交结果，14 项断言通过 |
 | P0-B Dependency 门禁 | 已执行：`app/dependency.py`，取消/失败/陈旧前置不触发下游业务执行，18 项断言通过 |
 | P0-B Completion 门禁 | 已执行：`app/completion.py`，坏结果/自审 reviewer/验收未过均不能完成任务，27 项断言通过 |
+| P0-B PlanValidator | 已执行：`app/plan.py`，DAG 无环/依赖存在/角色有效/验收声明/关键任务须有 reviewer，20 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -377,6 +378,12 @@ P0-B 第四部分（Completion 门禁）已执行：[app/completion.py](app/comp
 
 **身份判定取自记录本身，不取自调用参数**：`TaskResult.producer` 与 `AcceptanceCheck.verifier` 是记录的一部分，门禁不接受调用方在检查时传入的"作者"——否则调用方就能选择用于比较的字符串，独立性与自我认证的保证会退化成自证。首轮实现把 author 作为参数传入、且从不校验 acceptance 的 verifier，经代码审核后改为从记录读取。验收条件由 [app/models.py](app/models.py) 的 `AcceptanceCheck` 承载（`acceptance_id`/`result`/`verifier`/`evidence_refs`）；键必须与 `acceptance_id` 一致，`verifier` 不能是产出者也不能为空（结构性验收由程序判定，用非成员标识），只有 `required_acceptance_ids` 列出的条件是强制的，其余失败不阻塞。尚未接入 reviewer Rail 与原生任务完成路径。
 
+P0-B 第五部分（PlanValidator）已执行：[app/plan.py](app/plan.py) 在计划提交为原生任务前做确定性结构校验，落实 D05（不把模型的完成声明当作验收）。校验项：`task_id` 非空且唯一、依赖存在、无自依赖、无环（并报出环路径）、`role` 在 roster 内（MVP 为 `leader`/`teammate`，因为 agent 模板按角色而非成员名索引）、每个任务声明非空验收条件、关键任务必须带 reviewer。[plan_validator_check.py](p0b/plan_validator_check.py) 20 项断言通过，详见 [plan_validator_results.json](p0b/plan_validator_results.json)。
+
+**"关键任务"的正确界定是"交付物被其他任务依赖"，不是任务自身的 `requires_success`**——后者只说明该任务需要其前置成功，与它是否关键无关。首轮实现用 `requires_success` 判定，会漏掉"被依赖但不要求前置成功"的任务，同时误报无人依赖的叶子任务；经代码审核后改为按被依赖关系计算。这正是 §4 依赖示例的读法（最终方案依赖的是通过校验的事实产物），也是 §12 场景 6 唯一有保护意义的读法：无人依赖的任务不可能拖住整条链。
+
+报告收集全部问题而非在首个错误处停止；重复声明同一 `task_id` 的实例仍会报告其自身的其他问题；自环归为 `self_dependency` 而非环；环检测为迭代实现，长依赖链不会触发 `RecursionError`；空白 reviewer 与空白验收 id 都不算数。尚未接入 RuntimeAdapter 与原生任务创建。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -412,6 +419,7 @@ P0-B 第四部分（Completion 门禁）已执行：[app/completion.py](app/comp
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.9 | R04、R08 | 落地 PlanValidator；审核后把"关键任务"界定修正为被依赖关系，并补空 id、自环与多节点环的区分、长链迭代检测、重复实例问题上报 | 20 项断言通过；未接入 RuntimeAdapter 与原生任务创建 |
 | 2026-10-11 | 0.8 | R08、R11 | 落地 Completion 门禁：坏结果、自审 reviewer、验收未过均不能完成任务；`TaskResult` 增加 `producer`，验收身份取自记录而非调用参数 | 27 项断言通过；未接入 reviewer Rail 与原生完成路径 |
 | 2026-10-11 | 0.7 | R04、R11 | 落地 Dependency 门禁：取消/失败/陈旧前置不触发下游业务执行；新增应用侧 `TaskResult` 模型；审核后补 `mismatched_result`、自依赖检查与结果不可变 | 18 项断言通过；未接入原生任务表与 scheduler |
 | 2026-10-11 | 0.6 | R04、R11 | 落地 Execution 账本：只有当前 execution 可提交结果；提取 `checks/harness.py` 消除验证脚本重复 | 14 项断言通过；未接入原生任务表与 reviewer 门禁 |

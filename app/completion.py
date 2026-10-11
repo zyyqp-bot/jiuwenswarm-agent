@@ -32,7 +32,14 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict
 
 from app.execution import ExecutionLedger, StaleExecutionError, UnknownExecutionError
-from app.models import AcceptanceCheck, AcceptanceResult, TaskOutcome, TaskResult, usable_artifacts
+from app.models import (
+    AcceptanceCheck,
+    AcceptanceResult,
+    TaskOutcome,
+    TaskResult,
+    non_blank,
+    usable_artifacts,
+)
 
 __all__ = [
     "CompletionBlockReason",
@@ -85,11 +92,6 @@ class CompletionDecision(BaseModel):
     detail: str | None = None
 
 
-def _named(values: Sequence[str]) -> list[str]:
-    """Return the entries that actually name someone or something."""
-    return [value for value in values if value.strip()]
-
-
 class CompletionGate:
     """Decide whether a task's result may complete it."""
 
@@ -140,7 +142,7 @@ class CompletionGate:
         if not usable_artifacts(result.artifact_refs):
             return _block(CompletionBlockReason.MISSING_ARTIFACT, "the result carries no usable artifact")
 
-        named_reviewers = _named(reviewers)
+        named_reviewers = non_blank(reviewers)
         if require_reviewer and not named_reviewers:
             return _block(CompletionBlockReason.REVIEWER_MISSING, "the task requires a reviewer")
 

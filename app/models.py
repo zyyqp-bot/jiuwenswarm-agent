@@ -16,6 +16,7 @@ __all__ = [
     "AcceptanceResult",
     "TaskOutcome",
     "TaskResult",
+    "non_blank",
     "usable_artifacts",
 ]
 
@@ -85,10 +86,20 @@ class AcceptanceCheck(BaseModel):
     evidence_refs: tuple[str, ...] = ()
 
 
+def non_blank(values: Iterable[str]) -> list[str]:
+    """Return the entries that actually name something.
+
+    Blank entries never satisfy a requirement: they are not a deliverable, not a
+    reviewer, and not an acceptance condition. Every gate that asks "is there at
+    least one of these" filters through here.
+    """
+    return [value for value in values if value.strip()]
+
+
 def usable_artifacts(refs: Iterable[str]) -> list[str]:
     """Return the artifact references that actually name something.
 
     A blank reference is not a deliverable, so it must not satisfy a gate that
     requires a valid artifact (PROJECT.md section 6).
     """
-    return [ref for ref in refs if ref.strip()]
+    return non_blank(refs)

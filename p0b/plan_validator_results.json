@@ -1,0 +1,107 @@
+{
+  "checks_passed": 20,
+  "checks_total": 20,
+  "checks": [
+    {
+      "check": "a research -> engineering plan with a reviewed key task is valid",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "an empty plan is rejected with a structural code",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.EMPTY_PLAN: 'empty_plan'>]"
+    },
+    {
+      "check": "a blank task id is rejected",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.INVALID_TASK_ID: 'invalid_task_id'>]"
+    },
+    {
+      "check": "a duplicate task id is rejected",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.DUPLICATE_TASK_ID: 'duplicate_task_id'>]"
+    },
+    {
+      "check": "a duplicated task still has its own problems reported",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.DUPLICATE_TASK_ID: 'duplicate_task_id'>, <PlanIssueCode.UNKNOWN_DEPENDENCY: 'unknown_dependency'>, <PlanIssueCode.UNKNOWN_ROLE: 'unknown_role'>, <PlanIssueCode.MISSING_ACCEPTANCE: 'missing_acceptance'>]"
+    },
+    {
+      "check": "a dependency on a task that is not in the plan is rejected",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.UNKNOWN_DEPENDENCY: 'unknown_dependency'>]"
+    },
+    {
+      "check": "a self-dependency is reported as such, and not as a cycle",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.SELF_DEPENDENCY: 'self_dependency'>]"
+    },
+    {
+      "check": "a dependency cycle is rejected and named",
+      "result": "pass",
+      "detail": "dependency cycle: a -> b -> a"
+    },
+    {
+      "check": "a cycle deeper in the graph is still found",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.CYCLIC_DEPENDENCY: 'cyclic_dependency'>]"
+    },
+    {
+      "check": "a diamond (shared prerequisite) is not a cycle",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a long dependency chain returns a report instead of raising",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "a role outside the roster is rejected",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.UNKNOWN_ROLE: 'unknown_role'>]"
+    },
+    {
+      "check": "a custom roster is honoured",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a task with no acceptance condition is rejected",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.MISSING_ACCEPTANCE: 'missing_acceptance'>]"
+    },
+    {
+      "check": "a blank acceptance id does not count as an acceptance condition",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.MISSING_ACCEPTANCE: 'missing_acceptance'>]"
+    },
+    {
+      "check": "a key task without a reviewer is rejected (scenario 6)",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.MISSING_REVIEWER: 'missing_reviewer'>]"
+    },
+    {
+      "check": "a task nobody depends on does not need a reviewer",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "being depended on makes a task key even when it does not require its own prerequisites",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.MISSING_REVIEWER: 'missing_reviewer'>]"
+    },
+    {
+      "check": "a blank reviewer name does not satisfy the reviewer requirement",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.MISSING_REVIEWER: 'missing_reviewer'>]"
+    },
+    {
+      "check": "every problem is reported, not just the first",
+      "result": "pass",
+      "detail": "issues=[<PlanIssueCode.UNKNOWN_ROLE: 'unknown_role'>, <PlanIssueCode.MISSING_ACCEPTANCE: 'missing_acceptance'>] (t1 is not key, so no reviewer issue)"
+    }
+  ],
+  "scope": "pure plan validator; no framework, no Runner, no model"
+}
