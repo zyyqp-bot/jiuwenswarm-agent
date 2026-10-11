@@ -1,0 +1,98 @@
+{
+  "checks_passed": 18,
+  "checks_total": 18,
+  "checks": [
+    {
+      "check": "the compiled spec builds into a live TeamAgent",
+      "result": "pass",
+      "detail": "type=openjiuwen.agent_teams.agent.team_agent.TeamAgent"
+    },
+    {
+      "check": "the built team carries the spec's team name",
+      "result": "pass",
+      "detail": "team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "team.spec is the input spec object, so it cannot prove anything",
+      "result": "pass",
+      "detail": "this is why verify_identity reads runtime_context instead"
+    },
+    {
+      "check": "the built leader's member name matches the spec",
+      "result": "pass",
+      "detail": "member_name='team_leader'"
+    },
+    {
+      "check": "the leader desc survives the build (the config chain drops it, the build must not)",
+      "result": "pass",
+      "detail": "desc='Plans the work and owns the final judgement.'"
+    },
+    {
+      "check": "the leader prompt survives the build",
+      "result": "pass",
+      "detail": "prompt='Never mark an unverified claim as fact.'"
+    },
+    {
+      "check": "the built object is the leader role",
+      "result": "pass",
+      "detail": "role=<TeamRole.LEADER: 'leader'>"
+    },
+    {
+      "check": "the runtime TeamSpec is materialized separately and keeps dispatch_mode='scheduled'",
+      "result": "pass",
+      "detail": "dispatch_mode='scheduled'"
+    },
+    {
+      "check": "the runtime TeamSpec carries the team name",
+      "result": "pass",
+      "detail": "team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "the team exposes the native task manager",
+      "result": "pass",
+      "detail": "task_manager.team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "verify_identity accepts a team that matches its spec",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a stand-in identical to the spec passes",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "verify_identity rejects a mismatched team_name",
+      "result": "pass",
+      "detail": "built team is named 'some-other-team', spec says 'jiuwenswarm_mvp'"
+    },
+    {
+      "check": "verify_identity rejects a mismatched leader member name",
+      "result": "pass",
+      "detail": "built leader is 'someone-else', spec says 'team_leader'"
+    },
+    {
+      "check": "verify_identity rejects a mismatched leader desc",
+      "result": "pass",
+      "detail": "built leader desc is 'a different blurb', spec says 'Plans the work and owns the final judgement.'"
+    },
+    {
+      "check": "verify_identity rejects a mismatched leader prompt",
+      "result": "pass",
+      "detail": "built leader prompt is 'a different agreement', spec says 'Never mark an unverified claim as fact.'"
+    },
+    {
+      "check": "verify_identity rejects a mismatched dispatch mode",
+      "result": "pass",
+      "detail": "built team carries dispatch_mode 'autonomous', spec says 'scheduled'"
+    },
+    {
+      "check": "a renamed spec no longer matches the built team",
+      "result": "pass",
+      "detail": "built team is named 'jiuwenswarm_mvp', spec says 'some-other-team'"
+    }
+  ],
+  "scope": "real TeamAgent construction from a compiled spec; no run, no spawn, no model call",
+  "not_covered": "spawn-tool removal and run behaviour require an initialized runtime"
+}

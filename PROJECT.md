@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.10 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 除 RuntimeAdapter 外均已落地。
+版本：0.11 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 全部落地（RuntimeAdapter 首片）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -24,6 +24,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-B Completion 门禁 | 已执行：`app/completion.py`，坏结果/自审 reviewer/验收未过均不能完成任务，27 项断言通过 |
 | P0-B PlanValidator | 已执行：`app/plan.py`，DAG 无环/依赖存在/角色有效/验收声明/关键任务须有 reviewer，20 项断言通过 |
 | P0-B RunRepository | 已执行：`app/repository.py`，SQLite 持久化 run/execution/result，门禁不变式跨重启成立（含读侧），17 项断言通过 |
+| P0-B RuntimeAdapter（首片） | 已执行：`app/runtime_adapter.py`，从 spec 真实构造 TeamAgent 并校验身份一致，18 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -391,7 +392,22 @@ P0-B 第六部分（RunRepository）已执行：[app/repository.py](app/reposito
 
 **读侧与写侧同等重要**：任务被重新派发后、新 execution 尚未提交时，`latest_result` 返回 None 而非被超越那次的旧结果——否则恢复会把正在重执行的任务误判为已完成，而这正是本仓库存在的理由。首轮实现的读侧直接取最新结果、无视 execution 状态，经代码审核后改为只读当前 execution 的结果，并把逐任务的 N+1 查询合并为一次 join。stale 判定与内存账本共用 [app/execution.py](app/execution.py) 的 `validate_submission_record`，避免两套路径漂移；并发下重复开启由唯一约束拒绝并转换为 `DuplicateExecutionError`，而非泄漏原始 `sqlite3.IntegrityError`。新增依赖 `aiosqlite`。尚未接入 RuntimeAdapter。
 
-下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
+P0-B 第七部分（RuntimeAdapter 首片）已执行：[app/runtime_adapter.py](app/runtime_adapter.py) 从 validated Spec 构造真实 `TeamAgent`。`spec.build()` 组装 leader 的 agent 与 rails，但**不调用模型**，因此这条路径可离线验证；构造后校验对象与所依据的 spec 身份一致（`team_name`/`member_name`/`team_mode`/`dispatch_mode`），不一致抛 `RuntimeBuildError`。[runtime_adapter_check.py](p0b/runtime_adapter_check.py) 18 项断言通过，详见 [runtime_adapter_results.json](p0b/runtime_adapter_results.json)。为此需补 `opentelemetry-exporter-otlp-proto-common/grpc/http` 三个包。
+
+**校验必须打在 materialized 层**：`TeamAgent.spec` 与传入的 spec 是**同一个对象**（`build()` 把 `self` 交给 configurator），拿它做一致性比较恒为真、什么都证明不了。真正的物化值在 `team.runtime_context`（leader 的 `member_name`/`desc`/`prompt`/`role`）与 `runtime_context.team_spec`（**独立构造**的 `TeamSpec`，含运行时 `dispatch_mode`）。首轮实现比较的正是 `team.spec`，经代码审核后改到 materialized 层。另一条相关事实：`TeamSpec` **没有** `team_mode` 字段——该开关只存在于 `TeamAgentSpec`，由 configurator 在构造工具时消费。`build_team` 在身份校验失败时会先释放刚构造的 team，避免调用方拿不到对象、无法释放。
+
+**明确未覆盖**：leader 的工具集由 rails 在首次 `invoke` 前惰性注册，所以"`team_mode="predefined"` 摘除 `spawn_*` 工具"这件事在**从未运行过**的 team 上观察不到——该验证属于首次真实运行。§8 列出的 `run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面同样待真实 runtime 接入（P1）。
+
+下一次更新先阅读本文。P0-A 与 P0-B 的离线部分已完成（`app/` 下七个模块，十一个验证脚本）；下一步是 **P0-C（资料检索与上下文组装）**，仍可全程离线验证：
+
+- 导入链：授权 → 解析 → 资料版本/hash → 分块与 locator → FTS5 索引 → 可选真实 embedding → 索引状态
+- 查询链：身份与 scope 校验 → 关键词/向量召回 → 按 `chunk_id`+revision 去重 → RRF `sum(1/(60+rank))` → 来源/版本确认 → token 裁剪 → Evidence
+- 中文 FTS5 tokenizer（trigram）的本地可用性，以及不足 3 字符的词与实体匹配所需的受限补充检索
+- ContextBuilder 的不可压缩部分与输入预算换算
+
+再之后是 P0-D（Aggregator、语义验收、事件去重投影）。与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
+
+尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
 - JiuwenSwarm 模板配置、原生 Spec 与团队 core memory 的实际挂载差异；最终有效配置必须检查。
@@ -426,6 +442,7 @@ P0-B 第六部分（RunRepository）已执行：[app/repository.py](app/reposito
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.11 | R01、R13 | 落地 RuntimeAdapter 首片：spec → 真实 TeamAgent 构造与身份校验；审核后把校验从恒真的 `team.spec` 移到 materialized 的 `runtime_context`，并补失败释放与全分支覆盖 | 18 项断言通过；工具挂载与 run 表面待真实 runtime |
 | 2026-10-11 | 0.10 | R11、R12 | 落地 RunRepository：SQLite 持久化 run/execution/result；审核后修正读侧陈旧结果、并发原子性、schema 未强制单 ACTIVE、孤儿写入与 N+1 查询 | 17 项断言通过；未接入 RuntimeAdapter |
 | 2026-10-11 | 0.9 | R04、R08 | 落地 PlanValidator；审核后把"关键任务"界定修正为被依赖关系，并补空 id、自环与多节点环的区分、长链迭代检测、重复实例问题上报 | 20 项断言通过；未接入 RuntimeAdapter 与原生任务创建 |
 | 2026-10-11 | 0.8 | R08、R11 | 落地 Completion 门禁：坏结果、自审 reviewer、验收未过均不能完成任务；`TaskResult` 增加 `producer`，验收身份取自记录而非调用参数 | 27 项断言通过；未接入 reviewer Rail 与原生完成路径 |
