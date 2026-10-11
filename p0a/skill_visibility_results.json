@@ -1,22 +1,4 @@
 {
-  "scope": "offline Skill visibility declaration + composition; no Runner, no model call, no network",
-  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
-  "declarations": {
-    "team_allow": [
-      "common"
-    ],
-    "research_allow": [
-      "research",
-      "fact_checking"
-    ],
-    "engineering_allow": [
-      "software_engineering",
-      "code_review"
-    ],
-    "global_disabled": [
-      "legacy_skill"
-    ]
-  },
   "checks_passed": 12,
   "checks_total": 12,
   "checks": [
@@ -53,7 +35,7 @@
     {
       "check": "professional members cannot see each other's Skills",
       "result": "pass",
-      "detail": "research∩engineering_only=[] engineering∩research_only=[]"
+      "detail": "research&engineering_only=[] engineering&research_only=[]"
     },
     {
       "check": "every member keeps a non-empty effective allow-list (PROJECT.md section 9)",
@@ -81,5 +63,23 @@
       "detail": "enabled=['common', 'extra_tool', 'fact_checking', 'research']"
     }
   ],
+  "scope": "offline Skill visibility declaration + composition; no Runner, no model call, no network",
+  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+  "declarations": {
+    "team_allow": [
+      "common"
+    ],
+    "research_allow": [
+      "research",
+      "fact_checking"
+    ],
+    "engineering_allow": [
+      "software_engineering",
+      "code_review"
+    ],
+    "global_disabled": [
+      "legacy_skill"
+    ]
+  },
   "not_covered": "Skill content version/hash and tool-permission enforcement are P0-C scope"
 }

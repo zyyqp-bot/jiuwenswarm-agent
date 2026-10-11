@@ -1,6 +1,4 @@
 {
-  "scope": "JiuwenSwarm config chain -> TeamAgentSpec; no Runner, no model call, no network",
-  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
   "checks_passed": 8,
   "checks_total": 8,
   "checks": [
@@ -45,6 +43,8 @@
       "detail": "spec leader desc='天才项目管理专家' prompt=''"
     }
   ],
+  "scope": "JiuwenSwarm config chain -> TeamAgentSpec; no Runner, no model call, no network",
+  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
   "observations": [
     {
       "id": "O1",

@@ -1,8 +1,4 @@
 {
-  "scope": "offline TeamAgentSpec compilation + roster validation; no Runner, no model call, no network",
-  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
-  "team_name": "jiuwenswarm_mvp",
-  "member_count": 3,
   "checks_passed": 11,
   "checks_total": 11,
   "checks": [
@@ -42,7 +38,7 @@
       "detail": "members=team_leader,research,engineering"
     },
     {
-      "check": "Skill seed declared on the teammate template (seed only; authoritative set lives in skills-visibility.json)",
+      "check": "Skill seed declared on the teammate template (seed only; the authoritative set lives in skills-visibility.json)",
       "result": "pass",
       "detail": "teammate skill seed=['research', 'software_engineering']"
     },
@@ -61,5 +57,9 @@
       "result": "pass",
       "detail": ""
     }
-  ]
+  ],
+  "scope": "offline TeamAgentSpec compilation + roster validation; no Runner, no model call, no network",
+  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+  "team_name": "jiuwenswarm_mvp",
+  "member_count": 3
 }

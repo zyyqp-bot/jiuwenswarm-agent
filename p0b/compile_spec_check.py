@@ -18,7 +18,6 @@ Run: .venv/Scripts/python.exe p0b/compile_spec_check.py
 from __future__ import annotations
 
 import copy
-import json
 import sys
 from pathlib import Path
 
@@ -31,6 +30,7 @@ from app.config_adapter import (  # noqa: E402
     leader_identity_overrides,
     validate_roster_closed,
 )
+from checks.harness import Checks, call_ok, raises  # noqa: E402
 from openjiuwen.agent_teams.schema.blueprint import TeamAgentSpec  # noqa: E402
 
 TEAM = "jiuwenswarm_mvp"
@@ -115,28 +115,13 @@ def build_legacy_config() -> dict:
         "spawn_mode": "inprocess",
         "dispatch_mode": "scheduled",
         "team_mode": "predefined",
-        "agents": {"leader": {"workspace": {"stable_base": True}}, "teammate": {"workspace": {"stable_base": True}}},
+        "agents": {
+            "leader": {"workspace": {"stable_base": True}},
+            "teammate": {"workspace": {"stable_base": True}},
+        },
         "leader": copy.deepcopy(LEADER),
         "predefined_members": [copy.deepcopy(RESEARCH), copy.deepcopy(ENGINEERING)],
     }
-
-
-class Checks:
-    def __init__(self) -> None:
-        self.items: list[dict] = []
-
-    def add(self, check: str, ok: bool, detail: str = "") -> None:
-        self.items.append({"check": check, "result": "pass" if ok else "fail", "detail": detail})
-
-
-def _expect_compilation_error(config: dict) -> tuple[bool, str]:
-    try:
-        compile_team_spec(config)
-    except SpecCompilationError as exc:
-        return True, str(exc)
-    except Exception as exc:  # a different failure is not the guard we claim
-        return False, f"{type(exc).__name__}: {exc}"
-    return False, "no error raised"
 
 
 def main() -> int:
@@ -187,7 +172,7 @@ def main() -> int:
         "deepcopy comparison",
     )
 
-    # --- legacy top-level shape (F1: the old selector missed this) ----------
+    # --- legacy top-level shape (the old selector missed this) --------------
     legacy_spec = compile_team_spec(build_legacy_config())
     checks.add(
         "leader repair also works for a legacy top-level team config",
@@ -227,35 +212,27 @@ def main() -> int:
         f"leader.desc={blank_spec.leader.desc!r}",
     )
 
-    # --- roster closure guard (F3) -----------------------------------------
+    # --- roster closure guard ----------------------------------------------
     no_mode = build_config()
-    delimiter = no_mode["modes"]["team"][TEAM].pop("team_mode")
-    rejected, detail = _expect_compilation_error(no_mode)
+    removed = no_mode["modes"]["team"][TEAM].pop("team_mode")
+    rejected, detail = raises(compile_team_spec, no_mode, expected=SpecCompilationError)
     checks.add(
         "a config without team_mode is rejected instead of silently allowing spawn",
         rejected,
-        f"(was {delimiter!r}) {detail}",
+        f"(was {removed!r}) {detail}",
     )
 
     empty_roster = build_config()
     empty_roster["modes"]["team"][TEAM]["predefined_members"] = []
-    rejected, detail = _expect_compilation_error(empty_roster)
-    checks.add(
-        "an empty predefined_members roster is rejected",
-        rejected,
-        detail,
-    )
+    rejected, detail = raises(compile_team_spec, empty_roster, expected=SpecCompilationError)
+    checks.add("an empty predefined_members roster is rejected", rejected, detail)
 
     checks.add(
         "validate=False lets a caller inspect a spec that would be rejected",
         compile_team_spec(no_mode, validate=False).team_mode is None,
         "",
     )
-    checks.add(
-        "validate_roster_closed passes on a well-formed spec",
-        _call_ok(validate_roster_closed, spec),
-        "",
-    )
+    checks.add("validate_roster_closed passes on a well-formed spec", call_ok(validate_roster_closed, spec), "")
 
     # --- template selection -------------------------------------------------
     multi = build_config()
@@ -282,31 +259,11 @@ def main() -> int:
         "",
     )
 
-    failed = [c for c in checks.items if c["result"] != "pass"]
-    summary = {
-        "scope": "app-side spec compiler; no Runner, no model call, no network",
-        "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
-        "checks_passed": len(checks.items) - len(failed),
-        "checks_total": len(checks.items),
-        "checks": checks.items,
-    }
-    RESULTS_PATH.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    for c in checks.items:
-        mark = "PASS" if c["result"] == "pass" else "FAIL"
-        print(f"[{mark}] {c['check']}")
-        if c["detail"]:
-            print(f"       {c['detail']}")
-    print(f"\n{len(checks.items) - len(failed)}/{len(checks.items)} checks passed -> {RESULTS_PATH}")
-    return 1 if failed else 0
-
-
-def _call_ok(fn, *args) -> bool:
-    try:
-        fn(*args)
-    except Exception:
-        return False
-    return True
+    return checks.report(
+        RESULTS_PATH,
+        scope="app-side spec compiler; no Runner, no model call, no network",
+        baseline="workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
+    )
 
 
 if __name__ == "__main__":

@@ -21,12 +21,15 @@ Run:      .venv/Scripts/python.exe p0a/swarm_config_chain_check.py
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
-from jiuwenswarm.agents.harness.team.config_loader import load_team_spec_dict
-from openjiuwen.agent_teams.schema.blueprint import TeamAgentSpec
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from checks.harness import Checks  # noqa: E402
+from jiuwenswarm.agents.harness.team.config_loader import load_team_spec_dict  # noqa: E402
+from openjiuwen.agent_teams.schema.blueprint import TeamAgentSpec  # noqa: E402
 
 TEAM = "jiuwenswarm_mvp"
 RESULTS_PATH = Path(__file__).resolve().parent / "swarm_config_chain_results.json"
@@ -52,11 +55,23 @@ def build_swarm_config() -> dict:
         "preferred_language": "zh",
         "models": {"defaults": MODEL_DEFAULTS},
         "agents": {
-            "agent_leader": {"workspace": {"stable_base": True}, "max_iterations": 200, "completion_timeout": 6000.0},
-            "agent_research": {"workspace": {"stable_base": True}, "max_iterations": 200, "completion_timeout": 6000.0,
-                               "skills": ["research", "fact_checking"]},
-            "agent_engineering": {"workspace": {"stable_base": True}, "max_iterations": 200, "completion_timeout": 6000.0,
-                                  "skills": ["software_engineering", "code_review"]},
+            "agent_leader": {
+                "workspace": {"stable_base": True},
+                "max_iterations": 200,
+                "completion_timeout": 6000.0,
+            },
+            "agent_research": {
+                "workspace": {"stable_base": True},
+                "max_iterations": 200,
+                "completion_timeout": 6000.0,
+                "skills": ["research", "fact_checking"],
+            },
+            "agent_engineering": {
+                "workspace": {"stable_base": True},
+                "max_iterations": 200,
+                "completion_timeout": 6000.0,
+                "skills": ["software_engineering", "code_review"],
+            },
         },
         "modes": {
             "team": {
@@ -98,17 +113,10 @@ def build_swarm_config() -> dict:
     }
 
 
-class Checks:
-    def __init__(self) -> None:
-        self.items: list[dict] = []
-
-    def add(self, check: str, ok: bool, detail: str = "") -> None:
-        self.items.append({"check": check, "result": "pass" if ok else "fail", "detail": detail})
-
-
 def main() -> int:
     checks = Checks()
     config = build_swarm_config()
+    yaml_leader = config["modes"]["team"][TEAM]["leader"]
 
     spec_dict = load_team_spec_dict(config_base=config)
 
@@ -119,7 +127,7 @@ def main() -> int:
     )
     checks.add(
         "$agent references resolve into concrete agent templates with a model",
-        all("model" in spec_dict["agents"][k] for k in ("leader", "teammate")),
+        all("model" in spec_dict["agents"][key] for key in ("leader", "teammate")),
         f"agent keys={sorted(spec_dict['agents'])}",
     )
     checks.add(
@@ -147,63 +155,55 @@ def main() -> int:
     checks.add(
         "teammate desc/prompt survive the chain (predefined_members are copied verbatim)",
         all(m.desc and m.prompt for m in spec.predefined_members),
-        "teammates=" + ",".join(f"{m.member_name}:desc={bool(m.desc)},prompt={bool(m.prompt)}"
-                                for m in spec.predefined_members),
+        "teammates=" + ",".join(
+            f"{m.member_name}:desc={bool(m.desc)},prompt={bool(m.prompt)}" for m in spec.predefined_members
+        ),
     )
 
-    # --- what the chain drops (recorded, not a failure of this script) ------
-    observations = []
-    yaml_leader = config["modes"]["team"][TEAM]["leader"]
+    # --- what the chain drops ----------------------------------------------
     leader_desc_kept = spec.leader.desc == yaml_leader["desc"]
     leader_prompt_kept = spec.leader.prompt == yaml_leader["prompt"]
-    observations.append({
-        "id": "O1",
-        "observation": (
-            "Leader desc/prompt written in YAML do not reach the spec: _build_leader_spec emits only "
-            "member_name/display_name/name/persona, and LeaderSpec has no persona field. The adapter "
-            "must set the leader's desc/prompt on the compiled spec explicitly."
-        ),
-        "leader_desc_kept": leader_desc_kept,
-        "leader_prompt_kept": leader_prompt_kept,
-        "spec_leader_desc": spec.leader.desc,
-        "spec_leader_prompt": spec.leader.prompt,
-    })
     checks.add(
         "gap confirmed: leader desc/prompt are NOT carried by the config chain",
         not leader_desc_kept and not leader_prompt_kept,
         f"spec leader desc={spec.leader.desc!r} prompt={spec.leader.prompt!r}",
     )
-    observations.append({
-        "id": "O2",
-        "observation": (
-            "enable_hitt defaults to True in load_team_spec_dict even though the config does not set it. "
-            "With team_mode='predefined' the dynamic spawn_* tools are removed at build time, so the MVP "
-            "roster stays closed; the flag alone does not reopen it."
-        ),
-        "spec_enable_hitt": spec.enable_hitt,
-        "spec_team_mode": spec.team_mode,
-    })
 
-    failed = [c for c in checks.items if c["result"] != "pass"]
-    summary = {
-        "scope": "JiuwenSwarm config chain -> TeamAgentSpec; no Runner, no model call, no network",
-        "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
-        "checks_passed": len(checks.items) - len(failed),
-        "checks_total": len(checks.items),
-        "checks": checks.items,
-        "observations": observations,
-    }
-    RESULTS_PATH.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    observations = [
+        {
+            "id": "O1",
+            "observation": (
+                "Leader desc/prompt written in YAML do not reach the spec: _build_leader_spec emits only "
+                "member_name/display_name/name/persona, and LeaderSpec has no persona field. The adapter "
+                "must set the leader's desc/prompt on the compiled spec explicitly."
+            ),
+            "leader_desc_kept": leader_desc_kept,
+            "leader_prompt_kept": leader_prompt_kept,
+            "spec_leader_desc": spec.leader.desc,
+            "spec_leader_prompt": spec.leader.prompt,
+        },
+        {
+            "id": "O2",
+            "observation": (
+                "enable_hitt defaults to True in load_team_spec_dict even though the config does not set it. "
+                "With team_mode='predefined' the dynamic spawn_* tools are removed at build time, so the MVP "
+                "roster stays closed; the flag alone does not reopen it."
+            ),
+            "spec_enable_hitt": spec.enable_hitt,
+            "spec_team_mode": spec.team_mode,
+        },
+    ]
 
-    for c in checks.items:
-        mark = "PASS" if c["result"] == "pass" else "FAIL"
-        print(f"[{mark}] {c['check']}")
-        if c["detail"]:
-            print(f"       {c['detail']}")
-    for o in observations:
-        print(f"[NOTE] {o['id']}: {o['observation']}")
-    print(f"\n{len(checks.items) - len(failed)}/{len(checks.items)} checks passed -> {RESULTS_PATH}")
-    return 1 if failed else 0
+    for note in observations:
+        print(f"[NOTE] {note['id']}: {note['observation']}")
+    print()
+
+    return checks.report(
+        RESULTS_PATH,
+        scope="JiuwenSwarm config chain -> TeamAgentSpec; no Runner, no model call, no network",
+        baseline="workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
+        observations=observations,
+    )
 
 
 if __name__ == "__main__":

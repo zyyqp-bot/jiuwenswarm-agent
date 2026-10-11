@@ -1,6 +1,4 @@
 {
-  "scope": "app-side spec compiler; no Runner, no model call, no network",
-  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
   "checks_passed": 19,
   "checks_total": 19,
   "checks": [
@@ -99,5 +97,7 @@
       "result": "pass",
       "detail": ""
     }
-  ]
+  ],
+  "scope": "app-side spec compiler; no Runner, no model call, no network",
+  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3"
 }

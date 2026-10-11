@@ -1,0 +1,77 @@
+{
+  "checks_passed": 14,
+  "checks_total": 14,
+  "checks": [
+    {
+      "check": "the first execution gets sequence 1 and is active",
+      "result": "pass",
+      "detail": "current='exec-1'"
+    },
+    {
+      "check": "the active execution can submit a result",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "opening a second execution bumps the sequence and supersedes the first",
+      "result": "pass",
+      "detail": "states={'exec-1': 'superseded', 'exec-2': 'active'}"
+    },
+    {
+      "check": "current() reports the newest execution",
+      "result": "pass",
+      "detail": "current='exec-2'"
+    },
+    {
+      "check": "a superseded execution cannot submit (the core P0-B criterion)",
+      "result": "pass",
+      "detail": "execution 'exec-1' of task 'task-1' (sequence 1) was superseded by sequence 2"
+    },
+    {
+      "check": "the new execution can still submit",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "an execution id that was never opened is rejected",
+      "result": "pass",
+      "detail": "execution 'never-opened' was never opened for task 'task-1'"
+    },
+    {
+      "check": "an unknown task is rejected even with a known execution id",
+      "result": "pass",
+      "detail": "no execution recorded for task 'other-task' in run 'run-1'"
+    },
+    {
+      "check": "reopening an execution id for the same task is rejected",
+      "result": "pass",
+      "detail": "execution 'exec-1' was already opened for task 'task-1' in run 'run-1'"
+    },
+    {
+      "check": "records handed out by history() are immutable",
+      "result": "pass",
+      "detail": "assignment to a frozen record raises"
+    },
+    {
+      "check": "the same execution id in another run is tracked independently",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "history is oldest-first and only the last entry stays active",
+      "result": "pass",
+      "detail": "seqs=[1, 2, 3] states=['superseded', 'superseded', 'active']"
+    },
+    {
+      "check": "an execution two generations back is still rejected",
+      "result": "pass",
+      "detail": "execution 'exec-0' of task 'task-1' (sequence 1) was superseded by sequence 2"
+    },
+    {
+      "check": "the stale diagnostic names the generation that superseded it, not the newest",
+      "result": "pass",
+      "detail": "execution 'exec-0' of task 'task-1' (sequence 1) was superseded by sequence 2"
+    }
+  ],
+  "scope": "pure application ledger; no framework, no Runner, no database, no model"
+}

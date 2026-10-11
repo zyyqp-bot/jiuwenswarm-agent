@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.5 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 已启动（应用侧 Spec 编译适配层）。
+版本：0.6 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -19,6 +19,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-A 配置编译与名册校验 | 已执行：隔离 venv 内真实编译 TeamAgentSpec（11 项断言）+ Skill 可见性声明与合成（12 项断言），共 23 项通过；未启动 Runner、未调用模型、未联网 |
 | P0-A Swarm 配置链 | 已执行：`load_team_spec_dict` → `TeamAgentSpec`，8 项断言通过；记录 leader desc/prompt 不透传、`enable_hitt` 默认 True 两项事实 |
 | P0-B Spec 编译适配层 | 已执行：`app/config_adapter.py` 修复 leader 身份丢失（O1），19 项断言通过；应用代码首次落地 |
+| P0-B Execution 账本 | 已执行：`app/execution.py`，只有当前 execution 可提交结果，14 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -356,6 +357,12 @@ P0-B 第一部分（Spec 编译适配层）已执行：[app/config_adapter.py](a
 
 首轮实现经代码审核后修复 7 处问题，其中两处是真缺陷，值得记录：**（a）适配层最初自行重写了模板选择器，没有镜像 loader 的 legacy 顶层 `team:` 回退，会让那类配置静默跳过 leader 修复——正好重现它要修的 O1**；修复方式是直接复用 loader 自己的 `_select_modes_team`，消除第二套选择逻辑的漂移风险。**（b）`_build_leader_spec` 丢弃的字段不止 `desc`/`prompt`，还包括 `model_name`**（`LeaderSpec` 继承自 `MemberSpecBase`）；已改为对全部可透传字段做通用恢复。另新增 `validate_roster_closed`，在编译后强制 `team_mode == "predefined"`——此前该保证只写在 docstring 里而没有代码执行。
 
+P0-B 第二部分（Execution 账本）已执行：[app/execution.py](app/execution.py) 实现"只有当前 execution 可以提交结果"，这是 P0-B 验收点"旧 execution 不能完成新任务"的应用侧落点。框架的 CAS 状态转换不足以隔离重执行（§3 重要限制：重执行复用同一 `in_progress` 状态），因此应用必须以 `execution_id` 为准。[execution_ledger_check.py](p0b/execution_ledger_check.py) 14 项断言通过，详见 [execution_ledger_results.json](p0b/execution_ledger_results.json)。
+
+不变式：`execution_id` 在 `(run_id, task_id)` 内唯一，重开直接抛 `DuplicateExecutionError`（若允许复用，迟到的旧结果无法与新的区分）；每任务至多一条 ACTIVE 记录，且必为最后追加的一条；记录一经交出即不可变（`frozen=True`），调用方无法把已被超越的记录改回 ACTIVE 从而绕过检查。被超越的提交抛 `StaleExecutionError` 并点名真正超越它的那一代 sequence；从未开启的抛 `UnknownExecutionError`。
+
+首轮实现经代码审核后修复三处缺陷：验证只看 `execution_id` 而从不读 `execution_seq`（与文档声称的语义矛盾），`history()`/`current()` 交出内部可变对象，stale 诊断报的是最新 sequence 而非真正超越的那一代。另提取 [checks/harness.py](checks/harness.py) 作为全部验证脚本共用的断言与报告工具，消除各脚本重复的同名类。尚未接入原生任务表与 reviewer 门禁。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -391,6 +398,7 @@ P0-B 第一部分（Spec 编译适配层）已执行：[app/config_adapter.py](a
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.6 | R04、R11 | 落地 Execution 账本：只有当前 execution 可提交结果；提取 `checks/harness.py` 消除验证脚本重复 | 14 项断言通过；未接入原生任务表与 reviewer 门禁 |
 | 2026-10-11 | 0.5 | R01、R02、R03 | 落地应用侧 Spec 编译适配层，修复 O1（leader 身份丢失）；建立 `app/` 与 `p0b/` 目录约定；代码审核后修复模板选择器漂移与 leader 字段恢复不全，新增 `validate_roster_closed` | 19 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.4 | R01、R13 | 接入 Swarm 配置链：`load_team_spec_dict` → TeamAgentSpec 编译校验；记录 leader desc/prompt 不透传与 `enable_hitt` 默认 True | 8 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.3 | R05 | 闭合 Skill 可见性：新增基于真实声明文件的合成、隔离与权威性校验 | 12 项断言通过；Skill 内容 hash 与工具权限执行未做（P0-C） |

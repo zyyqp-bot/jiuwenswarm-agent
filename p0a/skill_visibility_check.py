@@ -12,7 +12,7 @@ against real files in a temporary agent-teams home:
 - the documented declaration-file layout is produced by the path helpers
 - effective enabled = member.allow UNION team.allow
 - effective disabled = member.deny UNION team.deny UNION global_disabled
-- an empty allow-list stays empty (the railway reads "empty" as unfiltered,
+- an empty allow-list stays empty (the rail reads "empty" as unfiltered,
   not as "no Skills"), so it must never be expanded to the whole library
 - professional members do not see each other's Skills
 - the file is the authority: a weaker seed never overwrites a stronger grant
@@ -24,18 +24,21 @@ Run:      .venv/Scripts/python.exe p0a/skill_visibility_check.py
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import tempfile
 from pathlib import Path
 
-from openjiuwen.agent_teams.paths import (
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from checks.harness import Checks  # noqa: E402
+from openjiuwen.agent_teams.paths import (  # noqa: E402
     SKILL_VISIBILITY_FILENAME,
     member_skill_visibility_path,
     team_skill_visibility_path,
 )
-from openjiuwen.agent_teams.skill.visibility import (
+from openjiuwen.agent_teams.skill.visibility import (  # noqa: E402
     AUTHORITY_EXPLICIT,
     AUTHORITY_SEED,
     SCOPE_MEMBER,
@@ -57,17 +60,7 @@ GLOBAL_DISABLED = ["legacy_skill"]
 RESULTS_PATH = Path(__file__).resolve().parent / "skill_visibility_results.json"
 
 
-class Checks:
-    def __init__(self) -> None:
-        self.items: list[dict] = []
-
-    def add(self, check: str, ok: bool, detail: str = "") -> None:
-        self.items.append({"check": check, "result": "pass" if ok else "fail", "detail": detail})
-
-
-def run() -> tuple[list[dict], dict]:
-    checks = Checks()
-
+def run(checks: Checks) -> dict:
     # --- declaration-file layout -------------------------------------------
     member_path = member_skill_visibility_path(TEAM, "research")
     team_path = team_skill_visibility_path(TEAM)
@@ -104,19 +97,21 @@ def run() -> tuple[list[dict], dict]:
 
         checks.add(
             "all three declarations are written and parse back",
-            all(read_skill_visibility(p, scope=s, entity_id=e).allow
-                for p, s, e in (
+            all(
+                read_skill_visibility(path, scope=scope, entity_id=entity).allow
+                for path, scope, entity in (
                     (team_file, SCOPE_TEAM, TEAM),
                     (research_file, SCOPE_MEMBER, "research"),
                     (engineering_file, SCOPE_MEMBER, "engineering"),
-                )),
+                )
+            ),
             f"team={team_file.name} research={research_file.name} engineering={engineering_file.name}",
         )
 
         def effective(member: str, member_file: Path) -> tuple[set[str], set[str]]:
-            m = read_skill_visibility(member_file, scope=SCOPE_MEMBER, entity_id=member)
-            t = read_skill_visibility(team_file, scope=SCOPE_TEAM, entity_id=TEAM)
-            return compose_skill_visibility(m, t, GLOBAL_DISABLED)
+            member_doc = read_skill_visibility(member_file, scope=SCOPE_MEMBER, entity_id=member)
+            team_doc = read_skill_visibility(team_file, scope=SCOPE_TEAM, entity_id=TEAM)
+            return compose_skill_visibility(member_doc, team_doc, GLOBAL_DISABLED)
 
         research_enabled, research_disabled = effective("research", research_file)
         engineering_enabled, engineering_disabled = effective("engineering", engineering_file)
@@ -140,8 +135,8 @@ def run() -> tuple[list[dict], dict]:
         checks.add(
             "professional members cannot see each other's Skills",
             not (research_enabled & ENGINEERING_ONLY) and not (engineering_enabled & RESEARCH_ONLY),
-            f"research∩engineering_only={sorted(research_enabled & ENGINEERING_ONLY)} "
-            f"engineering∩research_only={sorted(engineering_enabled & RESEARCH_ONLY)}",
+            f"research&engineering_only={sorted(research_enabled & ENGINEERING_ONLY)} "
+            f"engineering&research_only={sorted(engineering_enabled & RESEARCH_ONLY)}",
         )
         checks.add(
             "every member keeps a non-empty effective allow-list (PROJECT.md section 9)",
@@ -150,10 +145,8 @@ def run() -> tuple[list[dict], dict]:
         )
 
         # --- empty allow-list semantics -------------------------------------
-        empty_member = read_skill_visibility(
-            root / "absent.json", scope=SCOPE_MEMBER, entity_id="nobody"
-        )
-        empty_enabled, _ = compose_skill_visibility(empty_member, None, None)
+        absent = read_skill_visibility(root / "absent.json", scope=SCOPE_MEMBER, entity_id="nobody")
+        empty_enabled, _ = compose_skill_visibility(absent, None, None)
         checks.add(
             "an empty allow-list stays empty (means 'unfiltered', not 'no Skills')",
             empty_enabled == set(),
@@ -206,37 +199,25 @@ def run() -> tuple[list[dict], dict]:
             f"enabled={sorted(refreshed_enabled)}",
         )
 
-    context = {
+    return {
         "team_allow": TEAM_ALLOW,
         "research_allow": RESEARCH_ALLOW,
         "engineering_allow": ENGINEERING_ALLOW,
         "global_disabled": GLOBAL_DISABLED,
     }
-    return checks.items, context
 
 
 def main() -> int:
-    checks, context = run()
-    failed = [c for c in checks if c["result"] != "pass"]
+    checks = Checks()
+    declarations = run(checks)
 
-    summary = {
-        "scope": "offline Skill visibility declaration + composition; no Runner, no model call, no network",
-        "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
-        "declarations": context,
-        "checks_passed": len(checks) - len(failed),
-        "checks_total": len(checks),
-        "checks": checks,
-        "not_covered": "Skill content version/hash and tool-permission enforcement are P0-C scope",
-    }
-    RESULTS_PATH.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    for c in checks:
-        mark = "PASS" if c["result"] == "pass" else "FAIL"
-        print(f"[{mark}] {c['check']}")
-        if c["detail"]:
-            print(f"       {c['detail']}")
-    print(f"\n{len(checks) - len(failed)}/{len(checks)} checks passed -> {RESULTS_PATH}")
-    return 1 if failed else 0
+    return checks.report(
+        RESULTS_PATH,
+        scope="offline Skill visibility declaration + composition; no Runner, no model call, no network",
+        baseline="openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+        declarations=declarations,
+        not_covered="Skill content version/hash and tool-permission enforcement are P0-C scope",
+    )
 
 
 if __name__ == "__main__":
