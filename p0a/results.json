@@ -1,0 +1,65 @@
+{
+  "scope": "offline TeamAgentSpec compilation + roster validation; no Runner, no model call, no network",
+  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+  "team_name": "jiuwenswarm_mvp",
+  "member_count": 3,
+  "checks_passed": 11,
+  "checks_total": 11,
+  "checks": [
+    {
+      "check": "team_mode is explicitly 'predefined' (the only static no-spawn guarantee)",
+      "result": "pass",
+      "detail": "team_mode='predefined'"
+    },
+    {
+      "check": "dispatch_mode is 'scheduled'",
+      "result": "pass",
+      "detail": "dispatch_mode='scheduled'"
+    },
+    {
+      "check": "spawn_mode is 'inprocess' and lifecycle is 'persistent'",
+      "result": "pass",
+      "detail": "spawn_mode='inprocess' lifecycle='persistent'"
+    },
+    {
+      "check": "roster is exactly three collaboration members (R02)",
+      "result": "pass",
+      "detail": "members=team_leader,research,engineering"
+    },
+    {
+      "check": "all dynamic-spawn capability ceilings are closed",
+      "result": "pass",
+      "detail": "hitt=False bridge=False fork=False swarmflow=False external_cli=0"
+    },
+    {
+      "check": "both professional members are 'teammate' role",
+      "result": "pass",
+      "detail": "roles=TeamRole.TEAMMATE,TeamRole.TEAMMATE"
+    },
+    {
+      "check": "each member has a public desc and a private prompt",
+      "result": "pass",
+      "detail": "members=team_leader,research,engineering"
+    },
+    {
+      "check": "Skill seed declared on the teammate template (seed only; authoritative set lives in skills-visibility.json)",
+      "result": "pass",
+      "detail": "teammate skill seed=['research', 'software_engineering']"
+    },
+    {
+      "check": "_validate_reserved_names",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "_validate_hitt_consistency",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "_validate_bridge_consistency",
+      "result": "pass",
+      "detail": ""
+    }
+  ]
+}

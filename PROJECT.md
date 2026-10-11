@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.1 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成，应用实现未开始。
+版本：0.2 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 离线配置编译与名册校验已落地，应用实现未开始。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -16,6 +16,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | 官方 agent-core 源码 | 已拉取并切换到 Swarm 锁定的 `6df9699e650b3ad9b9835b46ae3c3b7572adb04b` |
 | 源码接口核对 | 已完成 MVP 相关路径核对；不是全仓库审计 |
 | 行为探针 | 7 项通过，包含 5 项隔离函数执行与 2 项静态检查 |
+| P0-A 配置编译与名册校验 | 已执行：隔离 venv 内真实编译 TeamAgentSpec，11 项断言通过；未启动 Runner、未调用模型、未联网。Skill 可见性权威校验未做 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -326,6 +327,22 @@ ModelPolicy.select(task, complexity, evidence_quality, budget) -> ModelProfile
 
 本机 py launcher 指向已不存在的 `D:\Development\Python\python.exe`，本次改用 bundled Python，不修改系统 Python 配置。
 
+P0-A 第一步已执行：在隔离 venv（`.venv/`，bundled Python 3.12.14）中真实 import agent-core 并编译 TeamAgentSpec，不需要全量依赖。[roster_check.py](p0a/roster_check.py) 构造固定三成员配置（Leader + Research + Engineering；predefined / scheduled / inprocess / persistent），调用 `TeamAgentSpec.model_validate` 并直接触发三项 build-time 名册检查，11 项断言通过，详见 [results.json](p0a/results.json)。复现命令：
+
+```powershell
+$env:PYTHONPATH = 'D:\Development\JiuwenSwarm-review\upstream\agent-core'
+.venv\Scripts\python.exe p0a/roster_check.py
+```
+
+依赖结论：真实 import `openjiuwen.agent_teams.schema.blueprint` 只需约 20 个包，**不需要** chromadb / playwright / fastapi / gitcode 私有源等重依赖；全程无模型调用、无网络。三个 Windows 陷阱：pip 包名不区分大小写（`Crypto` 会装成废弃的 `crypto`、`docx` 会装成废弃的 `docx`，必须写 `pycryptodome` / `python-docx`）；`opentelemetry` 是命名空间包（须装 `-api` + `-sdk`）；`agent_teams/__init__.py` 为 eager 导入，直接 import 子模块会拉起 TeamAgent → Runner 链。
+
+本次核对到两个设计修正，已影响 P0-A 的范围界定：
+
+1. **Skill 可见性不在 spec 上**。`DeepAgentSpec.skills` 只是 seed，`build()` 时 `AgentConfigurator` 把它清成 `[]` 并关闭 discovery（`agent_configurator.py:558-572`），权威是磁盘上的 `skills-visibility.json`。P0-A 只断言 seed，真实可见性校验留待 P0-C。
+2. **三项名册一致性检查只在 `build()` 内被调用**（`_validate_reserved_names` / `_validate_hitt_consistency` / `_validate_bridge_consistency`，`blueprint.py:744-746`），`model_validate` 不触发。脚本直接调用它们，从而在不构造 live TeamAgent 的前提下完成名册校验。
+
+`team_mode="predefined"` 是唯一能静态关闭动态 spawn 的开关（`agent_configurator.py:619-625` 摘除 4 个 `spawn_*` 工具）；`team_mode=None` 在存在非 avatar 成员时推导为 hybrid，仍允许 spawn。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -361,6 +378,7 @@ ModelPolicy.select(task, complexity, evidence_quality, budget) -> ModelProfile
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.2 | R02、R05、R13 | 新增 P0-A 离线配置编译与名册校验脚本；记录隔离 venv 依赖结论与 Windows 安装陷阱；修正 Skill 可见性落点与名册检查调用位置 | 11 项断言通过；未启动 Runner、未调用模型、未联网；Skill 可见性权威校验未做 |
 | 2026-10-11 | 0.1 | R01–R14 | 建立统一项目文档及更新规则；拉取并锁定官方源码；修正角色模板、调度、验收、取消依赖、RAG过滤、压缩字段与两条记忆路径；完善 MVP 流程与扩展边界 | 7项源码探针通过；未安装完整依赖、未运行真实模型/端到端；业务实现未开始 |
 
 后续每次更新填写：需求编号、问题/变更理由、最终实现、实际执行的验证、仍未解决问题。若设计被实现取代，修改正文中的当前决策和状态，不只在此追加一句“已完成”。
