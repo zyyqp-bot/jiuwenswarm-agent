@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.9 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本、Dependency 门禁、Completion 门禁、PlanValidator）。
+版本：0.10 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 除 RuntimeAdapter 外均已落地。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -23,6 +23,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-B Dependency 门禁 | 已执行：`app/dependency.py`，取消/失败/陈旧前置不触发下游业务执行，18 项断言通过 |
 | P0-B Completion 门禁 | 已执行：`app/completion.py`，坏结果/自审 reviewer/验收未过均不能完成任务，27 项断言通过 |
 | P0-B PlanValidator | 已执行：`app/plan.py`，DAG 无环/依赖存在/角色有效/验收声明/关键任务须有 reviewer，20 项断言通过 |
+| P0-B RunRepository | 已执行：`app/repository.py`，SQLite 持久化 run/execution/result，门禁不变式跨重启成立（含读侧），17 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -384,6 +385,12 @@ P0-B 第五部分（PlanValidator）已执行：[app/plan.py](app/plan.py) 在�
 
 报告收集全部问题而非在首个错误处停止；重复声明同一 `task_id` 的实例仍会报告其自身的其他问题；自环归为 `self_dependency` 而非环；环检测为迭代实现，长依赖链不会触发 `RecursionError`；空白 reviewer 与空白验收 id 都不算数。尚未接入 RuntimeAdapter 与原生任务创建。
 
+P0-B 第六部分（RunRepository）已执行：[app/repository.py](app/repository.py) 用 SQLite 持久化 run、execution 与任务结果，使 Execution 账本的不变式在重启后依然成立——这是 §10 恢复要求"对账原生任务、checkpoint、应用 execution/产物"的前提。[run_repository_check.py](p0b/run_repository_check.py) 17 项断言通过，详见 [run_repository_results.json](p0b/run_repository_results.json)。
+
+不变式由 schema 与查询共同强制：`(run_id, task_id, execution_id)` 唯一；部分唯一索引（`WHERE state='active'`）保证每任务至多一条 ACTIVE，即使绕过方法直接写入也会被拒绝；结果只接受当前 execution 的提交，同一 execution 不能提交第二次；写入 execution 前要求 run 已注册。测试在**中途关闭并重开数据库**，验证陈旧提交仍被拒绝、已存结果仍可读回。
+
+**读侧与写侧同等重要**：任务被重新派发后、新 execution 尚未提交时，`latest_result` 返回 None 而非被超越那次的旧结果——否则恢复会把正在重执行的任务误判为已完成，而这正是本仓库存在的理由。首轮实现的读侧直接取最新结果、无视 execution 状态，经代码审核后改为只读当前 execution 的结果，并把逐任务的 N+1 查询合并为一次 join。stale 判定与内存账本共用 [app/execution.py](app/execution.py) 的 `validate_submission_record`，避免两套路径漂移；并发下重复开启由唯一约束拒绝并转换为 `DuplicateExecutionError`，而非泄漏原始 `sqlite3.IntegrityError`。新增依赖 `aiosqlite`。尚未接入 RuntimeAdapter。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -419,6 +426,7 @@ P0-B 第五部分（PlanValidator）已执行：[app/plan.py](app/plan.py) 在�
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.10 | R11、R12 | 落地 RunRepository：SQLite 持久化 run/execution/result；审核后修正读侧陈旧结果、并发原子性、schema 未强制单 ACTIVE、孤儿写入与 N+1 查询 | 17 项断言通过；未接入 RuntimeAdapter |
 | 2026-10-11 | 0.9 | R04、R08 | 落地 PlanValidator；审核后把"关键任务"界定修正为被依赖关系，并补空 id、自环与多节点环的区分、长链迭代检测、重复实例问题上报 | 20 项断言通过；未接入 RuntimeAdapter 与原生任务创建 |
 | 2026-10-11 | 0.8 | R08、R11 | 落地 Completion 门禁：坏结果、自审 reviewer、验收未过均不能完成任务；`TaskResult` 增加 `producer`，验收身份取自记录而非调用参数 | 27 项断言通过；未接入 reviewer Rail 与原生完成路径 |
 | 2026-10-11 | 0.7 | R04、R11 | 落地 Dependency 门禁：取消/失败/陈旧前置不触发下游业务执行；新增应用侧 `TaskResult` 模型；审核后补 `mismatched_result`、自依赖检查与结果不可变 | 18 项断言通过；未接入原生任务表与 scheduler |

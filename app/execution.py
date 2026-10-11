@@ -25,6 +25,7 @@ diagnostic that names which generation superseded a rejected one.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
@@ -36,6 +37,7 @@ __all__ = [
     "ExecutionState",
     "StaleExecutionError",
     "UnknownExecutionError",
+    "validate_submission_record",
 ]
 
 
@@ -72,6 +74,44 @@ class ExecutionRecord(BaseModel):
     execution_id: str
     execution_seq: int
     state: ExecutionState = ExecutionState.ACTIVE
+
+
+def validate_submission_record(
+    records: Sequence[ExecutionRecord],
+    *,
+    run_id: str,
+    task_id: str,
+    execution_id: str,
+) -> ExecutionRecord:
+    """Return the record when this execution may submit a result.
+
+    Shared by the in-memory ledger and the durable repository so the staleness
+    rule and its diagnostics cannot drift between the two paths.
+
+    Raises:
+        UnknownExecutionError: the execution was never opened for this task.
+        StaleExecutionError: the execution has been superseded.
+    """
+    if not records:
+        raise UnknownExecutionError(f"no execution recorded for task {task_id!r} in run {run_id!r}")
+
+    # Newest record wins. A retry that reuses an execution id must resolve to
+    # its latest attempt, not to the superseded record it replaced.
+    for record in reversed(records):
+        if record.execution_id != execution_id:
+            continue
+        if record.state is ExecutionState.ACTIVE:
+            return record
+        superseded_by = next(
+            (later.execution_seq for later in records if later.execution_seq > record.execution_seq),
+            None,
+        )
+        raise StaleExecutionError(
+            f"execution {execution_id!r} of task {task_id!r} (sequence {record.execution_seq}) "
+            f"was superseded by sequence {superseded_by}"
+        )
+
+    raise UnknownExecutionError(f"execution {execution_id!r} was never opened for task {task_id!r}")
 
 
 class ExecutionLedger:
@@ -137,26 +177,9 @@ class ExecutionLedger:
             UnknownExecutionError: the execution was never opened for this task.
             StaleExecutionError: the execution has been superseded.
         """
-        records = self._history.get((run_id, task_id), [])
-        if not records:
-            raise UnknownExecutionError(
-                f"no execution recorded for task {task_id!r} in run {run_id!r}"
-            )
-
-        for record in records:
-            if record.execution_id != execution_id:
-                continue
-            if record.state is ExecutionState.ACTIVE:
-                return record
-            superseded_by = next(
-                (later.execution_seq for later in records if later.execution_seq > record.execution_seq),
-                None,
-            )
-            raise StaleExecutionError(
-                f"execution {execution_id!r} of task {task_id!r} (sequence {record.execution_seq}) "
-                f"was superseded by sequence {superseded_by}"
-            )
-
-        raise UnknownExecutionError(
-            f"execution {execution_id!r} was never opened for task {task_id!r}"
+        return validate_submission_record(
+            self._history.get((run_id, task_id), []),
+            run_id=run_id,
+            task_id=task_id,
+            execution_id=execution_id,
         )

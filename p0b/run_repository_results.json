@@ -1,0 +1,92 @@
+{
+  "checks_passed": 17,
+  "checks_total": 17,
+  "checks": [
+    {
+      "check": "an execution cannot be opened for a run that was never registered",
+      "result": "pass",
+      "detail": "run 'typo-run' is not registered"
+    },
+    {
+      "check": "registering a run is idempotent",
+      "result": "pass",
+      "detail": "runs=['run-1']"
+    },
+    {
+      "check": "the first execution gets sequence 1",
+      "result": "pass",
+      "detail": "seq=1"
+    },
+    {
+      "check": "a result from the current execution is stored and read back intact",
+      "result": "pass",
+      "detail": "stored=TaskResult(run_id='run-1', task_id='task-research', execution_id='exec-1', producer='research', outcome=<TaskOutcome.SUCCESS: 'success'>, artifact_refs=('artifact://facts',))"
+    },
+    {
+      "check": "an execution cannot submit a second result",
+      "result": "pass",
+      "detail": "execution 'exec-1' already submitted a result for task 'task-research'"
+    },
+    {
+      "check": "reopening an execution id is rejected",
+      "result": "pass",
+      "detail": "execution 'exec-1' was already opened for task 'task-research' in run 'run-1'"
+    },
+    {
+      "check": "opening a second execution supersedes the first",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a re-dispatched task does not look complete off its superseded execution's result",
+      "result": "pass",
+      "detail": "latest=None"
+    },
+    {
+      "check": "results_for_run omits tasks whose current execution has not reported",
+      "result": "pass",
+      "detail": "results={}"
+    },
+    {
+      "check": "a superseded execution cannot submit (the P0-B criterion)",
+      "result": "pass",
+      "detail": "execution 'exec-1' of task 'task-research' (sequence 1) was superseded by sequence 2"
+    },
+    {
+      "check": "an execution that was never opened is rejected",
+      "result": "pass",
+      "detail": "execution 'never-opened' was never opened for task 'task-research'"
+    },
+    {
+      "check": "the fresh execution can submit and becomes the readable result",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "runs and executions are still there after reopening the database",
+      "result": "pass",
+      "detail": "runs=['run-1']"
+    },
+    {
+      "check": "the stored result survives reopening",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a stale submission is still rejected after reopening",
+      "result": "pass",
+      "detail": "execution 'exec-1' of task 'task-research' (sequence 1) was superseded by sequence 2"
+    },
+    {
+      "check": "the schema itself forbids a second active execution for a task",
+      "result": "pass",
+      "detail": "a direct insert of a second ACTIVE row is rejected"
+    },
+    {
+      "check": "results_for_run returns the current result of every task, keyed by task id",
+      "result": "pass",
+      "detail": "tasks=['task-engineering', 'task-research']"
+    }
+  ],
+  "scope": "durable run repository over SQLite; no framework, no Runner, no model"
+}
