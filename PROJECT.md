@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.6 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本）。
+版本：0.7 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 进行中（Spec 编译适配层、Execution 账本、Dependency 门禁）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -20,6 +20,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-A Swarm 配置链 | 已执行：`load_team_spec_dict` → `TeamAgentSpec`，8 项断言通过；记录 leader desc/prompt 不透传、`enable_hitt` 默认 True 两项事实 |
 | P0-B Spec 编译适配层 | 已执行：`app/config_adapter.py` 修复 leader 身份丢失（O1），19 项断言通过；应用代码首次落地 |
 | P0-B Execution 账本 | 已执行：`app/execution.py`，只有当前 execution 可提交结果，14 项断言通过 |
+| P0-B Dependency 门禁 | 已执行：`app/dependency.py`，取消/失败/陈旧前置不触发下游业务执行，18 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -363,6 +364,12 @@ P0-B 第二部分（Execution 账本）已执行：[app/execution.py](app/execut
 
 首轮实现经代码审核后修复三处缺陷：验证只看 `execution_id` 而从不读 `execution_seq`（与文档声称的语义矛盾），`history()`/`current()` 交出内部可变对象，stale 诊断报的是最新 sequence 而非真正超越的那一代。另提取 [checks/harness.py](checks/harness.py) 作为全部验证脚本共用的断言与报告工具，消除各脚本重复的同名类。尚未接入原生任务表与 reviewer 门禁。
 
+P0-B 第三部分（Dependency 门禁）已执行：[app/dependency.py](app/dependency.py) 在任务业务执行开始前判定其前置是否满足。框架在 `COMPLETED` 和 `CANCELLED` 上同样解除依赖边（§3 的 S07/P06），所以"边已解除"不等于"前置成功"——门禁必须回看业务结果。[dependency_gate_check.py](p0b/dependency_gate_check.py) 18 项断言通过，详见 [dependency_gate_results.json](p0b/dependency_gate_results.json)。
+
+阻塞原因分为六类：任务把自身列为前置 `self_dependency`；前置无结果 `dependency_pending`；结果不属于该前置或该 run `mismatched_result`；结果不属于前置的**当前** execution `dependency_stale`；业务结果非 SUCCESS 而该依赖要求成功 `dependency_failed`（取消的前置落在这里）；成功但没有可用产物 `missing_artifact`。`requires_success=False` 的依赖只要求前置"已结束"，失败不阻塞，但**陈旧结果仍然阻塞**——那说明依赖的工作正在被重做。
+
+门禁不信任调用方提供的映射键：结果必须与前置 id、run id 一致，否则一次错误合并就能让任务基于别人的产物启动。应用侧结果模型见 [app/models.py](app/models.py) 的 `TaskResult`（`run_id`/`task_id`/`execution_id`/`outcome`/`artifact_refs`），业务 `outcome` 与框架任务状态分离；该模型冻结（`frozen=True`，`artifact_refs` 用 tuple），提交后无法再改判定或追加产物，空白引用不算有效交付。尚未接入原生任务表与 scheduler。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -398,6 +405,7 @@ P0-B 第二部分（Execution 账本）已执行：[app/execution.py](app/execut
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.7 | R04、R11 | 落地 Dependency 门禁：取消/失败/陈旧前置不触发下游业务执行；新增应用侧 `TaskResult` 模型；审核后补 `mismatched_result`、自依赖检查与结果不可变 | 18 项断言通过；未接入原生任务表与 scheduler |
 | 2026-10-11 | 0.6 | R04、R11 | 落地 Execution 账本：只有当前 execution 可提交结果；提取 `checks/harness.py` 消除验证脚本重复 | 14 项断言通过；未接入原生任务表与 reviewer 门禁 |
 | 2026-10-11 | 0.5 | R01、R02、R03 | 落地应用侧 Spec 编译适配层，修复 O1（leader 身份丢失）；建立 `app/` 与 `p0b/` 目录约定；代码审核后修复模板选择器漂移与 leader 字段恢复不全，新增 `validate_roster_closed` | 19 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.4 | R01、R13 | 接入 Swarm 配置链：`load_team_spec_dict` → TeamAgentSpec 编译校验；记录 leader desc/prompt 不透传与 `enable_hitt` 默认 True | 8 项断言通过；未启动 Runner、未调用模型、未联网 |

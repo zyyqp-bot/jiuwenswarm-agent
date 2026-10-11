@@ -1,0 +1,97 @@
+{
+  "checks_passed": 18,
+  "checks_total": 18,
+  "checks": [
+    {
+      "check": "a task with no prerequisites may start",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a successful prerequisite with an artifact lets the task start",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a prerequisite with no result blocks the task as pending",
+      "result": "pass",
+      "detail": "reason=BlockReason.DEPENDENCY_PENDING blocked_by=task-research"
+    },
+    {
+      "check": "a failed prerequisite blocks the task (a cancelled edge resolves the same way)",
+      "result": "pass",
+      "detail": "reason=BlockReason.DEPENDENCY_FAILED blocked_by=task-research"
+    },
+    {
+      "check": "a partial prerequisite does not satisfy a success-critical dependency",
+      "result": "pass",
+      "detail": "reason=BlockReason.DEPENDENCY_FAILED"
+    },
+    {
+      "check": "a successful prerequisite with no artifact blocks the task",
+      "result": "pass",
+      "detail": "reason=BlockReason.MISSING_ARTIFACT"
+    },
+    {
+      "check": "a blank artifact reference does not count as a deliverable",
+      "result": "pass",
+      "detail": "reason=BlockReason.MISSING_ARTIFACT"
+    },
+    {
+      "check": "a result filed under the wrong prerequisite is rejected",
+      "result": "pass",
+      "detail": "reason=BlockReason.MISMATCHED_RESULT"
+    },
+    {
+      "check": "a result produced in another run is rejected",
+      "result": "pass",
+      "detail": "reason=BlockReason.MISMATCHED_RESULT"
+    },
+    {
+      "check": "a task listing itself as its own prerequisite is rejected",
+      "result": "pass",
+      "detail": "reason=BlockReason.SELF_DEPENDENCY blocked_by=task-engineering"
+    },
+    {
+      "check": "a result from a superseded execution blocks the task as stale",
+      "result": "pass",
+      "detail": "reason=BlockReason.DEPENDENCY_STALE blocked_by=task-research"
+    },
+    {
+      "check": "the re-executed prerequisite's fresh result unblocks the task",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a failed prerequisite does not block a task that only needs it finished",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "even then a missing result still blocks the task",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a stale result blocks even a non-success-critical dependency",
+      "result": "pass",
+      "detail": "reason=BlockReason.DEPENDENCY_STALE"
+    },
+    {
+      "check": "the first unmet prerequisite is the one reported",
+      "result": "pass",
+      "detail": "blocked_by=task-a reason=BlockReason.DEPENDENCY_PENDING"
+    },
+    {
+      "check": "the first *unmet* prerequisite is reported, not merely the first",
+      "result": "pass",
+      "detail": "blocked_by=task-b reason=BlockReason.DEPENDENCY_PENDING"
+    },
+    {
+      "check": "a TaskResult cannot be retuned after the fact",
+      "result": "pass",
+      "detail": "outcome and artifact_refs are frozen"
+    }
+  ],
+  "scope": "pure dependency gate; no framework, no Runner, no model"
+}
