@@ -6,11 +6,18 @@ an unknown field is an error rather than a silently ignored one.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
 
-__all__ = ["TaskOutcome", "TaskResult"]
+__all__ = [
+    "AcceptanceCheck",
+    "AcceptanceResult",
+    "TaskOutcome",
+    "TaskResult",
+    "usable_artifacts",
+]
 
 
 class TaskOutcome(str, Enum):
@@ -25,6 +32,14 @@ class TaskOutcome(str, Enum):
     ERROR = "error"
 
 
+class AcceptanceResult(str, Enum):
+    """Verdict of one acceptance check."""
+
+    PASS = "pass"
+    FAIL = "fail"
+    UNKNOWN = "unknown"
+
+
 class TaskResult(BaseModel):
     """The immutable result of one task execution.
 
@@ -36,6 +51,10 @@ class TaskResult(BaseModel):
     execution ids are only unique per ``(run, task)`` in the ledger: without
     the run, a result from another run that happens to reuse the same execution
     id string would look current.
+
+    ``producer`` records which member produced the result. It lives on the
+    result rather than being passed to a gate, so "who wrote this" cannot be
+    chosen by the caller when it is checked against a reviewer's identity.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -43,5 +62,33 @@ class TaskResult(BaseModel):
     run_id: str
     task_id: str
     execution_id: str
+    producer: str
     outcome: TaskOutcome
     artifact_refs: tuple[str, ...] = ()
+
+
+class AcceptanceCheck(BaseModel):
+    """One acceptance condition evaluated against a task result.
+
+    ``verifier`` records who judged it. Structural acceptance is decided by
+    program, semantic acceptance by a reviewer or the leader; either way the
+    check is a first-class record rather than a boolean on the result, and the
+    verifier's identity is part of that record so a producer cannot sign off on
+    its own work.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    acceptance_id: str
+    result: AcceptanceResult
+    verifier: str
+    evidence_refs: tuple[str, ...] = ()
+
+
+def usable_artifacts(refs: Iterable[str]) -> list[str]:
+    """Return the artifact references that actually name something.
+
+    A blank reference is not a deliverable, so it must not satisfy a gate that
+    requires a valid artifact (PROJECT.md section 6).
+    """
+    return [ref for ref in refs if ref.strip()]

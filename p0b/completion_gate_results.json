@@ -1,0 +1,142 @@
+{
+  "checks_passed": 27,
+  "checks_total": 27,
+  "checks": [
+    {
+      "check": "a valid reviewed result with passing acceptance completes the task",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a missing result cannot complete the task",
+      "result": "pass",
+      "detail": "reason=CompletionBlockReason.RESULT_MISSING"
+    },
+    {
+      "check": "a result belonging to another task cannot complete this one",
+      "result": "pass",
+      "detail": "result belongs to run='run-1' task='task-other' execution='exec-1'"
+    },
+    {
+      "check": "a result belonging to another run cannot complete this one",
+      "result": "pass",
+      "detail": "result belongs to run='run-2' task='task-engineering' execution='exec-1'"
+    },
+    {
+      "check": "a result belonging to a different execution cannot complete this one",
+      "result": "pass",
+      "detail": "result belongs to run='run-1' task='task-engineering' execution='exec-other'"
+    },
+    {
+      "check": "an execution that was never opened is reported as unknown, not stale",
+      "result": "pass",
+      "detail": "execution 'exec-bogus' was never opened for task 'task-engineering'"
+    },
+    {
+      "check": "a superseded execution cannot complete the task",
+      "result": "pass",
+      "detail": "execution 'exec-1' of task 'task-engineering' (sequence 1) was superseded by sequence 2"
+    },
+    {
+      "check": "the new execution can complete it once ready",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a task with no open execution cannot be completed",
+      "result": "pass",
+      "detail": "reason=CompletionBlockReason.UNKNOWN_EXECUTION"
+    },
+    {
+      "check": "a partial outcome cannot complete the task",
+      "result": "pass",
+      "detail": "business outcome is 'partial'"
+    },
+    {
+      "check": "a error outcome cannot complete the task",
+      "result": "pass",
+      "detail": "business outcome is 'error'"
+    },
+    {
+      "check": "a result with no artifact cannot complete the task",
+      "result": "pass",
+      "detail": "the result carries no usable artifact"
+    },
+    {
+      "check": "a result with a blank artifact cannot complete the task",
+      "result": "pass",
+      "detail": "the result carries no usable artifact"
+    },
+    {
+      "check": "a task that requires a reviewer cannot complete without one",
+      "result": "pass",
+      "detail": "the task requires a reviewer"
+    },
+    {
+      "check": "a blank reviewer name does not satisfy the reviewer requirement",
+      "result": "pass",
+      "detail": "the task requires a reviewer"
+    },
+    {
+      "check": "a reviewer who produced the result cannot complete the task",
+      "result": "pass",
+      "detail": "reviewer 'engineering' produced the result being reviewed"
+    },
+    {
+      "check": "a producing reviewer blocks even when others are present",
+      "result": "pass",
+      "detail": "reviewer 'engineering' produced the result being reviewed"
+    },
+    {
+      "check": "a task that does not require a reviewer needs none",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a required acceptance condition with no verdict blocks the task",
+      "result": "pass",
+      "detail": "acceptance not passed: acc-schema"
+    },
+    {
+      "check": "a required acceptance condition that is fail blocks the task",
+      "result": "pass",
+      "detail": "acceptance not passed: acc-schema"
+    },
+    {
+      "check": "a required acceptance condition that is unknown blocks the task",
+      "result": "pass",
+      "detail": "acceptance not passed: acc-schema"
+    },
+    {
+      "check": "a passing verdict filed under the wrong condition does not satisfy it",
+      "result": "pass",
+      "detail": "acceptance not passed: acc-schema"
+    },
+    {
+      "check": "an acceptance condition signed by its own producer does not count",
+      "result": "pass",
+      "detail": "acceptance signed by the producer or unverifiable: acc-schema"
+    },
+    {
+      "check": "an acceptance condition signed by nobody does not count",
+      "result": "pass",
+      "detail": "acceptance signed by the producer or unverifiable: acc-schema"
+    },
+    {
+      "check": "a structural acceptance judged by a program does satisfy the condition",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "only the unmet required conditions are named",
+      "result": "pass",
+      "detail": "acceptance not passed: acc-evidence"
+    },
+    {
+      "check": "an advisory condition that fails does not block the task",
+      "result": "pass",
+      "detail": ""
+    }
+  ],
+  "scope": "pure completion gate; no framework, no Runner, no model"
+}

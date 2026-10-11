@@ -19,13 +19,13 @@ It holds no framework objects, starts no runtime and calls no model.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
 
 from app.execution import ExecutionLedger
-from app.models import TaskOutcome, TaskResult
+from app.models import TaskOutcome, TaskResult, usable_artifacts
 
 __all__ = ["BlockReason", "DependencyDecision", "DependencyGate"]
 
@@ -61,16 +61,6 @@ class DependencyDecision(BaseModel):
     reason: BlockReason | None = None
     blocked_by: str | None = None
     """The prerequisite task id responsible for a block."""
-
-
-def _usable_artifacts(refs: Iterable[str]) -> list[str]:
-    """Return the artifact references that name something.
-
-    A blank reference is not a deliverable, so it must not satisfy a
-    success-critical dependency (PROJECT.md section 6 requires a *valid*
-    artifact, not merely a present field).
-    """
-    return [ref for ref in refs if ref.strip()]
 
 
 class DependencyGate:
@@ -117,7 +107,7 @@ class DependencyGate:
                     return self._block(BlockReason.DEPENDENCY_FAILED, prerequisite)
                 continue
 
-            if requires_success and not _usable_artifacts(result.artifact_refs):
+            if requires_success and not usable_artifacts(result.artifact_refs):
                 return self._block(BlockReason.MISSING_ARTIFACT, prerequisite)
 
         return DependencyDecision(allowed=True)

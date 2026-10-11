@@ -38,11 +38,13 @@ def _result(
     artifacts: tuple[str, ...] = (),
     *,
     run_id: str = RUN,
+    producer: str = "research",
 ) -> TaskResult:
     return TaskResult(
         run_id=run_id,
         task_id=task_id,
         execution_id=execution_id,
+        producer=producer,
         outcome=outcome,
         artifact_refs=artifacts,
     )
