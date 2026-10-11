@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.4 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A（配置编译、名册校验、Skill 可见性、Swarm 配置链）已落地，应用实现未开始。
+版本：0.5 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 已启动（应用侧 Spec 编译适配层）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -18,6 +18,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | 行为探针 | 7 项通过，包含 5 项隔离函数执行与 2 项静态检查 |
 | P0-A 配置编译与名册校验 | 已执行：隔离 venv 内真实编译 TeamAgentSpec（11 项断言）+ Skill 可见性声明与合成（12 项断言），共 23 项通过；未启动 Runner、未调用模型、未联网 |
 | P0-A Swarm 配置链 | 已执行：`load_team_spec_dict` → `TeamAgentSpec`，8 项断言通过；记录 leader desc/prompt 不透传、`enable_hitt` 默认 True 两项事实 |
+| P0-B Spec 编译适配层 | 已执行：`app/config_adapter.py` 修复 leader 身份丢失（O1），19 项断言通过；应用代码首次落地 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -351,6 +352,10 @@ P0-A 第三部分（Swarm 配置链）已执行：[swarm_config_chain_check.py](
 1. **leader 的 desc/prompt 不经过配置链**。`_build_leader_spec`（`config_loader.py:560-572`）只输出 `member_name/display_name/name/persona`，而 `LeaderSpec`（`blueprint.py:159-174`）只有 `desc`/`prompt`、没有 `persona` 字段，YAML 里写的 leader `desc`/`prompt` 被静默丢弃。成员不受影响——`predefined_members` 原样拷贝。RuntimeAdapter 必须在编译后显式补 leader 的 desc/prompt，不能假定 YAML 生效。
 2. **`enable_hitt` 在 `load_team_spec_dict` 中默认为 True**（`config_loader.py:697`），即使配置未声明。因为 `team_mode="predefined"` 在 build 时摘除全部 `spawn_*` 工具，MVP 名册仍封闭；但判断封闭性必须看 `team_mode`，不能看 `enable_hitt`。
 
+P0-B 第一部分（Spec 编译适配层）已执行：[app/config_adapter.py](app/config_adapter.py) 是应用侧第一个模块，把 `load_team_spec_dict` 的产物封装为 validated Spec，并显式补回配置链丢弃的 leader `desc`/`prompt`（`persona` 仅作 `desc` 的遗留后备）。[compile_spec_check.py](p0b/compile_spec_check.py) 19 项断言通过，详见 [compile_spec_results.json](p0b/compile_spec_results.json)。要点：编译器对调用方的 config 无副作用；`template_id` 选择与"首个模板优先"的默认行为与框架一致；无身份字段时保留框架默认而非写入空串。目录约定：`app/` 放应用实现，`p0a/`、`p0b/` 放对应阶段的验证脚本。
+
+首轮实现经代码审核后修复 7 处问题，其中两处是真缺陷，值得记录：**（a）适配层最初自行重写了模板选择器，没有镜像 loader 的 legacy 顶层 `team:` 回退，会让那类配置静默跳过 leader 修复——正好重现它要修的 O1**；修复方式是直接复用 loader 自己的 `_select_modes_team`，消除第二套选择逻辑的漂移风险。**（b）`_build_leader_spec` 丢弃的字段不止 `desc`/`prompt`，还包括 `model_name`**（`LeaderSpec` 继承自 `MemberSpecBase`）；已改为对全部可透传字段做通用恢复。另新增 `validate_roster_closed`，在编译后强制 `team_mode == "predefined"`——此前该保证只写在 docstring 里而没有代码执行。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -386,6 +391,7 @@ P0-A 第三部分（Swarm 配置链）已执行：[swarm_config_chain_check.py](
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.5 | R01、R02、R03 | 落地应用侧 Spec 编译适配层，修复 O1（leader 身份丢失）；建立 `app/` 与 `p0b/` 目录约定；代码审核后修复模板选择器漂移与 leader 字段恢复不全，新增 `validate_roster_closed` | 19 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.4 | R01、R13 | 接入 Swarm 配置链：`load_team_spec_dict` → TeamAgentSpec 编译校验；记录 leader desc/prompt 不透传与 `enable_hitt` 默认 True | 8 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.3 | R05 | 闭合 Skill 可见性：新增基于真实声明文件的合成、隔离与权威性校验 | 12 项断言通过；Skill 内容 hash 与工具权限执行未做（P0-C） |
 | 2026-10-11 | 0.2 | R02、R05、R13 | 新增 P0-A 离线配置编译与名册校验脚本；记录隔离 venv 依赖结论与 Windows 安装陷阱；修正 Skill 可见性落点与名册检查调用位置 | 11 项断言通过；未启动 Runner、未调用模型、未联网；Skill 可见性权威校验未做 |

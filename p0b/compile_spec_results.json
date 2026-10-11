@@ -1,0 +1,103 @@
+{
+  "scope": "app-side spec compiler; no Runner, no model call, no network",
+  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
+  "checks_passed": 19,
+  "checks_total": 19,
+  "checks": [
+    {
+      "check": "config compiles into a real TeamAgentSpec",
+      "result": "pass",
+      "detail": "team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "leader desc reaches the spec (repairs gap O1)",
+      "result": "pass",
+      "detail": "leader.desc='Plans the work and owns the final judgement.'"
+    },
+    {
+      "check": "leader prompt reaches the spec",
+      "result": "pass",
+      "detail": "leader.prompt='Never mark an unverified claim as fact.'"
+    },
+    {
+      "check": "leader model_name reaches the spec (the chain drops this too)",
+      "result": "pass",
+      "detail": "leader.model_name='mock-model'"
+    },
+    {
+      "check": "teammate desc/prompt survive the chain",
+      "result": "pass",
+      "detail": "teammates=research:True/True,engineering:True/True"
+    },
+    {
+      "check": "roster is three members (R02)",
+      "result": "pass",
+      "detail": "members=team_leader,research,engineering"
+    },
+    {
+      "check": "mode invariants hold through the adapter",
+      "result": "pass",
+      "detail": "team_mode='predefined' dispatch_mode='scheduled'"
+    },
+    {
+      "check": "the compiler never mutates the caller's config",
+      "result": "pass",
+      "detail": "deepcopy comparison"
+    },
+    {
+      "check": "leader repair also works for a legacy top-level team config",
+      "result": "pass",
+      "detail": "team_name='legacy_mvp' leader.desc='Plans the work and owns the final judgement.'"
+    },
+    {
+      "check": "persona is used as the desc fallback when desc is absent",
+      "result": "pass",
+      "detail": "leader.desc='天才项目管理专家'"
+    },
+    {
+      "check": "persona fallback leaves no prompt behind",
+      "result": "pass",
+      "detail": "leader.prompt=''"
+    },
+    {
+      "check": "a blank leader identity keeps the framework default desc",
+      "result": "pass",
+      "detail": "leader.desc='天才项目管理专家'"
+    },
+    {
+      "check": "a config without team_mode is rejected instead of silently allowing spawn",
+      "result": "pass",
+      "detail": "(was 'predefined') team_mode must be explicitly 'predefined' for the MVP (got None); any other value keeps the leader's dynamic spawn tools and breaks R02"
+    },
+    {
+      "check": "an empty predefined_members roster is rejected",
+      "result": "pass",
+      "detail": "the MVP roster requires at least one predefined teammate"
+    },
+    {
+      "check": "validate=False lets a caller inspect a spec that would be rejected",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "validate_roster_closed passes on a well-formed spec",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "template_id selects the requested template",
+      "result": "pass",
+      "detail": "team_name='other_team' leader.desc='Other leader.'"
+    },
+    {
+      "check": "with no template_id the first declared template wins",
+      "result": "pass",
+      "detail": "team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "leader_identity_overrides drops blank values",
+      "result": "pass",
+      "detail": ""
+    }
+  ]
+}
