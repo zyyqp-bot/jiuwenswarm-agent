@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.3 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A（配置编译、名册校验、Skill 可见性）已落地，应用实现未开始。
+版本：0.4 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A（配置编译、名册校验、Skill 可见性、Swarm 配置链）已落地，应用实现未开始。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -17,6 +17,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | 源码接口核对 | 已完成 MVP 相关路径核对；不是全仓库审计 |
 | 行为探针 | 7 项通过，包含 5 项隔离函数执行与 2 项静态检查 |
 | P0-A 配置编译与名册校验 | 已执行：隔离 venv 内真实编译 TeamAgentSpec（11 项断言）+ Skill 可见性声明与合成（12 项断言），共 23 项通过；未启动 Runner、未调用模型、未联网 |
+| P0-A Swarm 配置链 | 已执行：`load_team_spec_dict` → `TeamAgentSpec`，8 项断言通过；记录 leader desc/prompt 不透传、`enable_hitt` 默认 True 两项事实 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -345,6 +346,11 @@ $env:PYTHONPATH = 'D:\Development\JiuwenSwarm-review\upstream\agent-core'
 
 P0-A 第二部分（Skill 可见性）已执行：[skill_visibility_check.py](p0a/skill_visibility_check.py) 在临时 agent-teams home 中对真实的成员/团队 `skills-visibility.json` 声明文件做读写与合成，12 项断言通过，详见 [skill_visibility_results.json](p0a/skill_visibility_results.json)。覆盖：声明文件路径布局（`{team_home}/workspaces/{member}_workspace/skills-visibility.json`、`{team_home}/team-workspace/skills-visibility.json`）、enabled = member.allow ∪ team.allow、disabled 含 `global_disabled`、两个专业成员互不可见、**空 allow 保持空集**（rail 读作"不过滤"而非"禁用全部"，不能展开为全库）、**文件是权威**（低 authority 的种子不覆盖已授权文档）、`FileSkillVisibilityProvider` 与直接合成一致且随文件 mtime 变更刷新。仍未覆盖：Skill 内容版本/内容 hash 与工具权限执行，属 P0-C 范围。
 
+P0-A 第三部分（Swarm 配置链）已执行：[swarm_config_chain_check.py](p0a/swarm_config_chain_check.py) 用 workswarm 的 `load_team_spec_dict` 把 YAML 形态配置编译为 TeamAgentSpec，8 项断言通过，详见 [swarm_config_chain_results.json](p0a/swarm_config_chain_results.json)。依赖只增加 `ruamel.yaml`（PyPI）与 `gateway-protocol`（按 pyproject 声明，从 gitcode 的 agent-protocol 仓库安装）。两条必须带入适配层设计的实测事实：
+
+1. **leader 的 desc/prompt 不经过配置链**。`_build_leader_spec`（`config_loader.py:560-572`）只输出 `member_name/display_name/name/persona`，而 `LeaderSpec`（`blueprint.py:159-174`）只有 `desc`/`prompt`、没有 `persona` 字段，YAML 里写的 leader `desc`/`prompt` 被静默丢弃。成员不受影响——`predefined_members` 原样拷贝。RuntimeAdapter 必须在编译后显式补 leader 的 desc/prompt，不能假定 YAML 生效。
+2. **`enable_hitt` 在 `load_team_spec_dict` 中默认为 True**（`config_loader.py:697`），即使配置未声明。因为 `team_mode="predefined"` 在 build 时摘除全部 `spawn_*` 工具，MVP 名册仍封闭；但判断封闭性必须看 `team_mode`，不能看 `enable_hitt`。
+
 下一次更新先阅读本文，优先做 P0-A/P0-B 的最小集成验证，再扩业务模块。尚需确认的技术问题：
 
 - CompletionGate/TaskInputRail 在 scheduled 自动交接中的挂载和身份顺序，是否能在第一次业务执行前可靠拦截；不能只靠 prompt。
@@ -380,6 +386,7 @@ P0-A 第二部分（Skill 可见性）已执行：[skill_visibility_check.py](p0
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-11 | 0.4 | R01、R13 | 接入 Swarm 配置链：`load_team_spec_dict` → TeamAgentSpec 编译校验；记录 leader desc/prompt 不透传与 `enable_hitt` 默认 True | 8 项断言通过；未启动 Runner、未调用模型、未联网 |
 | 2026-10-11 | 0.3 | R05 | 闭合 Skill 可见性：新增基于真实声明文件的合成、隔离与权威性校验 | 12 项断言通过；Skill 内容 hash 与工具权限执行未做（P0-C） |
 | 2026-10-11 | 0.2 | R02、R05、R13 | 新增 P0-A 离线配置编译与名册校验脚本；记录隔离 venv 依赖结论与 Windows 安装陷阱；修正 Skill 可见性落点与名册检查调用位置 | 11 项断言通过；未启动 Runner、未调用模型、未联网；Skill 可见性权威校验未做 |
 | 2026-10-11 | 0.1 | R01–R14 | 建立统一项目文档及更新规则；拉取并锁定官方源码；修正角色模板、调度、验收、取消依赖、RAG过滤、压缩字段与两条记忆路径；完善 MVP 流程与扩展边界 | 7项源码探针通过；未安装完整依赖、未运行真实模型/端到端；业务实现未开始 |

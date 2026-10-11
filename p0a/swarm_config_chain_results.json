@@ -1,0 +1,64 @@
+{
+  "scope": "JiuwenSwarm config chain -> TeamAgentSpec; no Runner, no model call, no network",
+  "baseline": "workswarm 0.2.5.beta1; openjiuwen agent-core @ 6df9699e650b3",
+  "checks_passed": 8,
+  "checks_total": 8,
+  "checks": [
+    {
+      "check": "load_team_spec_dict returns a TeamAgentSpec-shaped dict",
+      "result": "pass",
+      "detail": "keys=['agents', 'dispatch_mode', 'enable_hitt', 'enable_permissions', 'enable_swarmflow', 'enable_task_verification', 'external_cli_agents', 'language']..."
+    },
+    {
+      "check": "$agent references resolve into concrete agent templates with a model",
+      "result": "pass",
+      "detail": "agent keys=['leader', 'teammate']"
+    },
+    {
+      "check": "team_mode survives the chain as 'predefined'",
+      "result": "pass",
+      "detail": "team_mode='predefined'"
+    },
+    {
+      "check": "dispatch_mode survives the chain as 'scheduled'",
+      "result": "pass",
+      "detail": "dispatch_mode='scheduled'"
+    },
+    {
+      "check": "the compiled dict validates into a real TeamAgentSpec",
+      "result": "pass",
+      "detail": "team_name='jiuwenswarm_mvp'"
+    },
+    {
+      "check": "roster is three members again after the config chain (R02)",
+      "result": "pass",
+      "detail": "members=team_leader,research,engineering"
+    },
+    {
+      "check": "teammate desc/prompt survive the chain (predefined_members are copied verbatim)",
+      "result": "pass",
+      "detail": "teammates=research:desc=True,prompt=True,engineering:desc=True,prompt=True"
+    },
+    {
+      "check": "gap confirmed: leader desc/prompt are NOT carried by the config chain",
+      "result": "pass",
+      "detail": "spec leader desc='天才项目管理专家' prompt=''"
+    }
+  ],
+  "observations": [
+    {
+      "id": "O1",
+      "observation": "Leader desc/prompt written in YAML do not reach the spec: _build_leader_spec emits only member_name/display_name/name/persona, and LeaderSpec has no persona field. The adapter must set the leader's desc/prompt on the compiled spec explicitly.",
+      "leader_desc_kept": false,
+      "leader_prompt_kept": false,
+      "spec_leader_desc": "天才项目管理专家",
+      "spec_leader_prompt": ""
+    },
+    {
+      "id": "O2",
+      "observation": "enable_hitt defaults to True in load_team_spec_dict even though the config does not set it. With team_mode='predefined' the dynamic spawn_* tools are removed at build time, so the MVP roster stays closed; the flag alone does not reopen it.",
+      "spec_enable_hitt": true,
+      "spec_team_mode": "predefined"
+    }
+  ]
+}
