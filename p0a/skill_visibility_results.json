@@ -1,0 +1,85 @@
+{
+  "scope": "offline Skill visibility declaration + composition; no Runner, no model call, no network",
+  "baseline": "openjiuwen agent-core @ 6df9699e650b3ad9b9835b46ae3c3b7572adb04b",
+  "declarations": {
+    "team_allow": [
+      "common"
+    ],
+    "research_allow": [
+      "research",
+      "fact_checking"
+    ],
+    "engineering_allow": [
+      "software_engineering",
+      "code_review"
+    ],
+    "global_disabled": [
+      "legacy_skill"
+    ]
+  },
+  "checks_passed": 12,
+  "checks_total": 12,
+  "checks": [
+    {
+      "check": "member declaration path follows the documented layout",
+      "result": "pass",
+      "detail": "C:\\Users\\19468\\.openjiuwen\\.agent_teams\\jiuwenswarm_mvp\\workspaces\\research_workspace\\skills-visibility.json"
+    },
+    {
+      "check": "team declaration path follows the documented layout",
+      "result": "pass",
+      "detail": "C:\\Users\\19468\\.openjiuwen\\.agent_teams\\jiuwenswarm_mvp\\team-workspace\\skills-visibility.json"
+    },
+    {
+      "check": "all three declarations are written and parse back",
+      "result": "pass",
+      "detail": "team=skills-visibility.json research=skills-visibility.json engineering=skills-visibility.json"
+    },
+    {
+      "check": "enabled = member.allow UNION team.allow (research)",
+      "result": "pass",
+      "detail": "enabled=['common', 'fact_checking', 'research']"
+    },
+    {
+      "check": "enabled = member.allow UNION team.allow (engineering)",
+      "result": "pass",
+      "detail": "enabled=['code_review', 'common', 'software_engineering']"
+    },
+    {
+      "check": "global_disabled lands in the disabled set",
+      "result": "pass",
+      "detail": "disabled=['legacy_skill']"
+    },
+    {
+      "check": "professional members cannot see each other's Skills",
+      "result": "pass",
+      "detail": "research∩engineering_only=[] engineering∩research_only=[]"
+    },
+    {
+      "check": "every member keeps a non-empty effective allow-list (PROJECT.md section 9)",
+      "result": "pass",
+      "detail": "research=3 engineering=3"
+    },
+    {
+      "check": "an empty allow-list stays empty (means 'unfiltered', not 'no Skills')",
+      "result": "pass",
+      "detail": "enabled=[]"
+    },
+    {
+      "check": "a weaker seed never overwrites a stronger grant",
+      "result": "pass",
+      "detail": "allow after reseed=['research']"
+    },
+    {
+      "check": "FileSkillVisibilityProvider agrees with compose_skill_visibility",
+      "result": "pass",
+      "detail": "enabled=['common', 'fact_checking', 'research']"
+    },
+    {
+      "check": "provider re-reads the declaration after an on-disk change",
+      "result": "pass",
+      "detail": "enabled=['common', 'extra_tool', 'fact_checking', 'research']"
+    }
+  ],
+  "not_covered": "Skill content version/hash and tool-permission enforcement are P0-C scope"
+}
