@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict
 __all__ = [
     "AcceptanceCheck",
     "AcceptanceResult",
+    "Evidence",
     "TaskOutcome",
     "TaskResult",
     "non_blank",
@@ -84,6 +85,37 @@ class AcceptanceCheck(BaseModel):
     result: AcceptanceResult
     verifier: str
     evidence_refs: tuple[str, ...] = ()
+
+
+class Evidence(BaseModel):
+    """One retrieved passage, traceable back to the source it came from.
+
+    Every claim in a task result must be able to point at one of these, so a
+    passage carries its provenance (``source_uri`` / ``source_revision`` /
+    ``locator`` / ``content_hash``) alongside the text. ``retrieval_method``
+    records how it was found: PROJECT.md section 7.2 requires a short-query
+    fallback to be recorded rather than passed off as BM25, since the two
+    produce incomparable ``raw_score`` values.
+
+    ``raw_score`` is a retrieval score, not a confidence and not comparable
+    across methods.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    evidence_id: str
+    corpus: str
+    source_uri: str
+    source_revision: str
+    doc_id: str
+    chunk_id: str
+    content_hash: str
+    locator: str
+    text: str
+    retrieval_method: str
+    raw_score: float
+    fused_rank: int
+    access_scope: str
 
 
 def non_blank(values: Iterable[str]) -> list[str]:

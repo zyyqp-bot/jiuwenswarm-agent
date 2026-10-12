@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.11 · 更新日期：2026-10-11（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A 全部落地，P0-B 全部落地（RuntimeAdapter 首片）。
+版本：0.12 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 启动（语料索引、RRF 融合）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -25,6 +25,8 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-B PlanValidator | 已执行：`app/plan.py`，DAG 无环/依赖存在/角色有效/验收声明/关键任务须有 reviewer，20 项断言通过 |
 | P0-B RunRepository | 已执行：`app/repository.py`，SQLite 持久化 run/execution/result，门禁不变式跨重启成立（含读侧），17 项断言通过 |
 | P0-B RuntimeAdapter（首片） | 已执行：`app/runtime_adapter.py`，从 spec 真实构造 TeamAgent 并校验身份一致，18 项断言通过 |
+| P0-C 语料索引（FTS5） | 已执行：`app/knowledge.py`，导入链 + 查询链（含短查询受限回退），22 项断言通过 |
+| P0-C RRF 融合 | 已执行：`app/fusion.py`，`sum(1/(60+rank))`，11 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -398,12 +400,19 @@ P0-B 第七部分（RuntimeAdapter 首片）已执行：[app/runtime_adapter.py]
 
 **明确未覆盖**：leader 的工具集由 rails 在首次 `invoke` 前惰性注册，所以"`team_mode="predefined"` 摘除 `spawn_*` 工具"这件事在**从未运行过**的 team 上观察不到——该验证属于首次真实运行。§8 列出的 `run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面同样待真实 runtime 接入（P1）。
 
-下一次更新先阅读本文。P0-A 与 P0-B 的离线部分已完成（`app/` 下七个模块，十一个验证脚本）；下一步是 **P0-C（资料检索与上下文组装）**，仍可全程离线验证：
+P0-C 第一部分（语料索引）已执行：[app/knowledge.py](app/knowledge.py) 在 SQLite FTS5 上实现 §7.2 的两条链。导入链：写入 → 分块（400 字符、80 字符重叠，记录 `chars:start-end` locator）→ 内容 sha256 → FTS5 trigram 索引；同一文档的新 revision 会先删旧 chunk。查询链：先校验 scope（**授权决定打开哪个索引，而不是靠过滤参数**）→ 检索 → 生成携带完整 provenance 的 Evidence。
 
-- 导入链：授权 → 解析 → 资料版本/hash → 分块与 locator → FTS5 索引 → 可选真实 embedding → 索引状态
-- 查询链：身份与 scope 校验 → 关键词/向量召回 → 按 `chunk_id`+revision 去重 → RRF `sum(1/(60+rank))` → 来源/版本确认 → token 裁剪 → Evidence
-- 中文 FTS5 tokenizer（trigram）的本地可用性，以及不足 3 字符的词与实体匹配所需的受限补充检索
-- ContextBuilder 的不可压缩部分与输入预算换算
+三条本地实测事实（SQLite 3.53.1）：**（a）trigram tokenizer 可用且能匹配中文，但查询项短于 3 字符时匹配为空**——短查询因此走受限 `LIKE` 子串扫描，并把 `retrieval_method` 记为 `short_query_scan`，绝不冒充 BM25（两种路径的 `raw_score` 不可比）；LIKE 元字符（`%`/`_`/`\`）已转义。**（b）FTS5 的 bm25 返回负值且越小越相关**，排序按升序，`raw_score` 不是置信度。**（c）trigram 只在单个 chunk 内部匹配**，所以分块必须重叠，否则跨边界的短语在索引里根本不存在。
+
+首轮实现把 `doc_id` 默认设成 `source_uri@revision`，导致同一文档的新版本被当作另一篇文档、旧 chunk 残留；测试抓到后改为以文档为单位、revision 进入 chunk_id。代码审核又修复多处会**静默改变检索结果**的缺陷：分块无重叠（跨 400 字符边界的短语不可检索）、整条查询被当作单个 FTS5 phrase（含空格的查询一律返回空，改为按空白切分后 AND 组合）、`chunk_id` 用 `:` 直接拼接导致含冒号的 doc id/revision 主键碰撞（改为组件百分号编码）。另修：显式 `doc_id` 与 `source_uri` 不一致会留下重复副本；空白文档不再静默"导入成功"而是抛 `ValueError`；导入纳入显式事务、失败回滚；`open()` 失败时关闭连接；`authorized_scopes` 传入字符串由 `TypeError` 拒绝（字符串可迭代，否则会被按字符拆开而静默授权为空）。[knowledge_check.py](p0c/knowledge_check.py) 22 项断言通过，详见 [knowledge_results.json](p0c/knowledge_results.json)。
+
+P0-C 第二部分（RRF 融合）已执行：[app/fusion.py](app/fusion.py) 实现 `sum(1/(k+rank))`（k 默认 60，rank 从 1 开始），同一 ranking 内重复 key 只按最佳名次计一次——否则一个来源能自我加权并压过真正的多源共识。返回顺序确定（同分按 key）。[fusion_check.py](p0c/fusion_check.py) 11 项断言通过，详见 [fusion_results.json](p0c/fusion_results.json)。
+
+下一次更新先阅读本文。P0-A 与 P0-B 已全部落地，P0-C 进行中（语料索引、RRF 融合已完成）；剩余：
+
+- ContextBuilder：不可压缩部分（当前目标、硬约束、验收、任务输入）与输入预算换算，压缩后重算
+- 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
+- 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
 
 再之后是 P0-D（Aggregator、语义验收、事件去重投影）。与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
 
@@ -442,6 +451,7 @@ P0-B 第七部分（RuntimeAdapter 首片）已执行：[app/runtime_adapter.py]
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.12 | R07 | 启动 P0-C：落地 SQLite FTS5 语料索引（短查询受限回退、scope 前置授权）与 RRF 融合；审核后补分块重叠、多词查询、chunk_id 编码、导入事务等 | 33 项断言通过；向量检索、文件解析与 ContextBuilder 未做 |
 | 2026-10-11 | 0.11 | R01、R13 | 落地 RuntimeAdapter 首片：spec → 真实 TeamAgent 构造与身份校验；审核后把校验从恒真的 `team.spec` 移到 materialized 的 `runtime_context`，并补失败释放与全分支覆盖 | 18 项断言通过；工具挂载与 run 表面待真实 runtime |
 | 2026-10-11 | 0.10 | R11、R12 | 落地 RunRepository：SQLite 持久化 run/execution/result；审核后修正读侧陈旧结果、并发原子性、schema 未强制单 ACTIVE、孤儿写入与 N+1 查询 | 17 项断言通过；未接入 RuntimeAdapter |
 | 2026-10-11 | 0.9 | R04、R08 | 落地 PlanValidator；审核后把"关键任务"界定修正为被依赖关系，并补空 id、自环与多节点环的区分、长链迭代检测、重复实例问题上报 | 20 项断言通过；未接入 RuntimeAdapter 与原生任务创建 |

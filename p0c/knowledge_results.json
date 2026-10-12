@@ -1,0 +1,118 @@
+{
+  "checks_passed": 22,
+  "checks_total": 22,
+  "checks": [
+    {
+      "check": "import writes at least one chunk per document",
+      "result": "pass",
+      "detail": "chunks=1"
+    },
+    {
+      "check": "the index holds every imported chunk",
+      "result": "pass",
+      "detail": "count=2 expected=2"
+    },
+    {
+      "check": "a three-character query is answered by the trigram BM25 path",
+      "result": "pass",
+      "detail": "methods=['fts5_trigram_bm25']"
+    },
+    {
+      "check": "the hit carries full provenance",
+      "result": "pass",
+      "detail": "uri=docs/research.md locator=chars:0-52"
+    },
+    {
+      "check": "fused_rank starts at 1 and raw_score is the FTS5 bm25 value",
+      "result": "pass",
+      "detail": "rank=1 score=-1.0080862533692722e-06"
+    },
+    {
+      "check": "a multi-term query matches on the trigram path instead of returning nothing",
+      "result": "pass",
+      "detail": "hits=1"
+    },
+    {
+      "check": "a query for the other document finds the other document",
+      "result": "pass",
+      "detail": "uri=docs/engineering.md"
+    },
+    {
+      "check": "a query with no match returns nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a two-character query is served by the restricted scan, not silently empty",
+      "result": "pass",
+      "detail": "hits=2 methods=['short_query_scan', 'short_query_scan']"
+    },
+    {
+      "check": "the short-query path is never labelled as BM25",
+      "result": "pass",
+      "detail": "methods=['short_query_scan']"
+    },
+    {
+      "check": "a mixed-length query falls back rather than dropping its short term",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "LIKE metacharacters in a short query are escaped, not treated as wildcards",
+      "result": "pass",
+      "detail": "hits=0"
+    },
+    {
+      "check": "an underscore in a short query is escaped too",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "an unauthorised scope returns nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "an empty authorised set returns nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "passing a single scope string is rejected instead of silently authorising nothing",
+      "result": "pass",
+      "detail": "authorized_scopes must be a collection of scopes, not a single string"
+    },
+    {
+      "check": "a phrase straddling a chunk boundary is still retrievable (overlap)",
+      "result": "pass",
+      "detail": "uris=['docs/boundary.md', 'docs/research.md']"
+    },
+    {
+      "check": "re-importing an unchanged document does not duplicate its chunks",
+      "result": "pass",
+      "detail": "before=4 after=4"
+    },
+    {
+      "check": "importing the same source under an explicit doc id replaces the earlier import",
+      "result": "pass",
+      "detail": "before=4 after=4"
+    },
+    {
+      "check": "a changed revision replaces the old chunks rather than leaving them behind",
+      "result": "pass",
+      "detail": "revisions=['r2']"
+    },
+    {
+      "check": "ids and revisions containing the id separator coexist in the primary key",
+      "result": "pass",
+      "detail": "both imports succeeded"
+    },
+    {
+      "check": "a document with no indexable text is rejected rather than silently indexed",
+      "result": "pass",
+      "detail": "document 'docs/empty.md' has no indexable text"
+    }
+  ],
+  "scope": "SQLite FTS5 corpus index; no framework, no Runner, no model",
+  "sqlite_note": "trigram tokenizer verified available on SQLite 3.53.1"
+}

@@ -1,0 +1,62 @@
+{
+  "checks_passed": 11,
+  "checks_total": 11,
+  "checks": [
+    {
+      "check": "the default rank constant is 60, as section 7.2 fixes",
+      "result": "pass",
+      "detail": "60"
+    },
+    {
+      "check": "a single ranking scores 1/(k+rank) with rank starting at 1",
+      "result": "pass",
+      "detail": "a=0.016393 b=0.016129"
+    },
+    {
+      "check": "earlier ranks score higher",
+      "result": "pass",
+      "detail": "[0.016393, 0.016129, 0.015873]"
+    },
+    {
+      "check": "a result both sources agree on outranks either source's leader",
+      "result": "pass",
+      "detail": "a=0.032787 b=0.016129 c=0.016129"
+    },
+    {
+      "check": "the consensus score is the sum of its contributions",
+      "result": "pass",
+      "detail": "a=0.032787"
+    },
+    {
+      "check": "a key repeated inside one ranking is counted once, at its best rank",
+      "result": "pass",
+      "detail": "score=0.016393"
+    },
+    {
+      "check": "the rank constant is configurable",
+      "result": "pass",
+      "detail": "score=1.0"
+    },
+    {
+      "check": "no rankings fuse to no scores",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "an empty ranking contributes nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "fuse_scores returns pairs best-first",
+      "result": "pass",
+      "detail": "order=['a', 'b', 'c']"
+    },
+    {
+      "check": "ties order deterministically by key",
+      "result": "pass",
+      "detail": "order=['a', 'b']"
+    }
+  ],
+  "scope": "pure RRF functions; no framework, no Runner, no model"
+}
