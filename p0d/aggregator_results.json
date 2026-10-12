@@ -1,0 +1,118 @@
+{
+  "checks_passed": 22,
+  "checks_total": 22,
+  "checks": [
+    {
+      "check": "all conditions passing yields complete",
+      "result": "pass",
+      "detail": "complete"
+    },
+    {
+      "check": "artifacts and cited evidence are de-duplicated across repeated inputs",
+      "result": "pass",
+      "detail": "artifacts=('artifact://facts', 'artifact://plan') evidence=('ev-1',)"
+    },
+    {
+      "check": "a required condition listed twice is reported once",
+      "result": "pass",
+      "detail": "checks=['acc-1']"
+    },
+    {
+      "check": "the answer keeps each claim's grounding label",
+      "result": "pass",
+      "detail": "## task-research (success) | - [fact] 接口存在差异 | - [fact] 接口存在差异 | ## task-engineering (success) | - [inference] 因此需要重写适配层"
+    },
+    {
+      "check": "a complete run has no limitations",
+      "result": "pass",
+      "detail": "()"
+    },
+    {
+      "check": "an unmet condition downgrades the run to partial",
+      "result": "pass",
+      "detail": "partial"
+    },
+    {
+      "check": "the unmet condition is named in the limitations",
+      "result": "pass",
+      "detail": "('acceptance acc-2 is fail',)"
+    },
+    {
+      "check": "a required condition with no verdict counts as unmet",
+      "result": "pass",
+      "detail": "outcome=partial limitations=('acceptance acc-missing is missing',)"
+    },
+    {
+      "check": "an unmet condition with no successful task yields failed",
+      "result": "pass",
+      "detail": "failed"
+    },
+    {
+      "check": "a run with no results is failed and says so",
+      "result": "pass",
+      "detail": "limitations=('no task result was produced',)"
+    },
+    {
+      "check": "an unsupported claim is reported, not dropped",
+      "result": "pass",
+      "detail": "('unsupported claim: 接口存在差异', 'evidence not available: ev-9', 'task task-engineering finished with outcome partial')"
+    },
+    {
+      "check": "evidence the run could not obtain is reported",
+      "result": "pass",
+      "detail": "('unsupported claim: 接口存在差异', 'evidence not available: ev-9', 'task task-engineering finished with outcome partial')"
+    },
+    {
+      "check": "a task that finished without success is reported",
+      "result": "pass",
+      "detail": "('unsupported claim: 接口存在差异', 'evidence not available: ev-9', 'task task-engineering finished with outcome partial')"
+    },
+    {
+      "check": "reporting limitations does not block the run from completing",
+      "result": "pass",
+      "detail": "complete"
+    },
+    {
+      "check": "a claim whose citation failed is relabelled in the answer",
+      "result": "pass",
+      "detail": "## task-research (success) | - [unverified] 接口存在差异"
+    },
+    {
+      "check": "evidence behind an unsupported claim is kept out of the deliverable's evidence",
+      "result": "pass",
+      "detail": "evidence_refs=()"
+    },
+    {
+      "check": "a run whose every task failed is not complete, even with no unmet conditions",
+      "result": "pass",
+      "detail": "failed"
+    },
+    {
+      "check": "a cancelled run reports cancelled rather than a success or failure verdict",
+      "result": "pass",
+      "detail": "outcome=cancelled"
+    },
+    {
+      "check": "a cancelled run keeps the artifacts it did produce",
+      "result": "pass",
+      "detail": "artifacts=('artifact://facts',)"
+    },
+    {
+      "check": "a recorded advisory check still appears in the coverage report",
+      "result": "pass",
+      "detail": "checks=['adv-1']"
+    },
+    {
+      "check": "blank artifact references do not leak into the deliverable",
+      "result": "pass",
+      "detail": "artifacts=('artifact://facts',)"
+    },
+    {
+      "check": "the deliverable can report usage with its measurement quality",
+      "result": "pass",
+      "detail": "usage=model_calls=3 tokens=1200 quality='estimated'"
+    }
+  ],
+  "scope": "pure aggregation; no framework, no Runner, no model",
+  "note": "the answer is a deterministic template, never a model call (section 10)"
+}

@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.14 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 进行中（语料索引、RRF、ContextBuilder、引用校验）。
+版本：0.15 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B、P0-C 已落地，P0-D 启动（Aggregator）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -29,6 +29,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-C RRF 融合 | 已执行：`app/fusion.py`，`sum(1/(60+rank))`，11 项断言通过 |
 | P0-C ContextBuilder | 已执行：`app/context.py`，预算计算、不可压缩部分、证据裁剪与估算标注，22 项断言通过 |
 | P0-C 引用校验 | 已执行：`app/citations.py`，事实结论必须引用该任务实际收到的证据，15 项断言通过 |
+| P0-D Aggregator | 已执行：`app/aggregator.py`，确定性模板汇总 + 覆盖/限制报告，22 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -424,13 +425,23 @@ P0-C 第四部分（引用校验）已执行：[app/citations.py](app/citations.
 
 代码审核修复两处真缺陷：**（a）`TaskResult` 根本没有 `claims` 字段**——§5 规定它要有，缺了它则新加的 `Claim` 从任何结果提交路径都够不着，校验等于没接上；已补为 `claims: tuple[Claim, ...]`。**（b）空白 evidence id 能绕过"事实必须有引用"**——`("",)` 是非空元组，若 `""` 恰在可用集合中则整条校验返回 valid；现与其它门禁一致地过滤空白，空白 id 不算引用。另修：`available_evidence_ids` 传入单个 id 字符串会按字符拆开（`TypeError` 拒绝）；issue 现在以字段形式携带出问题的 evidence id（`evidence_ids`），调用方不必解析 `detail` 文本；`CitationReport`/`CitationIssue` 与 `PlanValidationReport`/`PlanIssue` 重复的 `codes()` 提取为 [app/models.py](app/models.py) 的 `distinct_codes`；两个检查脚本逐字节重复的 evidence 构造器提取为 [checks/fixtures.py](checks/fixtures.py)。
 
-下一次更新先阅读本文。P0-A 与 P0-B 已全部落地，P0-C 已完成语料索引、RRF 融合与 ContextBuilder；剩余：
+P0-D 第一部分（Aggregator）已执行：[app/aggregator.py](app/aggregator.py) 按 §6 步骤 11 判定整轮结论：必选验收条件全部 pass 才 `complete`，否则返回 `partial`（仍有成功产出时）或 `failed`。answer 由各结果自己的 claim **确定性**拼成（§10：失败回退是模板，不是模型调用），每条 claim 保留其标记（`[fact]`/`[inference]`/`[assumption]`），因此推断不会被读成事实。**不可确立的东西一律进 `limitations` 而不是被丢弃**：未通过的验收条件、引用未通过校验的 claim、拿不到的证据 id、以非成功结局结束的任务。`evidence_refs` 与 `artifact_refs` 收集后去重保序。
 
+值得注意的是"报告限制"与"判定结论"是两件事：一轮可以既 `complete` 又带有 limitations——限制是给读者的覆盖报告，不改变既定条件的通过与否（§4：Aggregator 负责结构整理和覆盖报告，不擅自消解冲突）。代码审核修复四处真缺陷：**（a）引用未通过校验的 claim 仍以 `[fact]` 出现在答案里**——仅在 limitations 提一句不足以阻止读者把它读成事实；现在会在答案正文改标为 `[unverified]`，且其证据被排除在交付物的 `evidence_refs` 之外。**（b）所有任务都失败但条件恰好满足时仍报 `complete`**——原判断只在存在未通过条件时才查看 `succeeded`；现在没有成功结果一律 `failed`。**（c）缺少 `cancelled`**——§5 定义了它、§10 要求取消时冻结产物；已补，取消的 run 保留已产出的 artifact，不被塞进成功/失败的二选一。**（d）空白引用未过滤**——空白 artifact 会进入交付物；现与其它门禁一致地过滤。
+
+另修：未列为必选的验收检查此前被丢弃（现全部进入覆盖报告）；重复的 required id 不再产生重复检查，检查的 `acceptance_id` 与键不符时视为缺失（与 completion 门禁一致）；`FinalResult` 增加 §5 要求的 `usage`（含 `quality`，对应 §10 不得把无 provider usage 的调用记为零成本成功）；未知 `ClaimKind` 降级为 `[unlabelled]` 而非在渲染时 `KeyError`。
+
+[aggregator_check.py](p0d/aggregator_check.py) 22 项断言通过，详见 [aggregator_results.json](p0d/aggregator_results.json)。
+
+下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已启动（Aggregator）；剩余：
+
+- 事件去重投影：框架事件按稳定键去重登记，无法取得稳定 event_id 时用已知实体标识与转换数据构造去重键，不按接收时间生成"唯一新事件"（§5）
 - 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
 - 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
 - §7.1 的"压缩后再次计算最终请求预算"：原生上下文 rail 压缩历史后，由调用方重跑 `ContextBuilder.build` 并按压缩结果更新 `fixed_overhead_tokens`（本模块不感知 rail，见 §7.1、D07）
+- 统一 BudgetManager：调用前原子预留、返回后结算、为最终汇总保留预算（§10）
 
-再之后是 P0-D（Aggregator、语义验收、事件去重投影）。与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
+与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
 
 尚需确认的技术问题：
 
@@ -467,6 +478,7 @@ P0-C 第四部分（引用校验）已执行：[app/citations.py](app/citations.
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.15 | R08 | 启动 P0-D：落地 Aggregator（确定性模板汇总、结论判定与限制报告）；审核后补未验证 claim 改标、全失败判负、`cancelled`、`usage` 与空白过滤 | 22 项断言通过；事件去重投影与统一预算未做 |
 | 2026-10-12 | 0.14 | R03、R08 | 落地引用校验：事实须引用该任务实际收到的证据，被预算裁剪的证据不算支撑；审核后给 `TaskResult` 补 `claims`、修空白 id 绕过 | 15 项断言通过 |
 | 2026-10-12 | 0.13 | R06 | 落地 ContextBuilder：输入预算、不可压缩部分、证据裁剪与估算标注；审核后补 acceptance 计入预算、韩文估算、固定开销与按相关性截断 | 22 项断言通过；历史压缩按 D07 归原生 rail，向量检索与文件解析未做 |
 | 2026-10-12 | 0.12 | R07 | 启动 P0-C：落地 SQLite FTS5 语料索引（短查询受限回退、scope 前置授权）与 RRF 融合；审核后补分块重叠、多词查询、chunk_id 编码、导入事务等 | 33 项断言通过；向量检索、文件解析与 ContextBuilder 未做 |
