@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.12 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 启动（语料索引、RRF 融合）。
+版本：0.13 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 进行中（语料索引、RRF、ContextBuilder）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -27,6 +27,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-B RuntimeAdapter（首片） | 已执行：`app/runtime_adapter.py`，从 spec 真实构造 TeamAgent 并校验身份一致，18 项断言通过 |
 | P0-C 语料索引（FTS5） | 已执行：`app/knowledge.py`，导入链 + 查询链（含短查询受限回退），22 项断言通过 |
 | P0-C RRF 融合 | 已执行：`app/fusion.py`，`sum(1/(60+rank))`，11 项断言通过 |
+| P0-C ContextBuilder | 已执行：`app/context.py`，预算计算、不可压缩部分、证据裁剪与估算标注，22 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -132,7 +133,7 @@ flowchart TD
 | TaskPlan | plan_id, revision, tasks[id,role,instruction,acceptance_ids,depends_on,requires_success,reviewers], source_refs |
 | TaskBinding | run_id, plan_revision, app_task_id, framework_task_id, member_id, execution_id, execution_seq |
 | Evidence | evidence_id, corpus, source_uri, source_revision, doc_id, chunk_id, content_hash, locator, text, retrieval_method, raw_score, fused_rank, access_scope |
-| ContextBundle | spec_ref, task_ref, pinned_constraints, decision_refs, evidence_refs, recent_messages, compressed_history_ref, input_token_estimate, tokenizer_id |
+| ContextBundle | spec_ref, task_ref, task_instruction, pinned_constraints, acceptance_ids, evidence, dropped_evidence_ids, fixed_overhead_tokens, input_token_estimate, tokenizer_id |
 | TaskResult | task_id, execution_id, outcome[success/partial/error], claims[text,kind,evidence_ids], artifact_refs, acceptance_checks, unresolved, error |
 | Artifact | artifact_id, run_id, task_id, execution_id, path, hash, media_type, created_at |
 | AcceptanceCheck | acceptance_id, result[pass/fail/unknown], verifier, evidence_refs, diagnostic |
@@ -141,6 +142,8 @@ flowchart TD
 | Budget | max_model_calls, max_tokens, deadline_at, spent, reserved, finalization_reserve, usage_quality[provider/estimated/unknown] |
 
 原生任务状态按框架展示：pending、blocked、planning、in_progress、in_review、completed、cancelled。应用不得把自定义 failed/succeeded 状态直接写入原生表。应用 `outcome` 记录业务结果，即使 framework_task 已 completed，也必须经过 AcceptanceCheck 才能视为业务成功。
+
+ContextBundle 的字段以 [app/context.py](app/context.py) 的实现为准（上表已同步）。原设计中的 `decision_refs` / `recent_messages` / `compressed_history_ref` **未实现**：历史与压缩归框架原生上下文 rail（§7.1、D07），应用只组装当前任务与证据；`evidence_refs` 改为直接携带 `Evidence` 对象，`dropped_evidence_ids` 与 `fixed_overhead_tokens` 为实现新增——前者让被裁剪的上下文可自查，后者承载系统提示词/Skill/tool schema/历史等应用无法测量的固定开销。
 
 运行状态、知识、长期记忆分别保存：
 
@@ -408,11 +411,20 @@ P0-C 第一部分（语料索引）已执行：[app/knowledge.py](app/knowledge.
 
 P0-C 第二部分（RRF 融合）已执行：[app/fusion.py](app/fusion.py) 实现 `sum(1/(k+rank))`（k 默认 60，rank 从 1 开始），同一 ranking 内重复 key 只按最佳名次计一次——否则一个来源能自我加权并压过真正的多源共识。返回顺序确定（同分按 key）。[fusion_check.py](p0c/fusion_check.py) 11 项断言通过，详见 [fusion_results.json](p0c/fusion_results.json)。
 
-下一次更新先阅读本文。P0-A 与 P0-B 已全部落地，P0-C 进行中（语料索引、RRF 融合已完成）；剩余：
+P0-C 第三部分（ContextBuilder）已执行：[app/context.py](app/context.py) 按 §7.1 组装任务输入。输入预算 = `context_window − max_output_tokens − safety_margin`；当前目标、硬约束、验收与任务输入是**不可压缩**部分，预算不足时抛 `ContextLimitExceeded`（调用方的出路是拆分任务，而不是丢掉用户的约束）；**让位的永远是证据**，被丢弃的 evidence id 记入 `dropped_evidence_ids`，使"基于被裁剪上下文的结果"能说明自己没看到什么——这与 [app/completion.py](app/completion.py) 对证据的要求是同一条线。无真实 tokenizer 时使用保守估算（CJK 每字 1 token、其余每 4 字符 1 token、向上取整），并以 `tokenizer_id="estimate:cjk-1-other-0.25"` 标注为**估计值而非测量值**；估算刻意偏悲观——高估留出余量，低估会静默越界。
 
-- ContextBuilder：不可压缩部分（当前目标、硬约束、验收、任务输入）与输入预算换算，压缩后重算
+历史压缩**不在此处**：按 §7.1 与 D07 归框架原生上下文 rail，避免同一段历史被应用和框架各摘要一次。相应地，§7.1 要求的"压缩后再次计算最终请求预算"由调用方在 rail 压缩后重跑 `build` 完成，属待办（见下文）。
+
+代码审核修复四处真缺陷：**（a）`acceptance_ids` 存进了 bundle 却从未计入预算**——它是 §7.1 明列的不可压缩部分，却是唯一不受预算约束的；现与指令、约束一并计入，超限同样抛 `ContextLimitExceeded`。**（b）估算范围遗漏韩文与 CJK 扩展区**（U+AC00 等）——韩文会被按拉丁文以 1/4 计数、低估约四倍，正是估算刻意偏悲观要避免的方向；已补 Hangul jamo/音节与扩展 B 区段。**（c）`input_token_estimate` 只算本模块组装的部分**——§7.1 要求预算计入系统提示词、Skill、tool schema、历史与工具结果；新增 `fixed_overhead_tokens` 由调用方声明并计入，估算值现在覆盖整个请求而非仅组装部分。**（d）裁剪会跳过装不下的大项去装后面的小项**——结果是留下较低相关的证据、把更相关的记入 dropped；现改为按相关性顺序截断，一旦某项装不下，其后的项不再被放行。另修：空白约束此前会原样回显成"幽灵要求"，现与其它门禁一致地过滤空白。
+
+[context_check.py](p0c/context_check.py) 22 项断言通过，详见 [context_results.json](p0c/context_results.json)。
+
+下一次更新先阅读本文。P0-A 与 P0-B 已全部落地，P0-C 已完成语料索引、RRF 融合与 ContextBuilder；剩余：
+
 - 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
 - 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
+- Evidence 到模型输入的引用校验：结果里的 `evidence_ids` 是否真的出现在该任务拿到的 ContextBundle 中
+- §7.1 的"压缩后再次计算最终请求预算"：原生上下文 rail 压缩历史后，由调用方重跑 `ContextBuilder.build` 并按压缩结果更新 `fixed_overhead_tokens`（本模块不感知 rail，见 §7.1、D07）
 
 再之后是 P0-D（Aggregator、语义验收、事件去重投影）。与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
 
@@ -451,6 +463,7 @@ P0-C 第二部分（RRF 融合）已执行：[app/fusion.py](app/fusion.py) 实�
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.13 | R06 | 落地 ContextBuilder：输入预算、不可压缩部分、证据裁剪与估算标注；审核后补 acceptance 计入预算、韩文估算、固定开销与按相关性截断 | 22 项断言通过；历史压缩按 D07 归原生 rail，向量检索与文件解析未做 |
 | 2026-10-12 | 0.12 | R07 | 启动 P0-C：落地 SQLite FTS5 语料索引（短查询受限回退、scope 前置授权）与 RRF 融合；审核后补分块重叠、多词查询、chunk_id 编码、导入事务等 | 33 项断言通过；向量检索、文件解析与 ContextBuilder 未做 |
 | 2026-10-11 | 0.11 | R01、R13 | 落地 RuntimeAdapter 首片：spec → 真实 TeamAgent 构造与身份校验；审核后把校验从恒真的 `team.spec` 移到 materialized 的 `runtime_context`，并补失败释放与全分支覆盖 | 18 项断言通过；工具挂载与 run 表面待真实 runtime |
 | 2026-10-11 | 0.10 | R11、R12 | 落地 RunRepository：SQLite 持久化 run/execution/result；审核后修正读侧陈旧结果、并发原子性、schema 未强制单 ACTIVE、孤儿写入与 N+1 查询 | 17 项断言通过；未接入 RuntimeAdapter |

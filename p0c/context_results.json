@@ -1,0 +1,118 @@
+{
+  "checks_passed": 22,
+  "checks_total": 22,
+  "checks": [
+    {
+      "check": "an empty string costs nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "CJK text is estimated at one token per character",
+      "result": "pass",
+      "detail": "got 4"
+    },
+    {
+      "check": "non-CJK text is estimated at one token per four characters, rounded up",
+      "result": "pass",
+      "detail": "abcd=1 abcde=2"
+    },
+    {
+      "check": "a mixed string sums both parts",
+      "result": "pass",
+      "detail": "got 3"
+    },
+    {
+      "check": "Hangul is counted per character like CJK, not as latin text",
+      "result": "pass",
+      "detail": "got 5"
+    },
+    {
+      "check": "the input budget is window minus output reserve minus margin",
+      "result": "pass",
+      "detail": "input_budget=70"
+    },
+    {
+      "check": "a non-positive budget is rejected rather than trimming everything away",
+      "result": "pass",
+      "detail": "input budget is -10: window 100 minus output 90 minus margin 20"
+    },
+    {
+      "check": "a bundle that fits keeps every evidence item",
+      "result": "pass",
+      "detail": "kept=2 dropped=()"
+    },
+    {
+      "check": "the bundle keeps the incompressible parts verbatim",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "evidence order is preserved",
+      "result": "pass",
+      "detail": "order=['ev-1', 'ev-2']"
+    },
+    {
+      "check": "the estimate is labelled as an estimate, not a measurement",
+      "result": "pass",
+      "detail": "tokenizer_id=estimate:cjk-1-other-0.25 estimate=41"
+    },
+    {
+      "check": "the reported estimate stays within the budget",
+      "result": "pass",
+      "detail": "estimate=41 budget=70"
+    },
+    {
+      "check": "when the budget is tight, evidence is trimmed and the drops are recorded",
+      "result": "pass",
+      "detail": "kept=1 dropped=19"
+    },
+    {
+      "check": "the trimmed bundle still fits the budget",
+      "result": "pass",
+      "detail": "estimate=30 budget=50"
+    },
+    {
+      "check": "the empty case leaves only the incompressible parts",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "incompressible constraints are never trimmed: the build fails instead",
+      "result": "pass",
+      "detail": "the fixed overhead (0) plus the incompressible context (405) needs 405 tokens, budget is 50; split the task"
+    },
+    {
+      "check": "an oversized acceptance condition is rejected, not stored for free",
+      "result": "pass",
+      "detail": "the fixed overhead (0) plus the incompressible context (103) needs 103 tokens, budget is 50; split the task"
+    },
+    {
+      "check": "acceptance ids contribute to the reported estimate",
+      "result": "pass",
+      "detail": "estimate=4 instruction_only=2"
+    },
+    {
+      "check": "the declared fixed overhead is charged against the budget",
+      "result": "pass",
+      "detail": "the fixed overhead (999) plus the incompressible context (2) needs 1001 tokens, budget is 50; split the task"
+    },
+    {
+      "check": "the reported estimate includes the fixed overhead, not just the assembled parts",
+      "result": "pass",
+      "detail": "estimate=29"
+    },
+    {
+      "check": "a smaller, less relevant item is not admitted ahead of a larger, more relevant one",
+      "result": "pass",
+      "detail": "kept=['ev-1'] dropped=('ev-2', 'ev-3')"
+    },
+    {
+      "check": "blank constraints are filtered rather than echoed as phantom requirements",
+      "result": "pass",
+      "detail": "constraints=('真实约束',)"
+    }
+  ],
+  "scope": "pure context assembly; no framework, no Runner, no model",
+  "not_covered": "history compression belongs to the framework rail (section 7.1, D07)"
+}
