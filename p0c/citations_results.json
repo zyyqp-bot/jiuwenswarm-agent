@@ -1,0 +1,82 @@
+{
+  "checks_passed": 15,
+  "checks_total": 15,
+  "checks": [
+    {
+      "check": "a fact citing evidence the task received is valid",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "a fact that cites nothing is rejected",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.UNCITED_FACT: 'uncited_fact'>]"
+    },
+    {
+      "check": "a fact citing evidence the task never received is rejected",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.UNKNOWN_EVIDENCE: 'unknown_evidence'>]"
+    },
+    {
+      "check": "an unsupported inference is allowed when it is labelled as such",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "an unsupported assumption is allowed when it is labelled as such",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "a claim with no text is rejected",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.BLANK_CLAIM: 'blank_claim'>]"
+    },
+    {
+      "check": "a result with no claims is valid",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "every problem is reported, with the claim that has it",
+      "result": "pass",
+      "detail": "indexes=[1, 2]"
+    },
+    {
+      "check": "the context builder dropped the oversized evidence (precondition)",
+      "result": "pass",
+      "detail": "kept=['ev-1'] dropped=('ev-2',)"
+    },
+    {
+      "check": "citing evidence this task's budget trimmed away is rejected, even though it is in the corpus",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.UNKNOWN_EVIDENCE: 'unknown_evidence'>]"
+    },
+    {
+      "check": "a fact citing only blank ids is uncited, not merely unknown",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.UNCITED_FACT: 'uncited_fact'>]"
+    },
+    {
+      "check": "a blank id present in the available set still does not make a fact cited",
+      "result": "pass",
+      "detail": "issues=[<CitationIssueCode.UNCITED_FACT: 'uncited_fact'>]"
+    },
+    {
+      "check": "passing a single id string is rejected instead of split into characters",
+      "result": "pass",
+      "detail": "available_evidence_ids must be a collection of ids, not a single string"
+    },
+    {
+      "check": "the issue names the missing ids as a field, not only in prose",
+      "result": "pass",
+      "detail": "evidence_ids=('ev-3', 'ev-4')"
+    },
+    {
+      "check": "a TaskResult carries its claims, so a submission reaches the validator",
+      "result": "pass",
+      "detail": "claims=1"
+    }
+  ],
+  "scope": "pure citation validation; no framework, no Runner, no model"
+}

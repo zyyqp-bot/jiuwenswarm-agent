@@ -20,7 +20,7 @@
     {
       "check": "a result from the current execution is stored and read back intact",
       "result": "pass",
-      "detail": "stored=TaskResult(run_id='run-1', task_id='task-research', execution_id='exec-1', producer='research', outcome=<TaskOutcome.SUCCESS: 'success'>, artifact_refs=('artifact://facts',))"
+      "detail": "stored=TaskResult(run_id='run-1', task_id='task-research', execution_id='exec-1', producer='research', outcome=<TaskOutcome.SUCCESS: 'success'>, artifact_refs=('artifact://facts',), claims=())"
     },
     {
       "check": "an execution cannot submit a second result",

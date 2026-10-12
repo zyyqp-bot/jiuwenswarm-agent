@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.13 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 进行中（语料索引、RRF、ContextBuilder）。
+版本：0.14 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B 全部落地，P0-C 进行中（语料索引、RRF、ContextBuilder、引用校验）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -28,6 +28,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-C 语料索引（FTS5） | 已执行：`app/knowledge.py`，导入链 + 查询链（含短查询受限回退），22 项断言通过 |
 | P0-C RRF 融合 | 已执行：`app/fusion.py`，`sum(1/(60+rank))`，11 项断言通过 |
 | P0-C ContextBuilder | 已执行：`app/context.py`，预算计算、不可压缩部分、证据裁剪与估算标注，22 项断言通过 |
+| P0-C 引用校验 | 已执行：`app/citations.py`，事实结论必须引用该任务实际收到的证据，15 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -419,11 +420,14 @@ P0-C 第三部分（ContextBuilder）已执行：[app/context.py](app/context.py
 
 [context_check.py](p0c/context_check.py) 22 项断言通过，详见 [context_results.json](p0c/context_results.json)。
 
+P0-C 第四部分（引用校验）已执行：[app/citations.py](app/citations.py) 校验结果中的每条 claim：标为 `fact` 的必须带引用；引用必须落在**该任务实际收到的证据**之内。后者是关键——语料里存在但被 ContextBuilder 因预算裁掉的证据**不算支撑**，因为成员从未见过它，结论不可能由它推出。`inference` 与 `assumption` 允许无引用，前提是如实标注（R03：未验证结论不标为事实）。报告收集全部问题并指出是第几条 claim。[citations_check.py](p0c/citations_check.py) 15 项断言通过，其中一条把两个模块接起来：ContextBuilder 因预算裁掉 `ev-2` 后，再引用 `ev-2` 的 fact 被判为 `unknown_evidence`，尽管它仍在语料里。
+
+代码审核修复两处真缺陷：**（a）`TaskResult` 根本没有 `claims` 字段**——§5 规定它要有，缺了它则新加的 `Claim` 从任何结果提交路径都够不着，校验等于没接上；已补为 `claims: tuple[Claim, ...]`。**（b）空白 evidence id 能绕过"事实必须有引用"**——`("",)` 是非空元组，若 `""` 恰在可用集合中则整条校验返回 valid；现与其它门禁一致地过滤空白，空白 id 不算引用。另修：`available_evidence_ids` 传入单个 id 字符串会按字符拆开（`TypeError` 拒绝）；issue 现在以字段形式携带出问题的 evidence id（`evidence_ids`），调用方不必解析 `detail` 文本；`CitationReport`/`CitationIssue` 与 `PlanValidationReport`/`PlanIssue` 重复的 `codes()` 提取为 [app/models.py](app/models.py) 的 `distinct_codes`；两个检查脚本逐字节重复的 evidence 构造器提取为 [checks/fixtures.py](checks/fixtures.py)。
+
 下一次更新先阅读本文。P0-A 与 P0-B 已全部落地，P0-C 已完成语料索引、RRF 融合与 ContextBuilder；剩余：
 
 - 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
 - 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
-- Evidence 到模型输入的引用校验：结果里的 `evidence_ids` 是否真的出现在该任务拿到的 ContextBundle 中
 - §7.1 的"压缩后再次计算最终请求预算"：原生上下文 rail 压缩历史后，由调用方重跑 `ContextBuilder.build` 并按压缩结果更新 `fixed_overhead_tokens`（本模块不感知 rail，见 §7.1、D07）
 
 再之后是 P0-D（Aggregator、语义验收、事件去重投影）。与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
@@ -463,6 +467,7 @@ P0-C 第三部分（ContextBuilder）已执行：[app/context.py](app/context.py
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.14 | R03、R08 | 落地引用校验：事实须引用该任务实际收到的证据，被预算裁剪的证据不算支撑；审核后给 `TaskResult` 补 `claims`、修空白 id 绕过 | 15 项断言通过 |
 | 2026-10-12 | 0.13 | R06 | 落地 ContextBuilder：输入预算、不可压缩部分、证据裁剪与估算标注；审核后补 acceptance 计入预算、韩文估算、固定开销与按相关性截断 | 22 项断言通过；历史压缩按 D07 归原生 rail，向量检索与文件解析未做 |
 | 2026-10-12 | 0.12 | R07 | 启动 P0-C：落地 SQLite FTS5 语料索引（短查询受限回退、scope 前置授权）与 RRF 融合；审核后补分块重叠、多词查询、chunk_id 编码、导入事务等 | 33 项断言通过；向量检索、文件解析与 ContextBuilder 未做 |
 | 2026-10-11 | 0.11 | R01、R13 | 落地 RuntimeAdapter 首片：spec → 真实 TeamAgent 构造与身份校验；审核后把校验从恒真的 `team.spec` 移到 materialized 的 `runtime_context`，并补失败释放与全分支覆盖 | 18 项断言通过；工具挂载与 run 表面待真实 runtime |

@@ -25,7 +25,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import non_blank
+from app.models import distinct_codes, non_blank
 
 __all__ = [
     "PlanIssue",
@@ -89,7 +89,7 @@ class PlanValidationReport(BaseModel):
 
     def codes(self) -> list[PlanIssueCode]:
         """Return the distinct issue codes, for compact assertions."""
-        return list(dict.fromkeys(issue.code for issue in self.issues))
+        return distinct_codes(self.issues)
 
 
 def _find_cycle(tasks: dict[str, PlanTask]) -> list[str] | None:

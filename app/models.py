@@ -8,18 +8,46 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
 __all__ = [
     "AcceptanceCheck",
     "AcceptanceResult",
+    "Claim",
+    "ClaimKind",
     "Evidence",
     "TaskOutcome",
     "TaskResult",
+    "distinct_codes",
     "non_blank",
     "usable_artifacts",
 ]
+
+
+class ClaimKind(str, Enum):
+    """How a claim is grounded.
+
+    PROJECT.md requires unverified conclusions not to be presented as fact, so
+    the kind is what decides whether evidence is mandatory: a FACT without
+    retrievable evidence is a defect, while an INFERENCE or ASSUMPTION is
+    allowed to stand unsupported as long as it is labelled as such.
+    """
+
+    FACT = "fact"
+    INFERENCE = "inference"
+    ASSUMPTION = "assumption"
+
+
+class Claim(BaseModel):
+    """One statement in a task result, with the evidence behind it."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    text: str
+    kind: ClaimKind
+    evidence_ids: tuple[str, ...] = ()
 
 
 class TaskOutcome(str, Enum):
@@ -67,6 +95,13 @@ class TaskResult(BaseModel):
     producer: str
     outcome: TaskOutcome
     artifact_refs: tuple[str, ...] = ()
+    claims: tuple[Claim, ...] = ()
+    """The statements the result makes, each labelled with how it is grounded.
+
+    They live on the result rather than beside it so a submission carries its
+    own claims into citation validation; PROJECT.md section 5 specifies the
+    field, and section 12's citation support rate is computed over them.
+    """
 
 
 class AcceptanceCheck(BaseModel):
@@ -126,6 +161,15 @@ def non_blank(values: Iterable[str]) -> list[str]:
     least one of these" filters through here.
     """
     return [value for value in values if value.strip()]
+
+
+def distinct_codes(issues: Iterable[Any]) -> list[Any]:
+    """Return the distinct ``code`` values of a validator's issues, in order.
+
+    Every validator report exposes the same compact view of its issues, so the
+    shape lives here rather than being reimplemented per report.
+    """
+    return list(dict.fromkeys(issue.code for issue in issues))
 
 
 def usable_artifacts(refs: Iterable[str]) -> list[str]:

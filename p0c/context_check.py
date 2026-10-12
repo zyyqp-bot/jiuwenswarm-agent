@@ -23,28 +23,10 @@ from app.context import (  # noqa: E402
     ContextLimitExceeded,
     estimate_tokens,
 )
-from app.models import Evidence  # noqa: E402
+from checks.fixtures import evidence as _evidence  # noqa: E402
 from checks.harness import Checks, raises  # noqa: E402
 
 RESULTS_PATH = Path(__file__).resolve().parent / "context_results.json"
-
-
-def _evidence(index: int, text: str) -> Evidence:
-    return Evidence(
-        evidence_id=f"ev-{index}",
-        corpus="docs",
-        source_uri=f"docs/{index}.md",
-        source_revision="r1",
-        doc_id=f"docs/{index}.md",
-        chunk_id=f"docs/{index}.md:r1:0:aaaa",
-        content_hash="a" * 64,
-        locator="chars:0-10",
-        text=text,
-        retrieval_method="fts5_trigram_bm25",
-        raw_score=-1.0,
-        fused_rank=index,
-        access_scope="project:alpha",
-    )
 
 
 def main() -> int:
