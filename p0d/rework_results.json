@@ -1,0 +1,97 @@
+{
+  "checks_passed": 18,
+  "checks_total": 18,
+  "checks": [
+    {
+      "check": "the default allows exactly one rework, as section 6 specifies",
+      "result": "pass",
+      "detail": "1"
+    },
+    {
+      "check": "a failed acceptance allows the first rework",
+      "result": "pass",
+      "detail": "allowed=True attempt=1"
+    },
+    {
+      "check": "a unsupported_claim also allows the first rework",
+      "result": "pass",
+      "detail": "allowed=True attempt=1"
+    },
+    {
+      "check": "a evidence_conflict also allows the first rework",
+      "result": "pass",
+      "detail": "allowed=True attempt=1"
+    },
+    {
+      "check": "a second rework is refused",
+      "result": "pass",
+      "detail": "reason=attempts_exhausted"
+    },
+    {
+      "check": "a failed prerequisite is not reworked (re-running could not change it)",
+      "result": "pass",
+      "detail": "reason=not_a_task_defect"
+    },
+    {
+      "check": "the prerequisite check comes first, so it is not reported as exhausted or unfunded",
+      "result": "pass",
+      "detail": "reason=not_a_task_defect"
+    },
+    {
+      "check": "a reason supplied as a plain string is recognised, not bypassed",
+      "result": "pass",
+      "detail": "reason=not_a_task_defect"
+    },
+    {
+      "check": "the ceiling applies to string reasons too",
+      "result": "pass",
+      "detail": "reason=attempts_exhausted"
+    },
+    {
+      "check": "an unrecognised reason is refused rather than treated as reworkable",
+      "result": "pass",
+      "detail": "unknown rework reason 'bogus'"
+    },
+    {
+      "check": "a rework the run cannot pay for is refused",
+      "result": "pass",
+      "detail": "reason=no_budget"
+    },
+    {
+      "check": "a negative rework count is refused",
+      "result": "pass",
+      "detail": "reworks_so_far cannot be negative"
+    },
+    {
+      "check": "the ceiling is configurable and honoured",
+      "result": "pass",
+      "detail": "two reworks allowed, a third refused"
+    },
+    {
+      "check": "a policy of zero reworks refuses even the first",
+      "result": "pass",
+      "detail": "reason=attempts_exhausted"
+    },
+    {
+      "check": "a negative rework ceiling is refused at construction",
+      "result": "pass",
+      "detail": "max_attempts cannot be negative"
+    },
+    {
+      "check": "the rework the policy approved is the attempt that opens a new execution",
+      "result": "pass",
+      "detail": "attempt=1 seq=1->2"
+    },
+    {
+      "check": "opening it supersedes the attempt being replaced",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "the superseded attempt can no longer submit, so its result cannot win later",
+      "result": "pass",
+      "detail": "execution 'exec-1' of task 'task-engineering' (sequence 1) was superseded by sequence 2"
+    }
+  ],
+  "scope": "pure rework policy; no framework, no Runner, no model"
+}
