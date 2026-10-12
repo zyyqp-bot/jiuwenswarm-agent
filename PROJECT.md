@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.20 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线），P1 启动（工具门禁验证，并修正一处此前写错的结论）。
+版本：0.21 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线），P1 进行中（工具门禁已从真实构造的 team 上验证）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -35,6 +35,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-E 端到端验收（离线） | 已执行：`p0e/e2e_check.py` 串联 §12 的 7 个场景，29 项断言通过；3 个场景因缺真实组件未跑 |
 | P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，18 项断言通过 |
 | P1 工具门禁 | 已执行：`p1/tool_gating_check.py`，验证 leader 的 spawn 工具由两条门禁控制；发现并修复 `spawn_passive_human` 缺口，9 项断言通过 |
+| P1 活工具集 | 已执行：`p1/live_tool_surface_check.py`，从真实构造的 team 读出 rail 的排除列表并物化 leader 工具集，对照实验证实缺口，6 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -47,7 +48,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | 编号 | 需求 | 优先级/阶段 | 验收标准 | 当前状态 |
 |---|---|---|---|---|
 | R01 | 使用 OpenJiuwen/JiuwenSwarm，实现多 Agent 协作 | MVP | 一个请求经 Leader 和专业成员完成 | 离线模块全部就位；**端到端流程未跑**（P1） |
-| R02 | 保留一个 Leader、两个固定专业 Teammate | MVP | 名册为 3 个协作成员，执行中不能自行新增 | 已实现；P1 探测发现 `predefined` 只摘 4 个 spawn 工具、`spawn_passive_human` 由 `enable_hitt` 控制，适配层已显式关门禁并纳入校验 |
+| R02 | 保留一个 Leader、两个固定专业 Teammate | MVP | 名册为 3 个协作成员，执行中不能自行新增 | 已实现并按真实构造的 team 验证：leader 工具集无任何 spawn 工具；对照实验证实缺口来自 `enable_hitt` 而非 `predefined` |
 | R03 | 依据 Skill 改进提示词，减少歧义和无证据推断 | MVP | 原始请求不变；约束、验收、假设、未知项分开保存 | 引用校验与 Claim 分级已实现；PromptRefiner 未做 |
 | R04 | 项目规划、任务分配、依赖和必要并行 | MVP | 计划无环、依赖存在、角色有效；依赖产物通过校验才执行 | 已实现（PlanValidator + DependencyGate） |
 | R05 | 不同成员使用对应 Skill | MVP | 专业可见性可检查；Skill 有版本或内容 hash；工具另行限制 | 可见性声明与合成已实现；Skill 内容 hash 与工具权限未做 |
@@ -480,7 +481,13 @@ P1 第一部分（工具门禁）已执行：[p1/tool_gating_check.py](p1/tool_g
 
 修复：`compile_team_spec` 现在**显式**关闭 `enable_hitt` / `enable_bridge` / `enable_swarmflow` 并清空 `external_cli_agents`（MVP 不使用这些能力，见 D02），`validate_roster_closed` 也把这一类门禁纳入检查，因此"只设 `predefined` 就以为关好了"这类配置会被编译期拒绝。
 
-**仍未覆盖**：这验证的是**规则与编译产物**，不是**已挂载的活 agent**——rails 惰性注册，要读到真实挂载的工具集仍需跑一次 runtime。
+P1 第二部分（活工具集）已执行：[p1/live_tool_surface_check.py](p1/live_tool_surface_check.py) 不再读源码，而是**构造真实的 `TeamAgent`**，从框架实际配置的 `TeamToolRail` 上读出排除列表，再用该 rail 自己的参数与 team 的真实 backend 物化 leader 的工具集。这一步之所以必要，是因为关于 R02 的上一版结论**正是靠读 `agent_configurator.py` 得出的，而它是错的**。
+
+读到的排除列表是 `[spawn_bridge_agent, spawn_external_cli, spawn_human_agent, spawn_teammate]`——正好 4 个，`spawn_passive_human` 不在其中；物化后的 leader 工具集为 10 个工具、**不含任何 `spawn_*`**。
+
+结尾的**对照实验**是这条断言的支点：同一路径、同一 `predefined`、同一份配置，只把 `enable_hitt` 还原成修复前的值再 build 一次，`spawn_passive_human` 就出现了。两次构建的工具集**恰好相差这一个工具**，因此"是谁摘掉了它"不再需要推断——不是 `team_mode`，而是那个门禁。
+
+**仍未执行**：真实的一个回合（run）。工具集是从构造好的 team 上物化的，但没有 invoke 过任何一轮。
 
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
@@ -527,6 +534,7 @@ P1 第一部分（工具门禁）已执行：[p1/tool_gating_check.py](p1/tool_g
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.21 | R02 | 从真实构造的 team 上验证 leader 工具集：读 rail 自身的排除列表并物化工具集，对照实验证实 `enable_hitt` 是缺口来源 | 6 项断言通过；已完成回合仍未跑 |
 | 2026-10-12 | 0.20 | R02、R13 | 启动 P1：验证 leader 的 spawn 工具门禁，发现 `predefined` 未覆盖 `spawn_passive_human`（由 `enable_hitt` 控制，而链上默认 True），适配层显式关闭该门禁并纳入 `validate_roster_closed`；更正 §13 中此前的错误结论 | 9 项断言通过；工具挂载仍需真实 runtime |
 | 2026-10-12 | 0.19 | R11 | 落地有限返工：最多一次、定向（依赖失败不返工）、返工开新 execution；审核后修字符串原因绕过守卫、fail-open 预算默认值、计数语义与判定顺序 | 18 项断言通过；P0-A~P0-D 退出条件至此全部达成；场景 3/7/10 与场景 2 运行时部分仍待 P1 |
 | 2026-10-12 | 0.18 | R01、R04、R08、R11 | 新增离线端到端验收链路，跑通 §12 的 7 个场景；审核后强制引用校验、补契约场景、去掉恒真断言与伪造用量 | 29 项断言通过；3 个场景因缺真实组件未跑，有限返工未实现 |
