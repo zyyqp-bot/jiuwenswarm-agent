@@ -1,0 +1,55 @@
+{
+  "checks_passed": 9,
+  "checks_total": 9,
+  "checks": [
+    {
+      "check": "the leader's tool set contains five spawn tools",
+      "result": "pass",
+      "detail": "spawn=['spawn_bridge_agent', 'spawn_external_cli', 'spawn_human_agent', 'spawn_passive_human', 'spawn_teammate']"
+    },
+    {
+      "check": "the predefined exclude list omits spawn_passive_human",
+      "result": "pass",
+      "detail": "this is the gap: one spawn tool is not covered by team_mode"
+    },
+    {
+      "check": "predefined alone leaves spawn_passive_human callable when HITT is open",
+      "result": "pass",
+      "detail": "remaining spawn tools=['spawn_passive_human']"
+    },
+    {
+      "check": "with HITT closed, the leader keeps no spawn tool at all",
+      "result": "pass",
+      "detail": "remaining=[]"
+    },
+    {
+      "check": "without predefined, the four team_mode-gated spawn tools survive",
+      "result": "pass",
+      "detail": "remaining=['spawn_bridge_agent', 'spawn_external_cli', 'spawn_teammate']"
+    },
+    {
+      "check": "the compiled MVP spec has every capability gate shut",
+      "result": "pass",
+      "detail": "hitt=False bridge=False swarmflow=False cli=0"
+    },
+    {
+      "check": "so the leader the spec describes keeps no spawn tool",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a config that explicitly asks for HITT is still compiled with it closed",
+      "result": "pass",
+      "detail": "the MVP does not use HITT, so the gate is shut rather than inherited"
+    },
+    {
+      "check": "the roster validator refuses a predefined spec with HITT left open",
+      "result": "pass",
+      "detail": "these capability gates keep a spawn tool alive even under team_mode='predefined': enable_hitt. In particular enable_hitt keeps spawn_passive_human, which is not in the predefined exclude list"
+    }
+  ],
+  "scope": "leader tool gating from upstream constants and subtraction rules; no runtime, no model",
+  "not_run": [
+    "the mounted tool list of a team that never ran: rails register lazily, so this checks the rules and the compiled spec, not a live agent"
+  ]
+}

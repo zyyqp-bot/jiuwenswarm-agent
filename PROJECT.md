@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.19 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A~P0-D 的退出条件已全部达成（离线），并有一条离线端到端链路跑通 §12 的 7/10 个场景。
+版本：0.20 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线），P1 启动（工具门禁验证，并修正一处此前写错的结论）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -33,7 +33,8 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-D 事件投影 | 已执行：`app/events.py`，按稳定键去重登记，绝不使用接收时间，19 项断言通过 |
 | P0-D 统一预算 | 已执行：`app/budget.py`，预留/结算/释放、最终汇总保留、deadline 闸门，34 项断言通过 |
 | P0-E 端到端验收（离线） | 已执行：`p0e/e2e_check.py` 串联 §12 的 7 个场景，29 项断言通过；3 个场景因缺真实组件未跑 |
-| P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，14 项断言通过 |
+| P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，18 项断言通过 |
+| P1 工具门禁 | 已执行：`p1/tool_gating_check.py`，验证 leader 的 spawn 工具由两条门禁控制；发现并修复 `spawn_passive_human` 缺口，9 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -46,7 +47,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | 编号 | 需求 | 优先级/阶段 | 验收标准 | 当前状态 |
 |---|---|---|---|---|
 | R01 | 使用 OpenJiuwen/JiuwenSwarm，实现多 Agent 协作 | MVP | 一个请求经 Leader 和专业成员完成 | 离线模块全部就位；**端到端流程未跑**（P1） |
-| R02 | 保留一个 Leader、两个固定专业 Teammate | MVP | 名册为 3 个协作成员，执行中不能自行新增 | 已实现并验证（`predefined` 静态摘除 spawn 工具；运行时挂载待 P1） |
+| R02 | 保留一个 Leader、两个固定专业 Teammate | MVP | 名册为 3 个协作成员，执行中不能自行新增 | 已实现；P1 探测发现 `predefined` 只摘 4 个 spawn 工具、`spawn_passive_human` 由 `enable_hitt` 控制，适配层已显式关门禁并纳入校验 |
 | R03 | 依据 Skill 改进提示词，减少歧义和无证据推断 | MVP | 原始请求不变；约束、验收、假设、未知项分开保存 | 引用校验与 Claim 分级已实现；PromptRefiner 未做 |
 | R04 | 项目规划、任务分配、依赖和必要并行 | MVP | 计划无环、依赖存在、角色有效；依赖产物通过校验才执行 | 已实现（PlanValidator + DependencyGate） |
 | R05 | 不同成员使用对应 Skill | MVP | 专业可见性可检查；Skill 有版本或内容 hash；工具另行限制 | 可见性声明与合成已实现；Skill 内容 hash 与工具权限未做 |
@@ -371,7 +372,9 @@ P0-A 第二部分（Skill 可见性）已执行：[skill_visibility_check.py](p0
 P0-A 第三部分（Swarm 配置链）已执行：[swarm_config_chain_check.py](p0a/swarm_config_chain_check.py) 用 workswarm 的 `load_team_spec_dict` 把 YAML 形态配置编译为 TeamAgentSpec，8 项断言通过，详见 [swarm_config_chain_results.json](p0a/swarm_config_chain_results.json)。依赖只增加 `ruamel.yaml`（PyPI）与 `gateway-protocol`（按 pyproject 声明，从 gitcode 的 agent-protocol 仓库安装）。两条必须带入适配层设计的实测事实：
 
 1. **leader 的 desc/prompt 不经过配置链**。`_build_leader_spec`（`config_loader.py:560-572`）只输出 `member_name/display_name/name/persona`，而 `LeaderSpec`（`blueprint.py:159-174`）只有 `desc`/`prompt`、没有 `persona` 字段，YAML 里写的 leader `desc`/`prompt` 被静默丢弃。成员不受影响——`predefined_members` 原样拷贝。RuntimeAdapter 必须在编译后显式补 leader 的 desc/prompt，不能假定 YAML 生效。
-2. **`enable_hitt` 在 `load_team_spec_dict` 中默认为 True**（`config_loader.py:697`），即使配置未声明。因为 `team_mode="predefined"` 在 build 时摘除全部 `spawn_*` 工具，MVP 名册仍封闭；但判断封闭性必须看 `team_mode`，不能看 `enable_hitt`。
+2. **`enable_hitt` 在 `load_team_spec_dict` 中默认为 True**（`config_loader.py:697`），即使配置未声明。
+
+> **更正（P1 探测发现）**：此处原结论是"因为 `team_mode="predefined"` 在 build 时摘除全部 `spawn_*` 工具，MVP 名册仍封闭"——**这个结论是错的**。`predefined` 只摘除 4 个（`spawn_teammate`/`spawn_human_agent`/`spawn_bridge_agent`/`spawn_external_cli`，`agent_configurator.py:619-625`），而 `LEADER_TOOLS` 里有 **5** 个 spawn 工具：**`spawn_passive_human` 不在排除名单里**，它由 `enable_hitt` 门禁控制（`tool_factory.py:310-311`）。因此在 `enable_hitt=True`（链上默认）时就绪的 leader 仍持有 `spawn_passive_human`，R02 的"名册封闭"并不成立。适配层现在显式关闭该门禁，`validate_roster_closed` 也把这一类门禁纳入检查。详见 [p1/tool_gating_check.py](p1/tool_gating_check.py)。
 
 P0-B 第一部分（Spec 编译适配层）已执行：[app/config_adapter.py](app/config_adapter.py) 是应用侧第一个模块，把 `load_team_spec_dict` 的产物封装为 validated Spec，并显式补回配置链丢弃的 leader `desc`/`prompt`（`persona` 仅作 `desc` 的遗留后备）。[compile_spec_check.py](p0b/compile_spec_check.py) 19 项断言通过，详见 [compile_spec_results.json](p0b/compile_spec_results.json)。要点：编译器对调用方的 config 无副作用；`template_id` 选择与"首个模板优先"的默认行为与框架一致；无身份字段时保留框架默认而非写入空串。目录约定：`app/` 放应用实现，`p0a/`、`p0b/` 放对应阶段的验证脚本。
 
@@ -471,6 +474,14 @@ P0-D 第四部分（有限返工）已执行：[app/rework.py](app/rework.py) �
 
 返工**必须开新 execution**：这使上一次尝试的结果自动失效（Execution 账本在开新 execution 时超越旧的），于是旧结果的迟到提交会被拒。返工的正确性因此不需要额外机制，它落在已有的不变式上。[rework_check.py](p0d/rework_check.py) 14 项断言通过，详见 [rework_results.json](p0d/rework_results.json)。
 
+P1 第一部分（工具门禁）已执行：[p1/tool_gating_check.py](p1/tool_gating_check.py) 直接读上游的 `LEADER_TOOLS` 常量并施加上游的减法规则（`predefined` 的 exclude 列表、`enable_hitt` 等能力门禁），9 项断言通过，详见 [tool_gating_results.json](p1/tool_gating_results.json)。
+
+**这次探测发现了一个真实缺口，并更正了本文此前的一处错误结论**：leader 的 spawn 能力由**两条**机制分别控制，而 `predefined` 只覆盖其中一条。`team_mode="predefined"` 摘除 4 个（`spawn_teammate`/`spawn_human_agent`/`spawn_bridge_agent`/`spawn_external_cli`），但 `LEADER_TOOLS` 里有 **5** 个 spawn 工具——**`spawn_passive_human` 不在排除名单里**，它由 `enable_hitt` 门禁控制。由于链上 `enable_hitt` 默认为 True，就绪的 leader **仍持有 `spawn_passive_human`**，一个能 spawn 人类成员的 leader 依然可以扩大名册，"名册封闭"并不成立。
+
+修复：`compile_team_spec` 现在**显式**关闭 `enable_hitt` / `enable_bridge` / `enable_swarmflow` 并清空 `external_cli_agents`（MVP 不使用这些能力，见 D02），`validate_roster_closed` 也把这一类门禁纳入检查，因此"只设 `predefined` 就以为关好了"这类配置会被编译期拒绝。
+
+**仍未覆盖**：这验证的是**规则与编译产物**，不是**已挂载的活 agent**——rails 惰性注册，要读到真实挂载的工具集仍需跑一次 runtime。
+
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
 下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：
@@ -516,6 +527,7 @@ P0-D 第四部分（有限返工）已执行：[app/rework.py](app/rework.py) �
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.20 | R02、R13 | 启动 P1：验证 leader 的 spawn 工具门禁，发现 `predefined` 未覆盖 `spawn_passive_human`（由 `enable_hitt` 控制，而链上默认 True），适配层显式关闭该门禁并纳入 `validate_roster_closed`；更正 §13 中此前的错误结论 | 9 项断言通过；工具挂载仍需真实 runtime |
 | 2026-10-12 | 0.19 | R11 | 落地有限返工：最多一次、定向（依赖失败不返工）、返工开新 execution；审核后修字符串原因绕过守卫、fail-open 预算默认值、计数语义与判定顺序 | 18 项断言通过；P0-A~P0-D 退出条件至此全部达成；场景 3/7/10 与场景 2 运行时部分仍待 P1 |
 | 2026-10-12 | 0.18 | R01、R04、R08、R11 | 新增离线端到端验收链路，跑通 §12 的 7 个场景；审核后强制引用校验、补契约场景、去掉恒真断言与伪造用量 | 29 项断言通过；3 个场景因缺真实组件未跑，有限返工未实现 |
 | 2026-10-12 | 0.17 | R09、R11 | 落地统一预算：预留/结算/释放、最终汇总保留、无 provider 用量不记零成本；审核后修结算破坏账本、reserve 双重扣除、负数充值并补 deadline 闸门 | 34 项断言通过；P0-A~P0-D 离线部分至此全部落地 |

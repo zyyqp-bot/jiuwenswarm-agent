@@ -82,14 +82,23 @@ def leader_identity_overrides(leader_raw: dict[str, Any]) -> dict[str, Any]:
 def validate_roster_closed(spec: TeamAgentSpec) -> None:
     """Fail fast when the compiled spec does not hold the MVP roster invariant (R02).
 
-    Roster closure is a property of ``team_mode``, never of ``enable_hitt``.
-    Only ``"predefined"`` strips the leader's dynamic ``spawn_*`` tools;
-    ``team_mode=None`` derives to ``"hybrid"`` whenever ``predefined_members``
-    holds non-avatar members, which keeps ``spawn_member``. A config that merely
-    omits ``team_mode`` would therefore let the roster grow past three members.
+    Roster closure needs **every** capability gate shut, not just
+    ``team_mode="predefined"``. The leader's spawn tools are stripped by more
+    than one mechanism, and each keeps a different one alive:
 
-    ``enable_hitt`` is deliberately not checked: the loader defaults it to True
-    and, under ``predefined``, it does not reopen spawning.
+    - ``team_mode="predefined"`` removes four of them -- ``spawn_teammate``,
+      ``spawn_human_agent``, ``spawn_bridge_agent``, ``spawn_external_cli``
+      (``agent_configurator.py``);
+    - ``spawn_passive_human`` is **not** in that list. It is gated on
+      ``enable_hitt`` (``tool_factory.py``), so leaving HITT open keeps it, and
+      a leader that can spawn a human can still grow the roster;
+    - ``enable_bridge`` / ``external_cli_agents`` / ``enable_swarmflow`` gate
+      the remaining capability ceilings the same way.
+
+    Checking only ``team_mode`` was the earlier mistake: it reads as though the
+    roster is closed while ``spawn_passive_human`` remains callable. Note that
+    the loader defaults ``enable_hitt`` to True, so this must be closed
+    explicitly rather than assumed.
     """
     if spec.team_mode != "predefined":
         raise SpecCompilationError(
@@ -98,6 +107,21 @@ def validate_roster_closed(spec: TeamAgentSpec) -> None:
         )
     if not spec.predefined_members:
         raise SpecCompilationError("the MVP roster requires at least one predefined teammate")
+
+    kept_alive = {
+        "enable_hitt": spec.enable_hitt,
+        "enable_bridge": spec.enable_bridge,
+        "enable_swarmflow": spec.enable_swarmflow,
+        "external_cli_agents": bool(spec.external_cli_agents),
+    }
+    open_gates = [name for name, is_open in kept_alive.items() if is_open]
+    if open_gates:
+        raise SpecCompilationError(
+            "these capability gates keep a spawn tool alive even under "
+            f"team_mode='predefined': {', '.join(sorted(open_gates))}. "
+            "In particular enable_hitt keeps spawn_passive_human, which is not in the "
+            "predefined exclude list"
+        )
 
 
 def compile_team_spec(
@@ -118,6 +142,21 @@ def compile_team_spec(
     """
     spec_dict = load_team_spec_dict(config_base=config_base, template_id=template_id)
     spec = TeamAgentSpec.model_validate(spec_dict)
+
+    # The MVP uses none of these capabilities (PROJECT.md D02: inprocess,
+    # persistent, predefined, scheduled), and the loader's defaults are not
+    # neutral: ``enable_hitt`` defaults to True, which keeps
+    # ``spawn_passive_human`` callable even under ``team_mode="predefined"``
+    # because that tool is not in the predefined exclude list. R02 needs the
+    # roster closed, so the gates are shut here rather than inherited.
+    spec = spec.model_copy(
+        update={
+            "enable_hitt": False,
+            "enable_bridge": False,
+            "enable_swarmflow": False,
+            "external_cli_agents": [],
+        }
+    )
 
     leader_raw = _select_team_raw(config_base, template_id=template_id).get("leader")
     if isinstance(leader_raw, dict):
