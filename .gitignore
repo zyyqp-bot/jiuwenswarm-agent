@@ -17,6 +17,11 @@ project-data/
 # Framework log output from local probes/experiments
 logs/
 
+# Local model credentials for the live run. Never commit: this holds an API
+# key, and the live checks read it from the environment rather than from a
+# tracked file.
+.env.local
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -1,0 +1,13 @@
+{
+  "checks_passed": 0,
+  "checks_total": 1,
+  "checks": [
+    {
+      "check": "model credentials are available (from env or .env.local)",
+      "result": "fail",
+      "detail": "MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME"
+    }
+  ],
+  "scope": "one real round against a real provider; costs money and is non-deterministic",
+  "query": "用一句话说明：为什么在开始实现前要先核对源码版本？"
+}
