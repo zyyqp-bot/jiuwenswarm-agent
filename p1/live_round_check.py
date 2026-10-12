@@ -58,6 +58,43 @@ def _load_credentials() -> dict[str, str] | None:
     return values if all(values.values()) else None
 
 
+_BASE_CHECKS: list[dict] = []
+
+
+def _report(chunks: list[str], events: int, elapsed: float, *, final: bool) -> None:
+    """Write and print the round's result.
+
+    Called *from inside* the stream, and repeatedly. The framework terminates
+    the process with ``os._exit()`` when the team round ends, so nothing after
+    the loop is reachable and this cannot wait for it.
+    """
+    checks = Checks()
+    checks.items.extend(_BASE_CHECKS)
+
+    answer = "".join(chunks).strip()
+    checks.add(
+        "the round produced output",
+        bool(answer),
+        f"{events} chunks, {len(answer)} chars in {elapsed:.0f}s",
+    )
+    checks.add(
+        "the output is not an error message",
+        bool(answer) and not answer.lower().startswith(("error", "traceback")),
+        answer[:200].replace("\n", " ") if answer else "(empty)",
+    )
+    checks.write(
+        RESULTS_PATH,
+        scope="one real round against a real provider; costs money and is non-deterministic",
+        query=QUERY,
+        complete=final,
+    )
+    for item in checks.items:
+        mark = "PASS" if item["result"] == "pass" else "FAIL"
+        print(f"[{mark}] {item['check']}", flush=True)
+        if item["detail"]:
+            print(f"       {item['detail']}", flush=True)
+
+
 def _team_config(credentials: dict[str, str]) -> dict:
     """The MVP team, pointed at the caller's endpoint."""
     from compile_spec_check import build_config
@@ -84,76 +121,82 @@ def _team_config(credentials: dict[str, str]) -> dict:
     return config
 
 
-async def _run_round(checks: Checks) -> None:
+async def _run_round() -> None:
     from openjiuwen.core.runner.runner import Runner
 
     from app.config_adapter import compile_team_spec
 
     credentials = _load_credentials()
-    checks.add(
-        "model credentials are available (from env or .env.local)",
-        credentials is not None,
-        "MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME",
-    )
     if credentials is None:
         return
 
     spec = compile_team_spec(_team_config(credentials))
-    checks.add("the team spec compiles", spec.team_mode == "predefined", f"team_mode={spec.team_mode!r}")
+    _BASE_CHECKS.append(
+        {
+            "check": "the team spec compiles with team_mode='predefined'",
+            "result": "pass" if spec.team_mode == "predefined" else "fail",
+            "detail": f"team_mode={spec.team_mode!r}",
+        }
+    )
 
     started = time.monotonic()
     team = spec.build()
-    checks.add("the team builds", team is not None, f"built in {time.monotonic() - started:.1f}s")
+    _BASE_CHECKS.append(
+        {
+            "check": "the team builds",
+            "result": "pass" if team is not None else "fail",
+            "detail": f"built in {time.monotonic() - started:.1f}s",
+        }
+    )
 
     await Runner.start()
-    try:
-        # Runner accepts a bare session id string, so no session object is needed.
-        session_id = f"live-round-{int(time.time())}"
-        chunks: list[str] = []
-        events = 0
-        async for chunk in Runner.run_agent_team_streaming(
-            agent_team=spec, inputs={"query": QUERY}, session=session_id
-        ):
-            events += 1
-            text = getattr(chunk, "content", None) or getattr(chunk, "text", None)
-            if text:
-                chunks.append(str(text))
-        elapsed = time.monotonic() - started
 
-        answer = "\n".join(chunks).strip()
-        checks.add(
-            "the round produced output",
-            bool(answer),
-            f"{events} chunks, {len(answer)} chars in {elapsed:.0f}s",
-        )
-        checks.add(
-            "the output is not an error message",
-            bool(answer) and not answer.lower().startswith(("error", "traceback")),
-            answer[:200].replace("\n", " ") if answer else "(empty)",
-        )
-    finally:
-        await Runner.stop()
+    # Everything below happens inside the stream, and the report is written from
+    # inside it too. The framework tears the process down with os._exit() when
+    # the team round ends -- atexit does not run, finally does not run, and no
+    # statement after the loop is ever reached. Anything that has to survive
+    # the round must be persisted before the round finishes.
+    session_id = f"live-round-{int(time.time())}"
+    chunks: list[str] = []
+    events = 0
+    async for chunk in Runner.run_agent_team_streaming(
+        agent_team=spec, inputs={"query": QUERY}, session=session_id
+    ):
+        events += 1
+        text = getattr(chunk, "content", None) or getattr(chunk, "text", None)
+        if text:
+            chunks.append(str(text))
+        if chunks and events % 5 == 0:
+            _report(checks, chunks, events, time.monotonic() - started, final=False)
+
+    _report(checks, chunks, events, time.monotonic() - started, final=True)
 
 
 def main() -> int:
-    checks = Checks()
-    try:
-        asyncio.run(_run_round(checks))
-    except Exception as exc:
-        checks.add("the round ran to completion", False, f"{type(exc).__name__}: {exc}")
-
-    checks.write(
-        RESULTS_PATH,
-        scope="one real round against a real provider; costs money and is non-deterministic",
-        query=QUERY,
+    credentials = _load_credentials()
+    _BASE_CHECKS.append(
+        {
+            "check": "model credentials are available (from env or .env.local)",
+            "result": "pass" if credentials is not None else "fail",
+            "detail": "MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME",
+        }
     )
-    for item in checks.items:
-        mark = "PASS" if item["result"] == "pass" else "FAIL"
-        print(f"[{mark}] {item['check']}")
-        if item["detail"]:
-            print(f"       {item['detail']}")
-    print(f"\n-> {RESULTS_PATH}")
-    return 1 if checks.failed else 0
+    if credentials is None:
+        _report([], 0, 0.0, final=True)
+        return 1
+
+    try:
+        asyncio.run(_run_round())
+    except Exception as exc:
+        _BASE_CHECKS.append(
+            {"check": "the round raised", "result": "fail", "detail": f"{type(exc).__name__}: {exc}"}
+        )
+        _report([], 0, 0.0, final=True)
+        return 1
+    # Reaching here means the framework did *not* tear the process down; the
+    # final report has already been written from inside the stream.
+    print("-> the round returned control; see the results file", flush=True)
+    return 0
 
 
 if __name__ == "__main__":

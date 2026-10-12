@@ -35,6 +35,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-E 端到端验收（离线） | 已执行：`p0e/e2e_check.py` 串联 §12 的 7 个场景，29 项断言通过；3 个场景因缺真实组件未跑 |
 | P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，18 项断言通过 |
 | P1 活工具集 | 已执行：`p1/live_tool_surface_check.py`，从真实构造的 team 读出 rail 自身的参数并物化 leader 工具集，对照实验证实缺口与修复，9 项断言通过 |
+| P1 真实回合 | 跑通：真实端点 + Runner，Leader 完成一轮（`tool_count=29`、安全 rail 与 checkpoint 均生效）；发现框架回合末以 `os._exit()` 终止进程，状态必须在流内落盘 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -183,6 +184,8 @@ project-data/
 10. **验收与返工**：关键任务设置 reviewer；reviewer 不能是作者。结构性验收由程序完成，语义评价由 reviewer/Leader 完成。最多一次业务返工，框架内部重试也计入总预算。不能只依靠 enable_task_verification。
 11. **汇总**：Aggregator 按 acceptance_id 合并有效成果，保留未解决冲突；Leader 确认。complete 必须所有必选条件 pass；否则返回 partial/failed 并列出缺失。
 12. **最终交付与记忆**：先保存最终结果，再返回用户；框架轮末提取仍使用既有路径。应用观察提取结果，不在正常交付路径再调用第二次 extractor。提取失败不能撤销已保存结果。
+
+> **实测限制（P1，2026-10-12）**：真实 runtime 下**没有"返回用户"这一步可以落脚**。团队回合结束时框架以 `os._exit()` 直接终结进程——`atexit` 不执行、`finally` 不执行、`run_agent_team_streaming` 循环之后的任何语句都不可达（诊断见 §13）。因此"先保存、后返回"必须改写为**在流处理过程中增量落盘**：应用要在收到流输出的当时就把结果与状态写下去，不能排到回合之后。这条约束离线链路完全无法暴露，只有真实 Runner 才会显现。
 
 依赖示例：Research 的“事实与框架能力”任务作为 Engineering 的“最终方案”前置；Engineering 的独立接口草案可以并行。最终方案依赖的是通过校验的事实产物，不是仅收到一条完成消息。
 
@@ -486,7 +489,16 @@ P1 第二部分（活工具集）已执行：[p1/live_tool_surface_check.py](p1/
 
 结尾的**对照实验**是这条断言的支点：同一路径、同一 `predefined`、同一份配置，只把 `enable_hitt` 还原成修复前的值再 build 一次（并换一个 `team_name`，避免第二次 build 覆盖第一次的进程级资源 id），`spawn_passive_human` 就出现了。两次构建的工具集**恰好相差这一个工具**，因此"是谁摘掉了它"是测量出来的——不是 `team_mode`，而是那个门禁。
 
-首轮实现经代码审核后重写：它虽然从真实 team 上读排除列表，却**硬编码了 role/modes**（与自身 docstring 的"不转述源码"相矛盾），另一个配套脚本则**手抄了上游规则且只抄到 4 条中的 2 条**，得出一个错误的结论并配了一条恒真的断言。现在两个脚本合并为一个，规则只从框架读取。**仍未执行**：真实的一个回合（run）——工具集是从构造好的 team 上物化的，但没有 invoke 过任何一轮。
+首轮实现经代码审核后重写：它虽然从真实 team 上读排除列表，却**硬编码了 role/modes**（与自身 docstring 的"不转述源码"相矛盾），另一个配套脚本则**手抄了上游规则且只抄到 4 条中的 2 条**，得出一个错误的结论并配了一条恒真的断言。现在两个脚本合并为一个，规则只从框架读取。
+
+P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 venv 中用真实端点（`deepseek-flash` @ `api.deepseek.com`，OpenAI 兼容）启动 `Runner`，把编译好的 spec 交给 `Runner.run_agent_team_streaming`，Leader 完成一轮并回到 idle。两次独立运行的日志都确认：`[LLM] >>> request: msg_count=2, tool_count=29`、`[BaseSecurityRail] get_user_input`、`checkpoint_save ... success`、`[OuterLoop] iteration=1 ... completed`、`[team_leader] team went idle`。凭据从环境变量或 git-ignored 的 `.env.local` 读取，脚本从不打印它们。
+
+**这次真实运行给出两条离线阶段拿不到的事实**：
+
+1. **框架在回合结束时直接终止进程**。诊断脚本打印 `MARK_1/2` 后即消失，且注册的 `atexit` 处理函数**也没有执行**——说明是 `os._exit()` 一类调用，绕过了 Python 的全部清理。影响见 §6 步骤 12 的实测限制：**状态必须在流处理过程中落盘**，"回合之后再保存"在真实 runtime 下没有落脚点。
+2. **真实挂载的工具是 29 个**，而此前从 rail 参数物化出的是 10 个 team 工具，差集是 harness 自带能力（shell、文件等）。也就是说 [live_tool_surface_check.py](p1/live_tool_surface_check.py) 验证的是 **team 工具面**，不是 Leader 面前的完整工具面——这一点此前未说明，现已写明。
+
+**仍未完成**：脚本级的断言收集。`os._exit()` 使"流结束后写结果"不可能，脚本已改为在流内落盘（`_report` 在收到内容时调用），但**该版本尚未跑完验证**（用户在验证中途要求停止）。
 
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
@@ -533,6 +545,7 @@ P1 第二部分（活工具集）已执行：[p1/live_tool_surface_check.py](p1/
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.22 | R01、R06 | 跑通真实回合：真实端点 + Runner，Leader 完成一轮；发现回合末 `os._exit()`，改写"先保存后返回"为流内落盘；记录真实工具数 29 与物化 10 的差异 | 回合跑通；脚本级断言收集未跑完 |
 | 2026-10-12 | 0.21 | R02 | 从真实构造的 team 上验证 leader 工具集：读 rail 自身参数物化工具集，对照实验证实 `enable_hitt` 是缺口来源；审核后合并两个脚本并去掉硬编码与手抄规则 | 9 项断言通过；真实回合仍未跑 |
 | 2026-10-12 | 0.20 | R02、R13 | 启动 P1：验证 leader 的 spawn 工具门禁，发现 `predefined` 未覆盖 `spawn_passive_human`（由 `enable_hitt` 控制，而链上默认 True），适配层显式关闭该门禁并纳入 `validate_roster_closed`；更正 §13 中此前的错误结论 | 9 项断言通过；工具挂载仍需真实 runtime |
 | 2026-10-12 | 0.19 | R11 | 落地有限返工：最多一次、定向（依赖失败不返工）、返工开新 execution；审核后修字符串原因绕过守卫、fail-open 预算默认值、计数语义与判定顺序 | 18 项断言通过；P0-A~P0-D 退出条件至此全部达成；场景 3/7/10 与场景 2 运行时部分仍待 P1 |
