@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.16 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B、P0-C 已落地，P0-D 进行中（Aggregator、事件投影）。
+版本：0.17 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A~P0-D 的离线部分全部落地。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -31,6 +31,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-C 引用校验 | 已执行：`app/citations.py`，事实结论必须引用该任务实际收到的证据，15 项断言通过 |
 | P0-D Aggregator | 已执行：`app/aggregator.py`，确定性模板汇总 + 覆盖/限制报告，22 项断言通过 |
 | P0-D 事件投影 | 已执行：`app/events.py`，按稳定键去重登记，绝不使用接收时间，19 项断言通过 |
+| P0-D 统一预算 | 已执行：`app/budget.py`，预留/结算/释放、最终汇总保留、deadline 闸门，34 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -442,12 +443,19 @@ P0-D 第二部分（事件投影）已执行：[app/events.py](app/events.py) �
 
 [events_check.py](p0d/events_check.py) 19 项断言通过，详见 [events_results.json](p0d/events_results.json)。
 
+P0-D 第三部分（统一预算）已执行：[app/budget.py](app/budget.py) 实现 §10 的三条规则：**调用前预留、返回后结算、失败释放**。预留制使"先查余额再调用"不再是两个可交错的步骤——两个成员不可能同时花掉最后一笔预算；**最终汇总预留**（`finalization_reserve_tokens`）对普通工作不可见，只有标记 `finalization=True` 的预留能动用，避免一轮把预算全花在工作上而无法汇总。
+
+**没有 provider 用量的调用不记为免费**：不提供 token 数时按预留的估计结算，`quality` 记为 `unknown`；声明 `quality="provider"` 却不给用量会被拒绝。`usage_quality()` 返回**整轮最弱的一档**——一轮的可信度取决于测量最差的那次调用，多数调用有精确计量就报 `provider` 会高估账本。所有方法都是无 `await` 的同步临界区，因此在单线程 asyncio 中"检查并预留"不会被其它协程插入。
+
+代码审核修复五处真缺陷：**（a）`settle()` 在校验之前就消费了预留**——参数错误的一笔结算会静默释放预算，余额跳回、别的成员可以再花一次；现改为先校验再消费，被拒的结算不改变账本。**（b）finalization reserve 被双重扣除**——预留既从共享池里减、又被当作普通消耗再减一次，导致"先预留哪一类"决定成败、普通工作被拒绝本该属于它的预算；现两个池**分开记账**。**（c）负数完全不校验**——`reserve(tokens=-1000)` 能通过检查并把可用额度翻倍，`settle(tokens=-500)` 同理；负数不是消耗而是充值，现一律拒绝。另修：构造参数不得为负；`quality` 必须取自已知集合（此前 `"PROVIDER"` 会被静默降级为 `unknown`，把一次全程精确计量的 run 低报成未计量）；结算超过预留时不再把余额悄悄压负，而是由 `is_overrun` 明确暴露；并补上 §10 要求的 **deadline 闸门**（`reserve` 在截止后拒绝新工作，`clock` 可注入以便测试）。
+
+[budget_check.py](p0d/budget_check.py) 34 项断言通过，详见 [budget_results.json](p0d/budget_results.json)。
+
 下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：
 
 - 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
 - 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
 - §7.1 的"压缩后再次计算最终请求预算"：原生上下文 rail 压缩历史后，由调用方重跑 `ContextBuilder.build` 并按压缩结果更新 `fixed_overhead_tokens`（本模块不感知 rail，见 §7.1、D07）
-- 统一 BudgetManager：调用前原子预留、返回后结算、为最终汇总保留预算（§10）
 
 与真实 runtime 绑定的部分——工具挂载验证、`run`/`snapshot`/`pause`/`cancel`/`reconcile` 表面、真实模型集成——属 P1。
 
@@ -486,6 +494,7 @@ P0-D 第二部分（事件投影）已执行：[app/events.py](app/events.py) �
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.17 | R09、R11 | 落地统一预算：预留/结算/释放、最终汇总保留、无 provider 用量不记零成本；审核后修结算破坏账本、reserve 双重扣除、负数充值并补 deadline 闸门 | 34 项断言通过；P0-A~P0-D 离线部分至此全部落地 |
 | 2026-10-12 | 0.16 | R11 | 落地事件去重投影：稳定键优先、实体+转换数据次之、接收时间绝不参与；快照回放对账；审核后补 payload 稳定摘要、按 run 作用域、坏行跳过与 `entity_id` 字段 | 19 项断言通过；统一预算未做 |
 | 2026-10-12 | 0.15 | R08 | 启动 P0-D：落地 Aggregator（确定性模板汇总、结论判定与限制报告）；审核后补未验证 claim 改标、全失败判负、`cancelled`、`usage` 与空白过滤 | 22 项断言通过；事件去重投影与统一预算未做 |
 | 2026-10-12 | 0.14 | R03、R08 | 落地引用校验：事实须引用该任务实际收到的证据，被预算裁剪的证据不算支撑；审核后给 `TaskResult` 补 `claims`、修空白 id 绕过 | 15 项断言通过 |

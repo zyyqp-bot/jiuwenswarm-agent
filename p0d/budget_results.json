@@ -1,0 +1,178 @@
+{
+  "checks_passed": 34,
+  "checks_total": 34,
+  "checks": [
+    {
+      "check": "a fresh budget reports everything available",
+      "result": "pass",
+      "detail": "calls=5 tokens=1000"
+    },
+    {
+      "check": "a reservation reduces what is available",
+      "result": "pass",
+      "detail": "calls=4 tokens=900"
+    },
+    {
+      "check": "a reservation is not yet usage",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a second reservation cannot take budget already held",
+      "result": "pass",
+      "detail": "reserving 1 call(s) would exceed the budget: 0 remaining"
+    },
+    {
+      "check": "a reservation covering no calls is refused",
+      "result": "pass",
+      "detail": "a reservation must cover at least one call"
+    },
+    {
+      "check": "settling charges what the call actually used, not what was reserved",
+      "result": "pass",
+      "detail": "tokens_remaining=920"
+    },
+    {
+      "check": "settling twice on one reservation is refused",
+      "result": "pass",
+      "detail": "\"no open reservation 'res-1'\""
+    },
+    {
+      "check": "a provider-quality settlement without a figure is refused",
+      "result": "pass",
+      "detail": "a provider-quality settlement must supply the provider's token count"
+    },
+    {
+      "check": "the refused settlement leaves the ledger exactly as it was",
+      "result": "pass",
+      "detail": "tokens=700 calls=4"
+    },
+    {
+      "check": "the reservation is still open and settles normally afterwards",
+      "result": "pass",
+      "detail": "tokens_remaining=900"
+    },
+    {
+      "check": "settling an unknown reservation is refused",
+      "result": "pass",
+      "detail": "\"no open reservation 'res-nope'\""
+    },
+    {
+      "check": "releasing returns the reservation to the pool",
+      "result": "pass",
+      "detail": "before=870 after=920"
+    },
+    {
+      "check": "a released reservation is not usage",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "releasing an unknown reservation is refused",
+      "result": "pass",
+      "detail": "\"no open reservation 'res-nope'\""
+    },
+    {
+      "check": "a reservation cannot hold a negative token count",
+      "result": "pass",
+      "detail": "a reservation cannot hold a negative token count"
+    },
+    {
+      "check": "a negative finalization reserve is refused",
+      "result": "pass",
+      "detail": "the finalization reserve must be between 0 and the whole token budget"
+    },
+    {
+      "check": "a negative call ceiling is refused",
+      "result": "pass",
+      "detail": "max_model_calls cannot be negative"
+    },
+    {
+      "check": "a negative settled count is refused rather than credited",
+      "result": "pass",
+      "detail": "a settled token count cannot be negative"
+    },
+    {
+      "check": "the refused negative settlement left the reservation open",
+      "result": "pass",
+      "detail": "tokens_remaining=990"
+    },
+    {
+      "check": "an unrecognised usage quality is refused, not silently downgraded",
+      "result": "pass",
+      "detail": "unknown usage quality 'PROVIDER'; expected one of ('provider', 'estimated', 'unknown')"
+    },
+    {
+      "check": "a call with no provider figure settles at its estimate, never at zero",
+      "result": "pass",
+      "detail": "tokens=[80, 200, 70]"
+    },
+    {
+      "check": "an unmeasured call is labelled unknown rather than provider",
+      "result": "pass",
+      "detail": "quality=unknown"
+    },
+    {
+      "check": "the run's quality is as weak as its weakest call",
+      "result": "pass",
+      "detail": "usage_quality=unknown"
+    },
+    {
+      "check": "a run mixing provider and estimated measurement reports the weaker",
+      "result": "pass",
+      "detail": "estimated"
+    },
+    {
+      "check": "a full ordinary share and the reserve can both be held (finalization first)",
+      "result": "pass",
+      "detail": "ordinary_remaining=0 finalization_remaining=0"
+    },
+    {
+      "check": "a full ordinary share and the reserve can both be held (ordinary first)",
+      "result": "pass",
+      "detail": "ordinary_remaining=0 finalization_remaining=0"
+    },
+    {
+      "check": "ordinary work does not see the finalization reserve",
+      "result": "pass",
+      "detail": "tokens_remaining=800"
+    },
+    {
+      "check": "ordinary work cannot spend past its share",
+      "result": "pass",
+      "detail": "reserving 900 token(s) would exceed the ordinary budget: 800 available"
+    },
+    {
+      "check": "finalization work cannot spend past the reserve",
+      "result": "pass",
+      "detail": "reserving 201 token(s) would exceed the finalization budget: 200 available"
+    },
+    {
+      "check": "a reserve larger than the whole budget is refused at construction",
+      "result": "pass",
+      "detail": "the finalization reserve must be between 0 and the whole token budget"
+    },
+    {
+      "check": "a settlement larger than its reservation surfaces as an overrun",
+      "result": "pass",
+      "detail": "tokens_remaining=-400 is_overrun=True"
+    },
+    {
+      "check": "work may reserve before the deadline",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "work is refused once the deadline has passed (section 10)",
+      "result": "pass",
+      "detail": "the run's deadline (2026-10-12T11:59:59+00:00) has passed"
+    },
+    {
+      "check": "a run with no deadline is never refused for time",
+      "result": "pass",
+      "detail": ""
+    }
+  ],
+  "scope": "pure budget ledger; no framework, no Runner, no model",
+  "note": "every method is await-free, so check-then-reserve is atomic under asyncio"
+}
