@@ -1,16 +1,31 @@
 {
-  "checks_passed": 6,
-  "checks_total": 6,
+  "checks_passed": 9,
+  "checks_total": 9,
   "checks": [
     {
-      "check": "the built team's tool rail is reachable and declares an exclude list",
+      "check": "the built team exposes a tool rail",
+      "result": "pass",
+      "detail": "TeamToolRail found on the leader's deep agent"
+    },
+    {
+      "check": "the rail was configured for the mode the spec asked for",
+      "result": "pass",
+      "detail": "team_mode='predefined' dispatch_mode='scheduled'"
+    },
+    {
+      "check": "the exclude list the framework actually applied has four entries",
       "result": "pass",
       "detail": "exclude=['spawn_bridge_agent', 'spawn_external_cli', 'spawn_human_agent', 'spawn_teammate']"
     },
     {
-      "check": "the exclude list the framework actually applied omits spawn_passive_human",
+      "check": "and it omits spawn_passive_human",
       "result": "pass",
       "detail": "this is why team_mode alone could not close the roster"
+    },
+    {
+      "check": "the leader's own tool set contains five spawn tools",
+      "result": "pass",
+      "detail": "spawn=['spawn_bridge_agent', 'spawn_external_cli', 'spawn_human_agent', 'spawn_passive_human', 'spawn_teammate']"
     },
     {
       "check": "the leader of the compiled MVP spec holds no spawn tool at all",
@@ -23,18 +38,18 @@
       "detail": "tools=['async_task_cancel', 'async_task_output', 'async_tasks_list', 'build_team', 'create_task', 'group_send_message', 'send_message', 'shutdown_member', 'update_task', 'view_task']"
     },
     {
-      "check": "with the HITT gate left open the same build keeps spawn_passive_human",
+      "check": "with the HITT gate left open the same path keeps spawn_passive_human",
       "result": "pass",
       "detail": "spawn=['spawn_passive_human']"
     },
     {
-      "check": "so closing that gate is what removes it, not team_mode",
+      "check": "so closing that gate is what removed it, not team_mode",
       "result": "pass",
       "detail": "the two builds differ by exactly the leaked tool"
     }
   ],
   "scope": "real TeamAgent construction and tool materialisation; no model call, no run",
   "not_run": [
-    "a run: the tools are materialised from the built team's rail, but no round was ever invoked"
+    "an actual round: the tools are materialised from a built team, but nothing was ever invoked"
   ]
 }
