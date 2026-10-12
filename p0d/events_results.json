@@ -1,0 +1,102 @@
+{
+  "checks_passed": 19,
+  "checks_total": 19,
+  "checks": [
+    {
+      "check": "the first event is registered with sequence 1",
+      "result": "pass",
+      "detail": "seq=1"
+    },
+    {
+      "check": "the same framework event delivered again is not registered twice",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a redelivery does not advance the sequence",
+      "result": "pass",
+      "detail": "last_seq=1"
+    },
+    {
+      "check": "an event without a framework id de-duplicates on entity plus transition data",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a different transition of the same entity is a new event",
+      "result": "pass",
+      "detail": "last_seq=2"
+    },
+    {
+      "check": "the same transition of a different entity is a new event",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "the registered event carries its entity id as a field",
+      "result": "pass",
+      "detail": "entity_id='t1'"
+    },
+    {
+      "check": "the same entity and transition in another run is a different event",
+      "result": "pass",
+      "detail": "framework ids and entity ids are only unique within a run"
+    },
+    {
+      "check": "an event redelivered later is still the same event",
+      "result": "pass",
+      "detail": "arrival time is not part of the dedup key"
+    },
+    {
+      "check": "an event with neither identifier is refused rather than keyed by arrival",
+      "result": "pass",
+      "detail": "event of type 'task.updated' carries neither a framework event id nor an entity id; its redeliveries cannot be distinguished"
+    },
+    {
+      "check": "a payload that cannot digest stably is refused instead of hashed per process",
+      "result": "pass",
+      "detail": "event payload must be JSON-serialisable to be de-duplicated stably: Object of type set is not JSON serializable"
+    },
+    {
+      "check": "an event identified only by a payload reference de-duplicates on that reference",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "sequences are handed out in order",
+      "result": "pass",
+      "detail": "seqs=[1, 2, 3]"
+    },
+    {
+      "check": "event ids embed the run and the sequence",
+      "result": "pass",
+      "detail": "run-1:1"
+    },
+    {
+      "check": "rebuilding from a snapshot registers only what was missed",
+      "result": "pass",
+      "detail": "added=2 skipped=() last_seq=3"
+    },
+    {
+      "check": "replaying the same snapshot again adds nothing",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a recovered event is registered now, so its sequence is the registration order",
+      "result": "pass",
+      "detail": "seqs=[1, 2, 3]"
+    },
+    {
+      "check": "an unusable snapshot row is skipped, and the rows after it are still recovered",
+      "result": "pass",
+      "detail": "added=2 skipped=1"
+    },
+    {
+      "check": "the skipped row is reported with a reason",
+      "result": "pass",
+      "detail": "event of type 'task.orphan' carries neither a framework event id nor an entity id; its redeliveries cannot be distinguished"
+    }
+  ],
+  "scope": "pure event projection; no framework, no Runner, no model"
+}

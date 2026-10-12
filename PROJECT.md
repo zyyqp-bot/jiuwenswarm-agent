@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.15 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B、P0-C 已落地，P0-D 启动（Aggregator）。
+版本：0.16 · 更新日期：2026-10-12（Asia/Shanghai）· 阶段：源码核对与设计完成；P0-A、P0-B、P0-C 已落地，P0-D 进行中（Aggregator、事件投影）。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -30,6 +30,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-C ContextBuilder | 已执行：`app/context.py`，预算计算、不可压缩部分、证据裁剪与估算标注，22 项断言通过 |
 | P0-C 引用校验 | 已执行：`app/citations.py`，事实结论必须引用该任务实际收到的证据，15 项断言通过 |
 | P0-D Aggregator | 已执行：`app/aggregator.py`，确定性模板汇总 + 覆盖/限制报告，22 项断言通过 |
+| P0-D 事件投影 | 已执行：`app/events.py`，按稳定键去重登记，绝不使用接收时间，19 项断言通过 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -139,7 +140,7 @@ flowchart TD
 | TaskResult | task_id, execution_id, outcome[success/partial/error], claims[text,kind,evidence_ids], artifact_refs, acceptance_checks, unresolved, error |
 | Artifact | artifact_id, run_id, task_id, execution_id, path, hash, media_type, created_at |
 | AcceptanceCheck | acceptance_id, result[pass/fail/unknown], verifier, evidence_refs, diagnostic |
-| RunEvent | event_id, seq, run_id, session_id, framework_event_ref, type, payload_ref, observed_at |
+| RunEvent | event_id, seq, run_id, session_id, framework_event_ref, entity_id, dedup_key, type, payload_ref, observed_at |
 | FinalResult | run_id, outcome[complete/partial/failed/cancelled], answer, acceptance_checks, evidence_refs, artifact_refs, limitations, usage |
 | Budget | max_model_calls, max_tokens, deadline_at, spent, reserved, finalization_reserve, usage_quality[provider/estimated/unknown] |
 
@@ -433,9 +434,16 @@ P0-D 第一部分（Aggregator）已执行：[app/aggregator.py](app/aggregator.
 
 [aggregator_check.py](p0d/aggregator_check.py) 22 项断言通过，详见 [aggregator_results.json](p0d/aggregator_results.json)。
 
-下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已启动（Aggregator）；剩余：
+P0-D 第二部分（事件投影）已执行：[app/events.py](app/events.py) 实现 §5 的去重投影。去重键的优先级：框架给出的稳定 event id 优先；没有时用「事件类型 + 实体标识 + 转换数据的规范化摘要」——同一转换重投哈希相同，同一实体的**新**转换哈希不同。**接收时间绝不参与键的构造**：按时间生成的键不只是去重失败，而是每重投一次就凭空造出一个新事件，且与真实事件在下游看来完全无法区分。无法构造稳定键的事件直接抛 `ProjectionError`，而不是退化成按时间登记。
 
-- 事件去重投影：框架事件按稳定键去重登记，无法取得稳定 event_id 时用已知实体标识与转换数据构造去重键，不按接收时间生成"唯一新事件"（§5）
+`rebuild_from_snapshot` 对应 §5 的恢复路径：事件可能丢失，所以对账的是框架自己的任务快照——把快照喂回同一套去重键，已到过的事件不会重复登记，丢失的会被补上，重复回放同一快照新增为零。代码审核修复四处真缺陷：**（a）`json.dumps(..., default=str)` 会让同一事件在不同进程里哈希不同**——`str(set)` 的顺序受 Python 哈希随机化影响（实测同一 payload 五次运行得到五个摘要），跨进程重投就会凭空造事件，正是本模块要防的事；现要求 payload 可 JSON 序列化，不可则抛 `ProjectionError`。**（b）快照中一条无标识记录会中断整个恢复**——异常从中途抛出，投影半重建、其后的事件再也捞不回来；现改为跳过并计入 `RebuildResult.skipped`。**（c）去重键漏了 `run_id`**——框架 event id 只在框架自己的序列内唯一、实体 id 只在 run 内唯一，一个 `EventProjection` 被跨 run 复用时会把另一个 run 的事件静默吞掉；键现已按 run 作用域。**（d）`RunEvent` 未存 `entity_id`**——需要按实体重建时间线的调用方只能去拆 `dedup_key` 字符串，而实体 id 本身可能含分隔符；现作为独立字段保存。
+
+另：`events()` 的语义明确为**登记顺序**——快照补回的事件会获得新的（更大的）`seq`，它不是发生顺序，`observed_at` 才记录何时被看到；`payload_ref` 现参与键构造，使只用引用标识事件的产生方也能去重（但同一次事件不能一次用内联 payload、一次用引用，两种摘要不同）。
+
+[events_check.py](p0d/events_check.py) 19 项断言通过，详见 [events_results.json](p0d/events_results.json)。
+
+下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：
+
 - 真实 embedding 向量检索，以及与关键词路径的 RRF 双路融合（当前只有关键词一路，融合函数已就位）
 - 资料导入的文件解析（当前 `add_document` 直接接收文本；PDF/DOCX 解析未接）
 - §7.1 的"压缩后再次计算最终请求预算"：原生上下文 rail 压缩历史后，由调用方重跑 `ContextBuilder.build` 并按压缩结果更新 `fixed_overhead_tokens`（本模块不感知 rail，见 §7.1、D07）
@@ -478,6 +486,7 @@ P0-D 第一部分（Aggregator）已执行：[app/aggregator.py](app/aggregator.
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-12 | 0.16 | R11 | 落地事件去重投影：稳定键优先、实体+转换数据次之、接收时间绝不参与；快照回放对账；审核后补 payload 稳定摘要、按 run 作用域、坏行跳过与 `entity_id` 字段 | 19 项断言通过；统一预算未做 |
 | 2026-10-12 | 0.15 | R08 | 启动 P0-D：落地 Aggregator（确定性模板汇总、结论判定与限制报告）；审核后补未验证 claim 改标、全失败判负、`cancelled`、`usage` 与空白过滤 | 22 项断言通过；事件去重投影与统一预算未做 |
 | 2026-10-12 | 0.14 | R03、R08 | 落地引用校验：事实须引用该任务实际收到的证据，被预算裁剪的证据不算支撑；审核后给 `TaskResult` 补 `claims`、修空白 id 绕过 | 15 项断言通过 |
 | 2026-10-12 | 0.13 | R06 | 落地 ContextBuilder：输入预算、不可压缩部分、证据裁剪与估算标注；审核后补 acceptance 计入预算、韩文估算、固定开销与按相关性截断 | 22 项断言通过；历史压缩按 D07 归原生 rail，向量检索与文件解析未做 |
