@@ -1,0 +1,158 @@
+{
+  "checks_passed": 29,
+  "checks_total": 29,
+  "checks": [
+    {
+      "check": "scenario 1: the research -> engineering plan validates",
+      "result": "pass",
+      "detail": "[]"
+    },
+    {
+      "check": "scenario 1: research produces a result whose claims cite the evidence it received",
+      "result": "pass",
+      "detail": "citations all resolved"
+    },
+    {
+      "check": "scenario 1: the dependent task runs once its prerequisite has a valid artifact",
+      "result": "pass",
+      "detail": "citations all resolved"
+    },
+    {
+      "check": "scenario 2: an independent task needs no prerequisite",
+      "result": "pass",
+      "detail": "citations all resolved"
+    },
+    {
+      "check": "scenario 2: the harness never took a spawn path (config roster unchanged)",
+      "result": "pass",
+      "detail": "config-level only; runtime roster maintenance needs a live Runner (P1)"
+    },
+    {
+      "check": "scenario 1: task-research passes the completion gate",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 1: task-engineering passes the completion gate",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 1: the run delivers complete with evidence and artifacts attached",
+      "result": "pass",
+      "detail": "outcome=complete evidence=2 artifacts=('artifact://task-research', 'artifact://task-engineering')"
+    },
+    {
+      "check": "scenario 8: the durable record holds every accepted result",
+      "result": "pass",
+      "detail": "stored=['task-engineering', 'task-independent', 'task-research']"
+    },
+    {
+      "check": "the deliverable's usage is not claimed as provider-measured (no provider was contacted)",
+      "result": "pass",
+      "detail": "quality=unknown"
+    },
+    {
+      "check": "scenario 5: the dependent task is blocked by the gate even though the edge resolved",
+      "result": "pass",
+      "detail": "blocked: dependency_failed at task-research"
+    },
+    {
+      "check": "scenario 5: the cancelled prerequisite cannot be accepted as complete",
+      "result": "pass",
+      "detail": "outcome_not_success"
+    },
+    {
+      "check": "scenario 6: a key task without a reviewer is refused by the plan validator",
+      "result": "pass",
+      "detail": "[<PlanIssueCode.MISSING_REVIEWER: 'missing_reviewer'>]"
+    },
+    {
+      "check": "scenario 6: an unsuccessful result cannot complete the task",
+      "result": "pass",
+      "detail": "outcome_not_success"
+    },
+    {
+      "check": "scenario 4: the authorised scope finds the material",
+      "result": "pass",
+      "detail": "hits=1"
+    },
+    {
+      "check": "scenario 4: another scope finds nothing, so no unauthorised text can reach a model",
+      "result": "pass",
+      "detail": "hits=0"
+    },
+    {
+      "check": "scenario 8: a repeated event is not registered twice",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 8: the accepted result survives a restart",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 8: a re-dispatched task does not read as complete off the old result",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 8: a late result from the superseded execution is refused",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "scenario 8: the superseded execution stays in the history, so the trail is auditable",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "a result whose claim cites evidence the task never had is refused before submission",
+      "result": "pass",
+      "detail": "[<CitationIssueCode.UNKNOWN_EVIDENCE: 'unknown_evidence'>]"
+    },
+    {
+      "check": "an unsupported claim reaches the deliverable relabelled, not as a fact",
+      "result": "pass",
+      "detail": "## task-research (success) | - [fact] research 的结论 | - [unverified] 无依据的断言"
+    },
+    {
+      "check": "its fabricated evidence stays out of the deliverable's evidence list",
+      "result": "pass",
+      "detail": "evidence_refs=('docs%2Fresearch.md:r1:0:c2fc119a4e82',)"
+    },
+    {
+      "check": "evidence trimmed away by the context budget is reported as a limitation",
+      "result": "pass",
+      "detail": "('unsupported claim: 无依据的断言', 'evidence not available: ev-trimmed')"
+    },
+    {
+      "check": "scenario 9: the first task fits the budget",
+      "result": "pass",
+      "detail": "citations all resolved"
+    },
+    {
+      "check": "scenario 9: once the budget is gone, no further work starts",
+      "result": "pass",
+      "detail": "budget refused: reserving 1 call(s) would exceed the budget: 0 remaining"
+    },
+    {
+      "check": "scenario 9: the finalization reserve survived the ordinary work",
+      "result": "pass",
+      "detail": "finalization_remaining=500"
+    },
+    {
+      "check": "scenario 9: the run delivers a bounded partial rather than claiming success",
+      "result": "pass",
+      "detail": "outcome=partial limitations=('acceptance acc-task-engineering is missing',)"
+    }
+  ],
+  "scope": "offline end-to-end acceptance; no framework runtime, no model, no network",
+  "not_run": [
+    "scenario 3 (embedding failure -> keyword_only): needs an embedding provider",
+    "scenario 7 (long tool chain, compression recall): needs the framework context rail",
+    "scenario 10 (memory writers): team and member memory are not wired",
+    "scenario 2's runtime half: keeping the roster at three during execution needs a live Runner"
+  ]
+}
