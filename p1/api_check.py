@@ -51,7 +51,12 @@ class FakeRunService:
             phase="returned",
             stop_reason="team_completed",
             seq=1,
-            snapshot={"phase": "returned", "complete": True, "results": {"research": {}}},
+            snapshot={
+                "phase": "returned",
+                "complete": True,
+                "results": {"research": {}},
+                "results_path": "/data/runs/x/results.json",
+            },
             terminal=True,
         )
         self.records[record.run_id] = record
@@ -192,9 +197,18 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             "the run detail never leaks a pid, credentials or the data directory",
             detail.status_code == 200
             and "process_pid" not in body
+            and "results_path" not in body
             and "api_key" not in body.lower()
             and str(data_dir) not in body,
             body[:200],
+        )
+
+        listed = await alice.get("/api/runs")
+        runs = listed.json().get("runs", [])
+        checks.add(
+            "the run list omits the snapshot",
+            listed.status_code == 200 and bool(runs) and all("snapshot" not in run for run in runs),
+            f"keys={sorted(runs[0]) if runs else None}",
         )
 
         content_type, frame = await _first_sse_frame(alice, run_id)

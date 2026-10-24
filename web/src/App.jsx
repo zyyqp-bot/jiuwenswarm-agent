@@ -3,6 +3,7 @@ import * as api from "./api.js";
 import EvidenceDrawer from "./EvidenceDrawer.jsx";
 import Report from "./Report.jsx";
 import TaskGraph from "./TaskGraph.jsx";
+import { mergeSnapshot } from "./snapshot.js";
 
 const PHASE_LABELS = {
   starting: "启动中",
@@ -230,14 +231,14 @@ function Workbench({ session, onLoggedOut }) {
       selectedId,
       (event) => {
         if (!alive) return;
-        setDetail((current) => ({
-          ...(current || {}),
-          phase: event.snapshot?.phase || current?.phase,
-          stop_reason: event.snapshot?.stream_stop_reason,
-          error: event.snapshot?.error,
-          snapshot: event.snapshot,
-        }));
-        if (event.snapshot?.complete) refreshRuns().catch(() => {});
+        setDetail((current) => mergeSnapshot(current, event.snapshot));
+        if (event.snapshot?.complete) {
+          // The server closes the stream, but EventSource reconnects on its
+          // own; close it or the page retries a finished run forever.
+          unsubscribe.current?.();
+          unsubscribe.current = null;
+          refreshRuns().catch(() => {});
+        }
       },
       (failure) => {
         if (alive) setError(failure.message);

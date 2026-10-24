@@ -140,7 +140,12 @@ def create_app(
 
     @app.get("/api/runs")
     async def list_runs(session: Session = Depends(require_session)) -> dict[str, Any]:
-        return {"runs": [_record_json(record) for record in service.list(session_id=session.sid)]}
+        return {
+            "runs": [
+                _record_json(record, include_snapshot=False)
+                for record in service.list(session_id=session.sid)
+            ]
+        }
 
     @app.get("/api/runs/{run_id}")
     async def get_run(run_id: str, session: Session = Depends(require_session)) -> dict[str, Any]:
@@ -210,9 +215,13 @@ def create_app(
     return app
 
 
-def _record_json(record: RunRecord) -> dict[str, Any]:
-    """The public view of a run. Never a pid, a credential or a path."""
-    return {
+def _record_json(record: RunRecord, *, include_snapshot: bool = True) -> dict[str, Any]:
+    """The public view of a run. Never a pid, a credential or a path.
+
+    The list omits the snapshot: every run's evidence would otherwise be
+    re-sent on every poll, and the list only needs status fields.
+    """
+    payload = {
         "run_id": record.run_id,
         "workspace": record.workspace,
         "goal": record.goal,
@@ -222,8 +231,19 @@ def _record_json(record: RunRecord) -> dict[str, Any]:
         "seq": record.seq,
         "created_at": record.created_at,
         "terminal": record.terminal,
-        "snapshot": record.snapshot,
     }
+    if include_snapshot:
+        # Defense in depth: the supervisor no longer writes these, but a
+        # snapshot is child-produced data and the response is public.
+        payload["snapshot"] = {
+            key: value
+            for key, value in record.snapshot.items()
+            if key not in _PRIVATE_SNAPSHOT_KEYS
+        }
+    return payload
+
+
+_PRIVATE_SNAPSHOT_KEYS = frozenset({"results_path", "snapshot_path", "process_pid", "pid"})
 
 
 def _ensure_data_dir(path: Path) -> None:

@@ -1,6 +1,6 @@
 {
-  "checks_passed": 15,
-  "checks_total": 15,
+  "checks_passed": 21,
+  "checks_total": 21,
   "checks": [
     {
       "check": "a completed supervisor snapshot becomes a returned record",
@@ -15,7 +15,7 @@
     {
       "check": "the run id is recorded",
       "result": "pass",
-      "detail": "run-20261024T083946-261ded"
+      "detail": "run-20261024T085412-4681b7"
     },
     {
       "check": "the child environment can import the app package",
@@ -30,7 +30,7 @@
     {
       "check": "the live event stream is ordered",
       "result": "pass",
-      "detail": "seqs=[1, 2, 3]"
+      "detail": "seqs=[1, 2, 3, 5]"
     },
     {
       "check": "the last event is the terminal snapshot",
@@ -50,12 +50,37 @@
     {
       "check": "the owning session lists only its own runs",
       "result": "pass",
-      "detail": "runs=['run-20261024T083946-261ded', 'run-20261024T083950-846e3f']"
+      "detail": "runs=['run-20261024T085412-4681b7', 'run-20261024T085415-34ccc8']"
+    },
+    {
+      "check": "the child payload does not persist the model key",
+      "result": "pass",
+      "detail": "payload_keys=['goal', 'results_path', 'run_id', 'snapshot_path', 'workspace']"
     },
     {
       "check": "a crashing supervisor becomes a failed run",
       "result": "pass",
       "detail": "phase='failed' error='supervisor exited with code 1'"
+    },
+    {
+      "check": "a failed run still streams a terminal frame",
+      "result": "pass",
+      "detail": "last={'run_id': 'run-20261024T085419-a50f23', 'phase': 'failed', 'complete': True, 'stream_stop_reason': None, 'error': 'supervisor exited with code 1', 'planner': 'fallback', 'plan': [{'task_id': 'research', 'role': 'teammate', 'instruction': '目标：crash now\\n用 retrieve 工具检索本工作区语料（task_id=research）。检索词用 2-6 个字的关键词（如「安全评估」「内容标识」），不要拿整句目标去搜；可以分多次检索不同关键词。整理有出处的发现；每条 fact 必须引用 retrieve 返回的 evidence id，最后用 submit_task_result 提交（task_id=research, outcome=success）。', 'assignee': 'research', 'acceptance_ids': ['research_accept'], 'depends_on': [], 'requires_success': True, 'reviewers': []}, {'task_id': 'engineering', 'role': 'teammate', 'instruction': '目标：crash now\\n用 retrieve 工具检索本工作区语料（task_id=engineering），检索词用 2-6 个字的关键词（如「安全评估」「算法备案」），基于检索到的条文给出可执行的方案或清单；每条 fact 必须引用 retrieve 返回的 evidence id，最后用 submit_task_result 提交（task_id=engineering, outcome=success）。', 'assignee': 'engineering', 'acceptance_ids': ['engineering_accept'], 'depends_on': [], 'requires_success': True, 'reviewers': []}], 'tasks': [{'task_id': 'research', 'assignee': 'research', 'status': 'pending', 'blocked_by': []}, {'task_id': 'engineering', 'assignee': 'engineering', 'status': 'pending', 'blocked_by': []}], 'evidence': {}, 'evidence_details': {}, 'results': {}, 'team_markers': []}"
+    },
+    {
+      "check": "a deadline-complete snapshot is not reported as returned",
+      "result": "pass",
+      "detail": "phase='failed' error='run ended without native completion (stop_reason=deadline, exit=1)'"
+    },
+    {
+      "check": "stopping after the child finished keeps the completed run",
+      "result": "pass",
+      "detail": "phase='returned' terminal=True"
+    },
+    {
+      "check": "the stop race does not lose the final results",
+      "result": "pass",
+      "detail": "report=present"
     },
     {
       "check": "a long run stays running",
@@ -76,6 +101,11 @@
       "check": "a stopped run is not overwritten as failed",
       "result": "pass",
       "detail": "phase='stopped'"
+    },
+    {
+      "check": "a stopped run streams a terminal frame",
+      "result": "pass",
+      "detail": "last={'run_id': 'run-20261024T085427-a3380d', 'phase': 'stopped', 'complete': True, 'stream_stop_reason': 'stopped_by_user', 'error': None}"
     }
   ],
   "scope": "run service orchestration with a fake supervisor; no team, no model call"

@@ -44,12 +44,13 @@ def _snapshot(
     evidence_details: dict | None = None,
     results: dict | None = None,
     error: str | None = None,
+    stop_reason: str | None = None,
 ) -> dict:
     return {
         "run_id": run_id,
         "phase": phase,
         "complete": complete,
-        "stream_stop_reason": "team_completed" if complete else None,
+        "stream_stop_reason": stop_reason or ("team_completed" if complete else None),
         "error": error,
         "planner": planner,
         "plan": plan or [],
@@ -205,9 +206,29 @@ def main(argv: list[str]) -> int:
     )
     time.sleep(0.05)
 
-    if "sleep" in goal.lower():
+    if "sleep" in goal.lower() and "sleepend" not in goal.lower():
         while True:
             time.sleep(0.2)
+
+    # A complete snapshot that does not carry the native completion reason is
+    # not a success: the run deadline and idle grace both end this way.
+    if "deadline" in goal.lower():
+        _write(
+            snapshot_path,
+            _snapshot(
+                run_id,
+                "returned",
+                complete=True,
+                stop_reason="deadline",
+                plan=plan_raw,
+                planner=planner,
+                tasks=_board(plan, status="in_progress"),
+                evidence=evidence,
+                evidence_details=details,
+                results=results,
+            ),
+        )
+        return 1
 
     _write(
         snapshot_path,
@@ -223,6 +244,9 @@ def main(argv: list[str]) -> int:
             results=results,
         ),
     )
+    if "sleepend" in goal.lower():
+        while True:
+            time.sleep(0.2)
     return 0
 
 

@@ -88,7 +88,11 @@ async def run_payload(
     parse_error = ""
     plan_source = "payload"
     try:
-        credentials = payload.get("credentials") or {}
+        credentials = payload.get("credentials") or {
+            "MODEL_BASE_URL": os.environ.get("MODEL_BASE_URL", ""),
+            "MODEL_API_KEY": os.environ.get("MODEL_API_KEY", ""),
+            "MODEL_NAME": os.environ.get("MODEL_NAME", ""),
+        }
         model = model_from_credentials(credentials) if credentials.get("MODEL_API_KEY") else None
         outcome = await resolve_plan(payload.get("plan"), goal, model=model)
         plan = outcome.tasks
@@ -120,7 +124,6 @@ async def run_payload(
                 "plan": [task.model_dump(mode="json") for task in plan],
                 "team_markers": list(state["markers"]),
                 "error": state["error"],
-                "results_path": str(results_path) if results_path else None,
             }
         _atomic_write_json(snapshot_path, snapshot)
         if results_path is not None:

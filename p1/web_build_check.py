@@ -78,6 +78,7 @@ def main() -> int:
     if not has_package:
         for name in (
             "npm install succeeds",
+            "the web unit tests pass",
             "npm run build succeeds",
             "dist/index.html exists",
             "index.html has the SPA mount point",
@@ -102,6 +103,17 @@ def main() -> int:
             install.returncode == 0,
             _tail(install.stdout + install.stderr),
         )
+
+    unit = None
+    if install is not None and install.returncode == 0:
+        unit = _run([npm, "test"])
+        checks.add(
+            "the web unit tests pass",
+            unit.returncode == 0,
+            _tail(unit.stdout + unit.stderr),
+        )
+    else:
+        checks.add("the web unit tests pass", False, "install did not succeed")
 
     build = None
     if install is not None and install.returncode == 0:

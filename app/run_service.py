@@ -112,11 +112,12 @@ class RunService:
             results_path = run_dir / "results.json"
             payload_path = run_dir / "payload.json"
 
+            # Credentials travel in the child's environment, never in a file:
+            # /data is a persistent volume that may be backed up or inspected.
             payload: dict[str, Any] = {
                 "run_id": run_id,
                 "goal": goal.strip(),
                 "workspace": workspace,
-                "credentials": self._settings.model_credentials(),
                 "snapshot_path": str(snapshot_path),
                 "results_path": str(results_path),
             }
@@ -149,13 +150,13 @@ class RunService:
                     "--payload",
                     str(payload_path),
                     cwd=str(REPO_ROOT),
-                    env=_child_env(),
+                    env=_child_env(self._settings.model_credentials()),
                 )
             except Exception as exc:  # noqa: BLE001 - surfaced to the caller
                 record.phase = "failed"
                 record.error = f"supervisor could not start: {type(exc).__name__}: {exc}"
                 record.terminal = True
-                _ensure_snapshot(record)
+                self._finalize_snapshot(record)
                 raise
 
             record.process_pid = process.pid
@@ -189,12 +190,15 @@ class RunService:
             except asyncio.TimeoutError:
                 process.kill()
                 await process.wait()
-        record.phase = "stopped"
-        record.stop_reason = "stopped_by_user"
-        record.error = None
+        # The child may have written its final snapshot between the monitor's
+        # last poll and this click; read the file so Stop cannot lose results.
+        final = self._read_snapshot(record)
+        if final is not None:
+            self._adopt_snapshot(record, final)
+        self._settle_stopped(record)
+        self._finalize_snapshot(record)
         self._write_report(record)
         record.terminal = True
-        _ensure_snapshot(record)
         return record
 
     async def events(
@@ -278,31 +282,22 @@ class RunService:
                     document = _parse_json(text)
                     if document is not None:
                         record.seq += 1
-                        record.snapshot = document
-                        record.phase = str(document.get("phase") or record.phase)
-                        record.stop_reason = document.get("stream_stop_reason")
-                        record.error = document.get("error")
-                        # The child plans when the request carried no plan; adopt
-                        # it so the report describes the graph that actually ran.
-                        if isinstance(document.get("plan"), list) and document["plan"]:
-                            record.plan = document["plan"]
+                        self._adopt_snapshot(record, document)
                         if document.get("complete"):
-                            self._write_report(record)
-                            record.terminal = True
+                            await self._finish_from_snapshot(record, process, document)
                             return
 
                 if process.returncode is not None:
                     if record.stop_requested:
-                        record.phase = "stopped"
-                        record.stop_reason = "stopped_by_user"
+                        self._settle_stopped(record)
                     else:
                         record.phase = "failed"
                         record.error = record.error or (
                             f"supervisor exited with code {process.returncode}"
                         )
+                    self._finalize_snapshot(record)
                     self._write_report(record)
                     record.terminal = True
-                    _ensure_snapshot(record)
                     return
 
                 if time.monotonic() > deadline:
@@ -310,9 +305,9 @@ class RunService:
                     await process.wait()
                     record.phase = "failed"
                     record.error = "run deadline exceeded"
+                    self._finalize_snapshot(record)
                     self._write_report(record)
                     record.terminal = True
-                    _ensure_snapshot(record)
                     return
 
                 await asyncio.sleep(self._poll)
@@ -321,12 +316,98 @@ class RunService:
         except Exception as exc:  # noqa: BLE001 - the record must still terminate
             record.phase = "failed"
             record.error = f"monitor failed: {type(exc).__name__}: {exc}"
+            self._finalize_snapshot(record)
             self._write_report(record)
             record.terminal = True
-            _ensure_snapshot(record)
         finally:
             self._processes.pop(record.run_id, None)
-            _ensure_snapshot(record)
+            if record.terminal:
+                self._finalize_snapshot(record)
+
+    async def _finish_from_snapshot(
+        self,
+        record: RunRecord,
+        process: asyncio.subprocess.Process,
+        document: dict[str, Any],
+    ) -> None:
+        """Classify a complete snapshot using the exit code, not the phase alone.
+
+        A run that hit its deadline or idle grace writes ``complete`` and exits
+        1; reporting that as "returned" would show a green run that produced
+        nothing. Wait briefly for the exit so the classification is not a race.
+        """
+        try:
+            returncode: int | None = await asyncio.wait_for(process.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            process.terminate()
+            try:
+                returncode = await asyncio.wait_for(
+                    process.wait(), timeout=TERMINATION_GRACE_SECONDS
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                returncode = await process.wait()
+
+        if record.stop_requested:
+            self._settle_stopped(record)
+        elif document.get("stream_stop_reason") == "team_completed" and returncode == 0:
+            record.phase = "returned"
+        else:
+            record.phase = "failed"
+            record.error = record.error or (
+                "run ended without native completion "
+                f"(stop_reason={document.get('stream_stop_reason')}, exit={returncode})"
+            )
+        self._finalize_snapshot(record)
+        self._write_report(record)
+        record.terminal = True
+
+    def _adopt_snapshot(self, record: RunRecord, document: dict[str, Any]) -> None:
+        """Copy the child's snapshot into the record."""
+        record.snapshot = document
+        record.phase = str(document.get("phase") or record.phase)
+        record.stop_reason = document.get("stream_stop_reason")
+        record.error = document.get("error")
+        # The child plans when the request carried no plan; adopt it so the
+        # report describes the graph that actually ran.
+        if isinstance(document.get("plan"), list) and document["plan"]:
+            record.plan = document["plan"]
+
+    def _settle_stopped(self, record: RunRecord) -> None:
+        """Stop is not allowed to erase a completion that already happened."""
+        snapshot = record.snapshot or {}
+        if (
+            snapshot.get("complete")
+            and snapshot.get("stream_stop_reason") == "team_completed"
+            and not snapshot.get("error")
+        ):
+            record.phase = "returned"
+            record.stop_reason = "team_completed"
+            record.error = None
+            return
+        record.phase = "stopped"
+        record.stop_reason = "stopped_by_user"
+        record.error = None
+
+    def _finalize_snapshot(self, record: RunRecord) -> None:
+        """Publish one terminal snapshot so SSE subscribers see the end state.
+
+        Without this, a failed or stopped run streams its last live snapshot
+        and closes: the client never learns the run ended and reconnects.
+        """
+        record.seq += 1
+        record.snapshot = {
+            **(record.snapshot or {}),
+            "run_id": record.run_id,
+            "phase": record.phase,
+            "complete": True,
+            "stream_stop_reason": record.stop_reason,
+            "error": record.error,
+        }
+
+    def _read_snapshot(self, record: RunRecord) -> dict[str, Any] | None:
+        path = self._settings.data_dir / "runs" / record.run_id / "snapshot.json"
+        return _parse_json(_read_text(path))
 
     def _write_report(self, record: RunRecord) -> None:
         """Write the report once, never letting a report failure fail the run."""
@@ -376,7 +457,7 @@ def _new_run_id() -> str:
     return f"run-{stamp}-{secrets.token_hex(3)}"
 
 
-def _child_env() -> dict[str, str]:
+def _child_env(credentials: dict[str, str] | None = None) -> dict[str, str]:
     env = os.environ.copy()
     # The supervisor runs as a file, so Python puts app/ (not the repository
     # root) on sys.path; without the root the child cannot import `app.*`.
@@ -387,6 +468,9 @@ def _child_env() -> dict[str, str]:
     ]
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = os.pathsep.join(paths + ([existing] if existing else []))
+    # Credentials are passed in the environment, not the payload file.
+    for key, value in (credentials or {}).items():
+        env[key] = value
     return env
 
 
@@ -411,16 +495,3 @@ def _parse_json(text: str) -> dict[str, Any] | None:
     return document if isinstance(document, dict) else None
 
 
-def _ensure_snapshot(record: RunRecord) -> None:
-    """Give terminal records a snapshot even when the child wrote none."""
-    if record.terminal and record.seq == 0:
-        record.seq = 1
-        record.snapshot = {
-            "run_id": record.run_id,
-            "phase": record.phase,
-            "complete": True,
-            "stream_stop_reason": record.stop_reason,
-            "error": record.error,
-            "results": {},
-            "team_markers": [],
-        }

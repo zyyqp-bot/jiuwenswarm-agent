@@ -15,6 +15,7 @@ Run: .venv/Scripts/python.exe p1/run_service_check.py
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 import tempfile
@@ -41,6 +42,9 @@ def _settings(data_dir: Path) -> Settings:
             "WORKBENCH_MAX_CONCURRENT_RUNS": "1",
             "WORKBENCH_MAX_RUNS_PER_DAY": "10",
             "WORKBENCH_ROUND_DEADLINE_SECONDS": "5",
+            "MODEL_API_KEY": "sk-test-secret",
+            "MODEL_BASE_URL": "https://example.test/v1",
+            "MODEL_NAME": "test-model",
         }
     )
 
@@ -163,6 +167,14 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             f"runs={[item.run_id for item in owned]}",
         )
 
+        payload_path = data_dir / "runs" / record.run_id / "payload.json"
+        payload_text = payload_path.read_text(encoding="utf-8")
+        checks.add(
+            "the child payload does not persist the model key",
+            "sk-test-secret" not in payload_text,
+            f"payload_keys={sorted(json.loads(payload_text))}",
+        )
+
         # -- a crashing supervisor ------------------------------------------
         crashed = await service.start(session_id="sid-1", goal="crash now", workspace="demo")
         broken = await _wait_terminal(service, crashed.run_id, session_id="sid-1")
@@ -170,6 +182,46 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             "a crashing supervisor becomes a failed run",
             broken.phase == "failed" and bool(broken.error),
             f"phase={broken.phase!r} error={broken.error!r}",
+        )
+        broken_events = [
+            event async for event in service.events(crashed.run_id, session_id="sid-1")
+        ]
+        checks.add(
+            "a failed run still streams a terminal frame",
+            bool(broken_events)
+            and broken_events[-1]["snapshot"].get("complete") is True
+            and broken_events[-1]["snapshot"].get("phase") == "failed",
+            f"last={broken_events[-1]['snapshot'] if broken_events else None}",
+        )
+
+        # -- a complete snapshot that is not a native completion ------------
+        timed = await service.start(session_id="sid-1", goal="deadline end", workspace="demo")
+        timed_final = await _wait_terminal(service, timed.run_id, session_id="sid-1")
+        checks.add(
+            "a deadline-complete snapshot is not reported as returned",
+            timed_final.phase == "failed" and "native completion" in (timed_final.error or ""),
+            f"phase={timed_final.phase!r} error={timed_final.error!r}",
+        )
+
+        # -- stop after the child already finished --------------------------
+        finished = await service.start(session_id="sid-1", goal="sleepend now", workspace="demo")
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline:
+            live = service.get(finished.run_id, session_id="sid-1")
+            if live.snapshot.get("complete"):
+                break
+            await asyncio.sleep(0.02)
+        raced = await service.stop(finished.run_id, session_id="sid-1")
+        checks.add(
+            "stopping after the child finished keeps the completed run",
+            raced.phase == "returned" and raced.terminal,
+            f"phase={raced.phase!r} terminal={raced.terminal}",
+        )
+        race_report = data_dir / "runs" / finished.run_id / "report.md"
+        checks.add(
+            "the stop race does not lose the final results",
+            race_report.is_file() and "done" in race_report.read_text(encoding="utf-8"),
+            f"report={'present' if race_report.is_file() else 'missing'}",
         )
 
         # -- stop and the concurrency cap -----------------------------------
@@ -196,6 +248,16 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             "a stopped run is not overwritten as failed",
             later.phase in ("stopped", "returned"),
             f"phase={later.phase!r}",
+        )
+        stop_events = [
+            event async for event in service.events(sleeper.run_id, session_id="sid-1")
+        ]
+        checks.add(
+            "a stopped run streams a terminal frame",
+            bool(stop_events)
+            and stop_events[-1]["snapshot"].get("complete") is True
+            and stop_events[-1]["snapshot"].get("phase") == later.phase,
+            f"last={stop_events[-1]['snapshot'] if stop_events else None}",
         )
     finally:
         await service.close()
