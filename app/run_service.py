@@ -29,6 +29,7 @@ from app.models import Claim, ClaimKind, TaskOutcome, TaskResult
 from app.plan import PlanTask
 from app.report import build_report, write_report
 from app.settings import Settings
+from app.workspaces import get_workspace
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SUPERVISOR = [sys.executable, str(REPO_ROOT / "app" / "supervisor.py")]
@@ -123,6 +124,14 @@ class RunService:
                 payload["plan"] = plan
             if evidence_by_task is not None:
                 payload["evidence_by_task"] = evidence_by_task
+            workspace_config = get_workspace(workspace)
+            corpus_db = self._settings.data_dir / "corpus.db"
+            if workspace_config is not None and corpus_db.is_file():
+                payload["corpus"] = {
+                    "db_path": str(corpus_db),
+                    "corpus": workspace_config.corpus,
+                    "access_scope": workspace_config.access_scope,
+                }
             _write_json(payload_path, payload)
 
             record = RunRecord(

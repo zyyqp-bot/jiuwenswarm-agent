@@ -108,6 +108,19 @@ class RunBridge:
         with self._lock:
             self._evidence[task_id] = set(evidence_ids)
 
+    def add_evidence(self, task_id: str, evidence_ids: Iterable[str]) -> None:
+        """Add ids the task's retrieval tool just returned."""
+        with self._lock:
+            self._evidence.setdefault(task_id, set()).update(
+                str(item) for item in evidence_ids
+            )
+
+    def assignee_for(self, task_id: str) -> str | None:
+        """Return the task's assignee, or ``None`` when it is not in the plan."""
+        with self._lock:
+            task = self._plan.get(task_id)
+            return task.assignee if task is not None else None
+
     def mark_bootstrapped(self) -> bool:
         """Return True the first time it is called, False afterwards."""
         with self._lock:
@@ -385,6 +398,9 @@ class RunBridge:
                 "bootstrapped": self.bootstrapped,
                 "tasks": [dict(task) for task in self._tasks],
                 "pending_reviews": sorted(self._pending_results),
+                "evidence": {
+                    task_id: sorted(ids) for task_id, ids in self._evidence.items()
+                },
                 "tool_names": list(self.tool_names),
                 "tool_requests": [dict(request) for request in self.tool_requests],
                 "blocked_tools": list(self.blocked_tools),

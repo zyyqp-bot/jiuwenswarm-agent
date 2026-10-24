@@ -137,8 +137,25 @@ async def run_payload(
             )
         return _snapshot("invalid_plan", complete=True)
 
+    extra_tools: list[dict[str, Any]] = []
+    corpus = payload.get("corpus")
+    if isinstance(corpus, dict) and corpus.get("db_path"):
+        extra_tools.append(
+            {
+                "type": "app.retrieve",
+                "params": {
+                    "run_id": run_id,
+                    "db_path": corpus["db_path"],
+                    "corpus": corpus["corpus"],
+                    "access_scope": corpus["access_scope"],
+                },
+            }
+        )
     config = build_workbench_config(
-        payload["credentials"], team_name=_team_name(run_id), run_id=run_id
+        payload["credentials"],
+        team_name=_team_name(run_id),
+        run_id=run_id,
+        extra_tools=extra_tools,
     )
     spec = compile_team_spec(config)
 

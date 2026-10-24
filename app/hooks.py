@@ -50,11 +50,13 @@ def register_providers() -> None:
         register_tool_provider,
     )
 
+    from app.retrieval_tool import make_retrieval_tool
     from app.run_rail import make_bootstrap_rail
     from app.submit_tool import make_submit_tool
     from app.tool_guard import make_tool_guard
 
     register_tool_provider("app.submit_task_result", make_submit_tool)
+    register_tool_provider("app.retrieve", make_retrieval_tool)
     register_rail_provider("app.run_bootstrap", make_bootstrap_rail)
     register_rail_provider("app.tool_surface_guard", make_tool_guard)
     _PROVIDERS_REGISTERED = True

@@ -1,0 +1,77 @@
+{
+  "checks_passed": 14,
+  "checks_total": 14,
+  "checks": [
+    {
+      "check": "every supported document is imported",
+      "result": "pass",
+      "detail": "imported={'documents': 2, 'chunks': 2, 'failures': []}"
+    },
+    {
+      "check": "a Chinese trigram query finds the passage",
+      "result": "pass",
+      "detail": "hits=['a.txt:85f732ca1dbc142f:0:85f732ca1dbc']"
+    },
+    {
+      "check": "the evidence carries a locator and source",
+      "result": "pass",
+      "detail": "source=a.txt locator=chars:0-21"
+    },
+    {
+      "check": "an unauthorised scope sees nothing",
+      "result": "pass",
+      "detail": "wrong scope"
+    },
+    {
+      "check": "re-importing a document replaces its chunks",
+      "result": "pass",
+      "detail": "chunks=2->2"
+    },
+    {
+      "check": "a UTF-8 BOM is stripped by the loader",
+      "result": "pass",
+      "detail": "安全评估应当每年进行一次"
+    },
+    {
+      "check": "an unsupported document type is refused",
+      "result": "pass",
+      "detail": "unsupported document type: .docx"
+    },
+    {
+      "check": "the retrieval tool returns evidence ids",
+      "result": "pass",
+      "detail": "success=True ids=['a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f'] error=None"
+    },
+    {
+      "check": "the bridge records exactly the returned evidence for the task",
+      "result": "pass",
+      "detail": "evidence={'research': ['a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f']}"
+    },
+    {
+      "check": "a member cannot retrieve for another member's task",
+      "result": "pass",
+      "detail": "'research' is not the assignee of 'engineering' (assigned to 'engineering')"
+    },
+    {
+      "check": "an unknown task is refused",
+      "result": "pass",
+      "detail": "task 'ghost' is not in the plan for this run"
+    },
+    {
+      "check": "a refused call records no evidence",
+      "result": "pass",
+      "detail": "evidence={'research': ['a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f']}"
+    },
+    {
+      "check": "the provider binds the member identity",
+      "result": "pass",
+      "detail": "research"
+    },
+    {
+      "check": "a context without a member name refuses to build the tool",
+      "result": "pass",
+      "detail": "retrieve needs a BuildContext.member_name"
+    }
+  ],
+  "scope": "FTS5 import and retrieval tool only; no model, no embedding call"
+}
