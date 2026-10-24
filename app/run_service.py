@@ -378,12 +378,15 @@ def _new_run_id() -> str:
 
 def _child_env() -> dict[str, str]:
     env = os.environ.copy()
-    upstream = [
+    # The supervisor runs as a file, so Python puts app/ (not the repository
+    # root) on sys.path; without the root the child cannot import `app.*`.
+    paths = [
+        str(REPO_ROOT),
         str(REPO_ROOT / "upstream" / "agent-core"),
         str(REPO_ROOT / "upstream" / "jiuwenswarm"),
     ]
     existing = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = os.pathsep.join(upstream + ([existing] if existing else []))
+    env["PYTHONPATH"] = os.pathsep.join(paths + ([existing] if existing else []))
     return env
 
 

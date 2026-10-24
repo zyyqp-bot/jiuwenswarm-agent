@@ -1,0 +1,83 @@
+{
+  "checks_passed": 15,
+  "checks_total": 15,
+  "checks": [
+    {
+      "check": "the temporary corpus imports",
+      "result": "pass",
+      "detail": "imported={'documents': 1, 'chunks': 1, 'failures': []}"
+    },
+    {
+      "check": "the run list requires a session",
+      "result": "pass",
+      "detail": "status=401"
+    },
+    {
+      "check": "a wrong password sets no session",
+      "result": "pass",
+      "detail": "status=401"
+    },
+    {
+      "check": "login establishes the session",
+      "result": "pass",
+      "detail": "status=200"
+    },
+    {
+      "check": "the workspace registry reaches the client",
+      "result": "pass",
+      "detail": "workspaces=['ai-governance']"
+    },
+    {
+      "check": "a run starts without a plan in the request",
+      "result": "pass",
+      "detail": "status=200 run_id=run-20261024T083848-92f33e"
+    },
+    {
+      "check": "the stream delivers a snapshot frame",
+      "result": "pass",
+      "detail": "event=snapshot"
+    },
+    {
+      "check": "the run reaches a terminal phase",
+      "result": "pass",
+      "detail": "phase=returned terminal=True"
+    },
+    {
+      "check": "the task board is projected",
+      "result": "pass",
+      "detail": "tasks=['research', 'engineering']"
+    },
+    {
+      "check": "the planner source is recorded",
+      "result": "pass",
+      "detail": "planner=fallback"
+    },
+    {
+      "check": "retrieval recorded evidence for the research task",
+      "result": "pass",
+      "detail": "evidence={'research': ['%E5%AE%89%E5%85%A8%E8%AF%84%E4%BC%B0%E5%8A%9E%E6%B3%95.txt:7e2cfa547fac772a:0:7e2cfa547fac']}"
+    },
+    {
+      "check": "the snapshot carries the passage behind the id",
+      "result": "pass",
+      "detail": "detail={'evidence_id': '%E5%AE%89%E5%85%A8%E8%AF%84%E4%BC%B0%E5%8A%9E%E6%B3%95.txt:7e2cfa547fac772a:0:7e2cfa547fac', 'text': '生成式人工智能服务提供者应当按照本办法进行安全评估，并留存评估记录。', 'source_uri': '安全评估办法.txt', 'source_revision': '7e2cfa547fac772a', 'locator': 'chars:0-34'}"
+    },
+    {
+      "check": "the report renders",
+      "result": "pass",
+      "detail": "status=200 bytes=473"
+    },
+    {
+      "check": "the report cites the evidence the tool returned",
+      "result": "pass",
+      "detail": "ids=['%E5%AE%89%E5%85%A8%E8%AF%84%E4%BC%B0%E5%8A%9E%E6%B3%95.txt:7e2cfa547fac772a:0:7e2cfa547fac']"
+    },
+    {
+      "check": "another session cannot read the run",
+      "result": "pass",
+      "detail": "status=404"
+    }
+  ],
+  "scope": "offline chain: login, run, stream, retrieval, report, isolation",
+  "live_run": "not_run"
+}

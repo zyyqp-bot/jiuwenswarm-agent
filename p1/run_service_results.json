@@ -1,6 +1,6 @@
 {
-  "checks_passed": 14,
-  "checks_total": 14,
+  "checks_passed": 15,
+  "checks_total": 15,
   "checks": [
     {
       "check": "a completed supervisor snapshot becomes a returned record",
@@ -15,7 +15,12 @@
     {
       "check": "the run id is recorded",
       "result": "pass",
-      "detail": "run-20261024T081243-759148"
+      "detail": "run-20261024T083946-261ded"
+    },
+    {
+      "check": "the child environment can import the app package",
+      "result": "pass",
+      "detail": "PYTHONPATH=['D:\\\\Development\\\\JiuwenSwarm-review', 'D:\\\\Development\\\\JiuwenSwarm-review\\\\upstream\\\\agent-core', 'D:\\\\Development\\\\JiuwenSwarm-review\\\\upstream\\\\jiuwenswarm', 'D:\\\\Development\\\\JiuwenSwarm-review\\\\upstream\\\\agent-core', 'D:\\\\Development\\\\JiuwenSwarm-review\\\\upstream\\\\jiuwenswarm']"
     },
     {
       "check": "a terminal run writes its report",
@@ -45,7 +50,7 @@
     {
       "check": "the owning session lists only its own runs",
       "result": "pass",
-      "detail": "runs=['run-20261024T081243-759148', 'run-20261024T081243-276721']"
+      "detail": "runs=['run-20261024T083946-261ded', 'run-20261024T083950-846e3f']"
     },
     {
       "check": "a crashing supervisor becomes a failed run",

@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.25 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁、真实回合断言收集与工作台运行时钉子均已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7），并已通过整支独立审查与三条 Critical 修复（钉子复跑 7/7）；下一步按大赛设计要求实现在线工作台。
+版本：0.26 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台的 14 个任务已全部落地，离线套件 35 个脚本、564 项断言全绿；容器镜像已定义但本机无 Docker，未执行真实构建；云托管部署与真实模型运行待执行。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -38,8 +38,11 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P1 真实回合 | 曾经跑通：真实端点 + Runner，Leader 完成一轮（`tool_count=29`、安全 rail 与 checkpoint 均生效）；当时观察到回合末进程未执行 atexit，推断为 `os._exit()`，该机制**尚未复现**（见 §13 更正） |
 | P1 工作台运行时钉子 | 已执行：应用提交 2 个已分配任务 → 原生调度器拉起成员 → 成员 `submit_task_result` → `team.completed`，7/7 通过；请求工具面无 shell/文件/spawn |
 | P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
+| Plan 2 在线工作台（离线） | 已实现：登录会话、按运行子进程 + 原子快照、SSE、任务板投影、计划器与确定性回退、证据详情快照、单容器镜像定义、SPA 三个面板；35 个离线脚本 564 项断言全绿 |
+| Plan 2 云托管部署与真实运行 | **未执行**：本机无 Docker；CloudBase 体验环境仅验证过占位镜像，真实镜像需重新构建部署；真实模型运行需部署后 `scripts/smoke_check.py` |
+| 垂直语料内容 | **未完成**：`corpus/ai-governance/` 目前只有 `.gitkeep`，需放入公开政策文本后导入 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
-| 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
+| 应用代码、真实模型、真实 RAG、恢复测试 | 应用代码已实现；真实 RAG 检索链路离线可跑，真实模型回合见 P1 记录；恢复测试未执行 |
 
 源码位置：`upstream/jiuwenswarm/`、`upstream/agent-core/`。版本机器记录见 [source-lock.json](source-lock.json)。当前 Swarm 包名为 `workswarm`，源码包为 `jiuwenswarm`，Python 要求 `>=3.11,<3.14`。拉取时介绍视频的 Git LFS 对象返回 404；已跳过媒体下载恢复完整源码检出，两个参考 checkout 均无本地代码变更。视频不属于本次核对范围。
 
@@ -336,6 +339,7 @@ ModelPolicy.select(task, complexity, evidence_quality, budget) -> ModelProfile
 | P0-D | Aggregator、语义验收、统一预算、事件投影 | 一个模拟端到端请求按验收产出；断连不重复执行；有限返工 |
 | P1 | 真实模型、embedding、长期记忆、压缩与重启恢复 | 真实工具/RAG/压缩召回/恢复集成测试通过，成本可追踪 |
 | P2 | 动态成员数量、模型策略、更多角色/工具 | 与固定基线对比收益，成员硬上限和 draining 通过 |
+| Plan 2（参赛在线工作台） | 会话登录、运行服务、SSE、任务图、证据抽屉、带引用报告、单容器部署 | 离线：登录→运行→SSE→检索→报告→会话隔离全链路通过；在线：CloudBase 部署后 `smoke_check.py` 通过 |
 
 **当前状态（2026-10-12）**：P0-A、P0-B、P0-C 的退出条件均已由断言覆盖并通过。P0-D 的模块全部就位，并已有一条离线端到端链路跑通下表 10 个场景中的 **7 个**（[p0e/e2e_check.py](p0e/e2e_check.py)，29 项断言）——场景 1、2、4、5、6、8、9。pipeline 中每个任务同时写入内存账本（门禁读它）与持久化 repository（恢复读它），因此两条路径被一起验证而非互相代表。
 
@@ -621,6 +625,36 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 **未执行**：本机没有 Docker CLI，未实际 `docker build`；镜像构建与云托管运行需在有 Docker 的机器或 CloudBase 上完成。`scripts/smoke_check.py` 已写好，但同样需要在部署后对真实 URL 执行。
 
+**Plan 2 离线验证记录（2026-10-24 实测）**：
+
+| 范围 | 命令 | 结果 |
+|---|---|---|
+| 会话与 Cookie | `p1/auth_check.py` | 16/16 |
+| 运行子进程与快照 | `p1/run_service_check.py` | 15/15 |
+| API 与 SSE、会话隔离 | `p1/api_check.py` | 15/15 |
+| 报告与 Markdown | `p1/report_check.py` | 10/10 |
+| 准入限制 | `p1/limits_check.py` | 7/7 |
+| 语料导入、检索、证据正文 | `p1/retrieval_check.py` | 16/16 |
+| 计划器与确定性回退 | `p1/planner_check.py` | 15/15 |
+| 原生任务板投影 | `p1/run_rail_check.py` / `p1/task_bridge_check.py` | 25/25 · 7/7 |
+| 提交与复核裁决 | `p1/submit_tool_check.py` | 20/20 |
+| SPA 构建与三个面板 | `p1/web_build_check.py` | 14/14 |
+| 镜像与部署文档 | `p1/deploy_check.py` | 18/18 |
+| 端到端离线链路 | `p1/workbench_e2e_check.py` | 15/15（`live_run: not_run`） |
+| 全量离线套件 | 35 个 `p0*/**/*_check.py` 与 `p1/*_check.py`（排除 `live_*`） | 0 失败 |
+
+端到端链路用真实 `RunService` 启动假 supervisor（不建团队、不调模型），假 supervisor 用真实 `RetrievalTool` 查临时语料，报告的 `## 证据` 里出现的 id 就是工具返回的 id；另一个登录会话读取同一运行得到 404。
+
+过程中发现并修复的真实缺陷：supervisor 以文件方式启动时，`sys.path[0]` 是 `app/`，子进程环境原先只加了两个 upstream 目录，导致 `import app.*` 失败——`_child_env` 现在把仓库根放在 `PYTHONPATH` 首位，并由 `p1/run_service_check.py` 断言。另将“事件流至少两帧”改为“有序且不重复”，因为快照契约是最新状态，负载下合并中间态不是缺陷。
+
+**仍未覆盖（Plan 3 或参赛前手工完成）**：
+
+- 真实模型多轮检索与返工：离线 e2e 用假 supervisor，真实链路由 `smoke_check.py` 在部署后验证；
+- 冲突候选与冲突报告：当前只要求引用可追溯，不检测互相矛盾的政策条文；
+- token/调用成本记账：运行快照不含 usage 汇总；
+- 第二个工作区：注册表结构支持，但只预置 `ai-governance`；
+- 语料内容：`corpus/ai-governance/` 目前只有占位文件，需在参赛前放入真实公开政策文本并导入。
+
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
 下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：
@@ -666,6 +700,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-24 | 0.26 | R04、R08、R11、参赛在线链接 | Plan 2 全部 14 个任务：会话与 Cookie、运行服务与快照、API/SSE、报告、任务板、复核裁决、依赖断言、准入限制、语料与检索、计划器、SPA 三面板、任务图与证据详情、单容器镜像与部署文档、离线端到端链路；README 补齐本地运行/导入语料/构建/部署/验证 | 35 个离线脚本 564 项断言 0 失败；e2e 15/15（`live_run: not_run`）；`_child_env` 缺仓库根的真实缺陷已修并加断言；Docker 构建与云端运行未执行 |
 | 2026-10-24 | 0.25 | R04、R08、R11 | 整支审查后的修复：成员自有 task manager 完成并检查 `TaskOpResult`；`member_complete_task`/`create_task`/`update_task` 执行级拒绝；请求过滤之外的 `before_tool_call` 执行边界；`AbortError` + fatal 提升；固定可指派名册；reporter join；请求历史累积；应用侧结构化验收 | 离线 26 脚本 0 失败；真实钉子 7/7；两处 Plan 2 缺口已登记 |
 | 2026-10-12 | 0.22 | R01、R06 | 跑通真实回合：真实端点 + Runner，Leader 完成一轮；发现回合末 `os._exit()`，改写"先保存后返回"为流内落盘；记录真实工具数 29 与物化 10 的差异 | 回合跑通；脚本级断言收集未跑完 |
 | 2026-10-12 | 0.21 | R02 | 从真实构造的 team 上验证 leader 工具集：读 rail 自身参数物化工具集，对照实验证实 `enable_hitt` 是缺口来源；审核后合并两个脚本并去掉硬编码与手抄规则 | 9 项断言通过；真实回合仍未跑 |
