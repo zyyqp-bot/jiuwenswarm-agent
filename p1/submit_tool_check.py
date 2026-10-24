@@ -42,6 +42,16 @@ PLAN = [
         assignee="research_member",
     )
 ]
+REVIEW_PLAN = [
+    PlanTask(
+        task_id="research",
+        role="teammate",
+        instruction="x",
+        acceptance_ids=("a1",),
+        assignee="research_member",
+        reviewers=("team_leader",),
+    )
+]
 ACCEPTANCE = {
     "a1": AcceptanceCheck(
         acceptance_id="a1",
@@ -203,7 +213,62 @@ async def _run(checks: Checks) -> None:
         outcome.error or "accepted",
     )
 
-    # --- case 9: the producer is bound at build time, never by the model ---
+    # --- case 9: a reviewed task waits for the native verdict --------------
+    reviewed = RunBridge(
+        run_id="run-r", plan=REVIEW_PLAN, evidence_by_task={"research": ["ev-1"]}
+    )
+    execution = reviewed.execution_for("research")
+    outcome = await reviewed.submit(
+        producer="research_member", task_id="research", execution_id=execution,
+        outcome=TaskOutcome.SUCCESS, claims=[_claim()], acceptance=ACCEPTANCE,
+        complete=_complete_ok([]),
+    )
+    checks.add(
+        "a reviewed submission is accepted but not yet a result",
+        outcome.ok and reviewed.results() == {},
+        f"ok={outcome.ok} results={list(reviewed.results())}",
+    )
+    checks.add(
+        "the pending review is visible in the snapshot",
+        reviewed.snapshot().get("pending_reviews") == ["research"],
+        f"pending={reviewed.snapshot().get('pending_reviews')}",
+    )
+    checks.add(
+        "a completed native task accepts the pending result",
+        reviewed.settle_review("research", "completed") == "accepted"
+        and "research" in reviewed.results()
+        and reviewed.snapshot().get("pending_reviews") == [],
+        f"results={list(reviewed.results())}",
+    )
+
+    # --- case 10: a rejected review reopens the execution ------------------
+    reworked = RunBridge(
+        run_id="run-w", plan=REVIEW_PLAN, evidence_by_task={"research": ["ev-1"]}
+    )
+    first_execution = reworked.execution_for("research")
+    await reworked.submit(
+        producer="research_member", task_id="research", execution_id=first_execution,
+        outcome=TaskOutcome.SUCCESS, claims=[_claim()], acceptance=ACCEPTANCE,
+        complete=_complete_ok([]),
+    )
+    checks.add(
+        "a rejected review discards the pending result",
+        reworked.settle_review("research", "in_progress") == "rework"
+        and reworked.results() == {},
+        f"results={list(reworked.results())}",
+    )
+    checks.add(
+        "a rejected review opens a new execution",
+        reworked.execution_for("research") != first_execution,
+        f"first={first_execution} next={reworked.execution_for('research')}",
+    )
+    checks.add(
+        "settling an unknown task is ignored",
+        reworked.settle_review("engineering", "completed") == "ignored",
+        "unknown task",
+    )
+
+    # --- case 11: the producer is bound at build time, never by the model ---
     bound = RunBridge(run_id="run-factory", plan=PLAN)
     register_bridge("run-factory", bound)
     try:

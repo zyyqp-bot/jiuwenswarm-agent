@@ -73,6 +73,7 @@ class RunBridge:
         self._completion = CompletionGate(self._ledger)
         self._executions: dict[str, str] = {}
         self._results: dict[str, TaskResult] = {}
+        self._pending_results: dict[str, TaskResult] = {}
         self._submitted: set[tuple[str, str]] = set()
         self._reported_acceptance: dict[str, dict[str, str]] = {}
         self._lock = threading.Lock()
@@ -114,6 +115,71 @@ class RunBridge:
                 return False
             self.bootstrapped = True
             return True
+
+    def settle_review(self, task_id: str, native_status: str) -> str:
+        """Act on the native verdict for a task that was submitted for review.
+
+        ``completed`` accepts the pending result. ``in_progress`` means the
+        reviewer rejected it: the result is discarded and a new execution is
+        opened so the member can rework and resubmit. Anything else is not a
+        verdict and changes nothing.
+        """
+        with self._lock:
+            pending = self._pending_results.get(task_id)
+            if pending is None:
+                return "ignored"
+            if native_status == "completed":
+                del self._pending_results[task_id]
+                self._results[task_id] = pending
+                return "accepted"
+            if native_status != "in_progress":
+                return "ignored"
+            del self._pending_results[task_id]
+            self._submitted.discard((task_id, pending.execution_id))
+
+        self._next_execution(task_id)
+        with self._lock:
+            self.errors.append(f"review rejected for {task_id}; a new execution was opened")
+        return "rework"
+
+    def _next_execution(self, task_id: str) -> str:
+        """Open and return the task's next execution attempt."""
+        with self._lock:
+            current = self._executions.get(task_id, "")
+            attempt = 1
+            if current:
+                try:
+                    attempt = int(current.rsplit(":", 1)[-1]) + 1
+                except ValueError:
+                    attempt = 1
+            execution_id = f"{self.run_id}:{task_id}:{attempt}"
+            self._ledger.open(self.run_id, task_id, execution_id)
+            self._executions[task_id] = execution_id
+            return execution_id
+
+    def verify_dependencies(self) -> list[str]:
+        """Return tasks that started before an accepted predecessor result.
+
+        With the single completion path (``submit_task_result`` is the only
+        tool that can complete a task), a native ``completed`` already means
+        the app accepted the result. This assertion is what keeps that true:
+        if any other path ever completes a task, the dependent task's start
+        finds no accepted result and the run fails loudly.
+        """
+        with self._lock:
+            tasks = [dict(task) for task in self._tasks]
+            accepted = set(self._results)
+        violations: list[str] = []
+        for task in tasks:
+            if str(task.get("status") or "") != "in_progress":
+                continue
+            task_id = str(task.get("task_id") or "")
+            for predecessor in task.get("blocked_by") or []:
+                if str(predecessor) not in accepted:
+                    violations.append(
+                        f"task {task_id!r} started before {predecessor!r} was accepted"
+                    )
+        return violations
 
     def record_task_board(self, tasks: Sequence[Mapping[str, Any]]) -> None:
         """Replace the projected native task board."""
@@ -293,13 +359,18 @@ class RunBridge:
                 return SubmitOutcome(
                     False, f"execution {execution_id!r} already submitted a result for {task_id!r}"
                 )
-            self._results[task_id] = result
-            self._submitted.add(key)
             if acceptance:
                 self._reported_acceptance[task_id] = {
                     str(acceptance_id): check.result.value
                     for acceptance_id, check in acceptance.items()
                 }
+            self._submitted.add(key)
+            if plan_task.reviewers:
+                # The native task is in IN_REVIEW. The result stays pending
+                # until the board says the review settled.
+                self._pending_results[task_id] = result
+                return SubmitOutcome(True)
+            self._results[task_id] = result
         return SubmitOutcome(True)
 
     # -- observation --------------------------------------------------------
@@ -313,6 +384,7 @@ class RunBridge:
                 "run_id": self.run_id,
                 "bootstrapped": self.bootstrapped,
                 "tasks": [dict(task) for task in self._tasks],
+                "pending_reviews": sorted(self._pending_results),
                 "tool_names": list(self.tool_names),
                 "tool_requests": [dict(request) for request in self.tool_requests],
                 "blocked_tools": list(self.blocked_tools),

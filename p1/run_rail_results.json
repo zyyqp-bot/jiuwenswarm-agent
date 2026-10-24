@@ -1,6 +1,6 @@
 {
-  "checks_passed": 21,
-  "checks_total": 21,
+  "checks_passed": 25,
+  "checks_total": 25,
   "checks": [
     {
       "check": "no submission before build_team completes",
@@ -20,7 +20,7 @@
     {
       "check": "the native task board is projected into the snapshot",
       "result": "pass",
-      "detail": "tasks=[{'task_id': 'research', 'title': 'collect evidence', 'status': 'in_progress', 'assignee': 'research', 'blocked_by': ['engineering'], 'updated_at': 1}]"
+      "detail": "tasks=[{'task_id': 'research', 'title': 'collect evidence', 'status': 'in_progress', 'assignee': 'research', 'blocked_by': [], 'updated_at': 1}]"
     },
     {
       "check": "the board is read once after bootstrap",
@@ -36,6 +36,26 @@
       "check": "the board refreshes after the interval",
       "result": "pass",
       "detail": "board_calls=2"
+    },
+    {
+      "check": "a board refresh settles reviewer tasks",
+      "result": "pass",
+      "detail": "settled=[('research', 'in_progress')]"
+    },
+    {
+      "check": "an accepted predecessor satisfies the dependency",
+      "result": "pass",
+      "detail": "violations=[]"
+    },
+    {
+      "check": "a started task with an unaccepted predecessor is a violation",
+      "result": "pass",
+      "detail": "violations=[\"task 'engineering' started before 'research' was accepted\"]"
+    },
+    {
+      "check": "a violated dependency aborts the run",
+      "result": "pass",
+      "detail": "error=\"[110600] callback execution aborted: dependency violated: task 'engineering' started before 'research' was accepted\" fatal=[\"dependency violated: task 'engineering' started before 'research' was accepted\"]"
     },
     {
       "check": "a rejected graph aborts the callback chain",

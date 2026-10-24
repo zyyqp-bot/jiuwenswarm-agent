@@ -1,6 +1,6 @@
 {
-  "checks_passed": 14,
-  "checks_total": 14,
+  "checks_passed": 20,
+  "checks_total": 20,
   "checks": [
     {
       "check": "the assignee's supported result is accepted",
@@ -61,6 +61,36 @@
       "check": "the app's structural acceptance needs no model-supplied verdict",
       "result": "pass",
       "detail": "accepted"
+    },
+    {
+      "check": "a reviewed submission is accepted but not yet a result",
+      "result": "pass",
+      "detail": "ok=True results=[]"
+    },
+    {
+      "check": "the pending review is visible in the snapshot",
+      "result": "pass",
+      "detail": "pending=['research']"
+    },
+    {
+      "check": "a completed native task accepts the pending result",
+      "result": "pass",
+      "detail": "results=['research']"
+    },
+    {
+      "check": "a rejected review discards the pending result",
+      "result": "pass",
+      "detail": "results=[]"
+    },
+    {
+      "check": "a rejected review opens a new execution",
+      "result": "pass",
+      "detail": "first=run-w:research:1 next=run-w:research:2"
+    },
+    {
+      "check": "settling an unknown task is ignored",
+      "result": "pass",
+      "detail": "unknown task"
     },
     {
       "check": "the factory binds the build context's member",

@@ -124,6 +124,16 @@ class RunBootstrapRail(DeepAgentRail):
             self.bridge.errors.append(f"task board refresh failed: {type(exc).__name__}: {exc}")
             return
         self.bridge.record_task_board(tasks)
+        for task in tasks:
+            task_id = str(task.get("task_id") or "")
+            status = str(task.get("status") or "")
+            if task_id and status:
+                self.bridge.settle_review(task_id, status)
+        violations = self.bridge.verify_dependencies()
+        if violations:
+            message = "dependency violated: " + "; ".join(violations)
+            self.bridge.fail(message)
+            raise AbortError(reason=message)
 
     # -- resolution ---------------------------------------------------------
     @staticmethod

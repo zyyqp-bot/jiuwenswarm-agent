@@ -24,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from app.models import Claim, ClaimKind, TaskOutcome  # noqa: E402
 from app.plan import PlanTask  # noqa: E402
 from app.request_probe import install_request_probe  # noqa: E402
 from app.run_bridge import RunBridge  # noqa: E402
@@ -70,7 +71,7 @@ class _Manager:
             title="collect evidence",
             status="in_progress",
             assignee="research",
-            blocked_by=["engineering"],
+            blocked_by=[],
             updated_at=1,
         )
         return TaskListResult(tasks=[task], count=1)
@@ -83,6 +84,20 @@ class _MemberDao:
 
 class _Db:
     member = _MemberDao()
+
+
+class _BlockedManager(_Manager):
+    async def list_tasks_with_deps(self, status=None) -> TaskListResult:
+        self.board_calls += 1
+        task = TaskSummary(
+            task_id="engineering",
+            title="propose",
+            status="in_progress",
+            assignee="engineering",
+            blocked_by=["research"],
+            updated_at=1,
+        )
+        return TaskListResult(tasks=[task], count=1)
 
 
 class _Backend:
@@ -183,7 +198,7 @@ async def _run(checks: Checks) -> None:
                 "title": "collect evidence",
                 "status": "in_progress",
                 "assignee": "research",
-                "blocked_by": ["engineering"],
+                "blocked_by": [],
                 "updated_at": 1,
             }
         ],
@@ -201,12 +216,87 @@ async def _run(checks: Checks) -> None:
         backend.task_manager.board_calls == 1,
         f"board_calls={backend.task_manager.board_calls}",
     )
+    settled: list[tuple[str, str]] = []
+    original_settle = bridge.settle_review
+    bridge.settle_review = lambda task_id, status: (  # type: ignore[method-assign]
+        settled.append((task_id, status)) or original_settle(task_id, status)
+    )
     run_rail_module.BOARD_REFRESH_SECONDS = 0.0
     await rail.after_tool_call(_Ctx(_Agent(TeamToolRail(backend)), tool_name="view_task"))
     checks.add(
         "the board refreshes after the interval",
         backend.task_manager.board_calls == 2,
         f"board_calls={backend.task_manager.board_calls}",
+    )
+    checks.add(
+        "a board refresh settles reviewer tasks",
+        ("research", "in_progress") in settled,
+        f"settled={settled}",
+    )
+
+    # --- dependencies are app-accepted, not merely native-completed --------
+    ready = RunBridge(run_id="run-6", plan=PLAN)
+    execution = ready.execution_for("research")
+    await ready.submit(
+        producer="research",
+        task_id="research",
+        execution_id=execution,
+        outcome=TaskOutcome.SUCCESS,
+        claims=[Claim(text="a supported inference", kind=ClaimKind.INFERENCE)],
+    )
+    ready.record_task_board(
+        [
+            {
+                "task_id": "engineering",
+                "title": "propose",
+                "status": "in_progress",
+                "assignee": "engineering",
+                "blocked_by": ["research"],
+                "updated_at": 1,
+            }
+        ]
+    )
+    checks.add(
+        "an accepted predecessor satisfies the dependency",
+        ready.verify_dependencies() == [],
+        f"violations={ready.verify_dependencies()}",
+    )
+
+    waiting = RunBridge(run_id="run-7", plan=PLAN)
+    waiting.record_task_board(
+        [
+            {
+                "task_id": "engineering",
+                "title": "propose",
+                "status": "in_progress",
+                "assignee": "engineering",
+                "blocked_by": ["research"],
+                "updated_at": 1,
+            }
+        ]
+    )
+    checks.add(
+        "a started task with an unaccepted predecessor is a violation",
+        bool(waiting.verify_dependencies()),
+        f"violations={waiting.verify_dependencies()}",
+    )
+
+    violating_backend = _Backend(TaskGraphResult.success(tasks=[]), db=_Db())
+    violating_backend.task_manager = _BlockedManager(TaskGraphResult.success(tasks=[]))
+    violating_backend.task_manager.db = violating_backend.db
+    violating_bridge = RunBridge(run_id="run-8", plan=PLAN)
+    violating_rail = RunBootstrapRail(violating_bridge)
+    rail_error = ""
+    try:
+        await violating_rail.after_tool_call(
+            _Ctx(_Agent(TeamToolRail(violating_backend)), tool_name="build_team")
+        )
+    except AbortError as exc:
+        rail_error = str(exc)
+    checks.add(
+        "a violated dependency aborts the run",
+        "research" in rail_error and bool(violating_bridge.fatal_errors),
+        f"error={rail_error!r} fatal={violating_bridge.fatal_errors}",
     )
 
     # --- a rejected graph is loud on the explicit attempt -------------------
