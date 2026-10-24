@@ -70,12 +70,12 @@
     {
       "check": "the deploy guide states the single-instance and volume rules",
       "result": "pass",
-      "detail": "bytes=2069"
+      "detail": "bytes=2735"
     },
     {
       "check": "the deploy guide rules out public uploads",
       "result": "pass",
-      "detail": "bytes=2069"
+      "detail": "bytes=2735"
     },
     {
       "check": "the image carries the corpus seed directory",

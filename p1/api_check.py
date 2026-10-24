@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -107,6 +108,46 @@ async def _run(checks: Checks, data_dir: Path) -> None:
     settings = _settings(data_dir)
     app = create_app(settings=settings, service=FakeRunService())
     transport = httpx.ASGITransport(app=app)
+
+    # The container serves the SPA from the same origin. A fake dist keeps
+    # this check independent of a local `npm run build`.
+    static = data_dir / "static"
+    (static / "assets").mkdir(parents=True, exist_ok=True)
+    (static / "index.html").write_text(
+        '<!doctype html><div id="root"></div>'
+        '<script type="module" src="/assets/app-abc123.js"></script>',
+        encoding="utf-8",
+    )
+    (static / "assets" / "app-abc123.js").write_text("console.log('ok')\n", encoding="utf-8")
+    static_app = create_app(
+        settings=settings, service=FakeRunService(), static_dir=static
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=static_app), base_url="http://test"
+    ) as browser:
+        index = await browser.get("/")
+        checks.add(
+            "the SPA is served at the root",
+            index.status_code == 200 and 'id="root"' in index.text,
+            f"status={index.status_code}",
+        )
+        match = re.search(r'src="(/assets/[^"]+\.js)"', index.text)
+        asset = await browser.get(match.group(1)) if match else None
+        checks.add(
+            "the hashed bundle is served",
+            asset is not None and asset.status_code == 200,
+            f"asset={match.group(1) if match else 'missing'}",
+        )
+        checks.add(
+            "an unknown client route falls back to the SPA",
+            (await browser.get("/runs/whatever")).text == index.text,
+            "history fallback",
+        )
+        checks.add(
+            "an unknown api path is not the SPA",
+            (await browser.get("/api/nope")).status_code == 404,
+            "404 expected",
+        )
 
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as anonymous:
         checks.add(

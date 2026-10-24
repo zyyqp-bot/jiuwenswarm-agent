@@ -1,7 +1,27 @@
 {
-  "checks_passed": 15,
-  "checks_total": 15,
+  "checks_passed": 19,
+  "checks_total": 19,
   "checks": [
+    {
+      "check": "the SPA is served at the root",
+      "result": "pass",
+      "detail": "status=200"
+    },
+    {
+      "check": "the hashed bundle is served",
+      "result": "pass",
+      "detail": "asset=/assets/app-abc123.js"
+    },
+    {
+      "check": "an unknown client route falls back to the SPA",
+      "result": "pass",
+      "detail": "history fallback"
+    },
+    {
+      "check": "an unknown api path is not the SPA",
+      "result": "pass",
+      "detail": "404 expected"
+    },
     {
       "check": "health is public",
       "result": "pass",
@@ -20,7 +40,7 @@
     {
       "check": "a correct login sets a hardened cookie",
       "result": "pass",
-      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiI1NDRWdlhueDVqd1J3VjBpMjUtNUxBIiwiaWF0IjoxNzkyODI5ODY2fQ.oDbuU7ay14ObeKK9SkxWgZ56l54; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJJdFVJUHVJeFBrOG0zdW5RX2YxSTZBIiwiaWF0IjoxNzkyODMxNTcxfQ.qAnlrVGxIyTfhqmb2V58NoyRvKg; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
     },
     {
       "check": "the preseeded workspace is listed",
@@ -35,7 +55,7 @@
     {
       "check": "the run detail never leaks a pid, credentials or the data directory",
       "result": "pass",
-      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792829867.0002892,\"terminal\":true,\"snapshot"
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792831571.2369611,\"terminal\":true,\"snapshot"
     },
     {
       "check": "the event stream starts with a snapshot frame",

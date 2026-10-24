@@ -29,6 +29,9 @@ p1/.live_round/
 web/node_modules/
 web/dist/
 
+# Local tool cursor state (not product data)
+events/
+
 # OS / editor
 .DS_Store
 Thumbs.db

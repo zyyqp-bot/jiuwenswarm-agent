@@ -18,8 +18,11 @@ RUN npm run build
 # -- runtime ---------------------------------------------------------------
 FROM python:3.12-slim AS runtime
 
-ARG AGENT_CORE_COMMIT=6df9699e650b3ad9b9835b46ae3c3b7572adb04b
-ARG JIUWENSWARM_COMMIT=3fea8d1623a13646e935df9e96100ab7ad470aa4
+# Pinned commit archives. Override either URL with a mirror if the build host
+# cannot reach GitHub; the extracted tree is renamed, so the mirror may use a
+# different archive root name.
+ARG AGENT_CORE_ARCHIVE=https://github.com/openJiuwen-ai/agent-core/archive/6df9699e650b3ad9b9835b46ae3c3b7572adb04b.tar.gz
+ARG JIUWENSWARM_ARCHIVE=https://github.com/openJiuwen-ai/jiuwenswarm/archive/3fea8d1623a13646e935df9e96100ab7ad470aa4.tar.gz
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -38,12 +41,10 @@ COPY p0a/requirements-frozen.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir -p /app/upstream \
-    && curl -fsSL "https://github.com/openJiuwen-ai/agent-core/archive/${AGENT_CORE_COMMIT}.tar.gz" \
-         | tar -xz -C /app/upstream \
-    && mv "/app/upstream/agent-core-${AGENT_CORE_COMMIT}" /app/upstream/agent-core \
-    && curl -fsSL "https://github.com/openJiuwen-ai/jiuwenswarm/archive/${JIUWENSWARM_COMMIT}.tar.gz" \
-         | tar -xz -C /app/upstream \
-    && mv "/app/upstream/jiuwenswarm-${JIUWENSWARM_COMMIT}" /app/upstream/jiuwenswarm
+    && curl -fsSL "${AGENT_CORE_ARCHIVE}" | tar -xz -C /app/upstream \
+    && mv "$(find /app/upstream -mindepth 1 -maxdepth 1 -type d | head -n1)" /app/upstream/agent-core \
+    && curl -fsSL "${JIUWENSWARM_ARCHIVE}" | tar -xz -C /app/upstream \
+    && mv "$(find /app/upstream -mindepth 1 -maxdepth 1 -type d ! -name agent-core | head -n1)" /app/upstream/jiuwenswarm
 
 COPY app ./app
 COPY scripts ./scripts

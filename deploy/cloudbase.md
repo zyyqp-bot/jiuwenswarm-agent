@@ -12,7 +12,24 @@
 | 公开上传 | **不上传、不提供入口** | 只暴露预置工作区；导入语料由运维在容器内执行 |
 | Worker 数 | 1 | 同上；不要用 `--workers N` 覆盖 `CMD` |
 
-## 2. 部署步骤
+## 2. 从占位镜像切换到真实镜像
+
+`workbench-prod` 目前跑的是用来验证平台的 nginx 占位镜像（端口 80）。切换时：
+
+1. 同一个服务、同一个 Git 分支，Dockerfile 仍是仓库根目录的 `Dockerfile`；
+2. **把容器端口从 80 改成 8000**（新镜像的 `EXPOSE`/`CMD` 是 8000，网关按这个端口转发）；
+3. 补齐环境变量、挂载 `/data`、实例数固定 1，再点“重新部署”。
+
+构建时镜像会从 GitHub 下载两个固定提交的源码。若构建日志显示 `curl: (28)` 或连接重置，用构建参数把地址换成可达镜像（CloudBase 构建参数或 Dockerfile 默认值）：
+
+```text
+AGENT_CORE_ARCHIVE=<agent-core 同提交 tar.gz 的可达地址>
+JIUWENSWARM_ARCHIVE=<jiuwenswarm 同提交 tar.gz 的可达地址>
+```
+
+两个 URL 必须指向 `source-lock.json` 里的同一提交；不要改成移动分支。`requirements-frozen.txt` 还包含一个 `gitcode.com` 的 `gateway-protocol` 依赖，构建机需能访问该域名。
+
+## 3. 部署步骤
 
 1. 云托管 → 新建服务 → 代码仓库（GitHub），仓库 `zyyqp-bot/jiuwenswarm-agent`，分支 `main`。
 2. Dockerfile 路径填仓库根目录的 `Dockerfile`（多阶段：Node 构建 SPA，Python 运行 API）。
@@ -21,9 +38,9 @@
 5. 环境变量按 [deploy/.env.example](.env.example) 逐项填写。密钥只在控制台保存，不写进仓库。
 6. 部署完成后访问默认域名，应看到登录页；`/api/health` 应返回 `{"status":"ok","writable":true}`。
 
-## 3. 导入语料（一次性，运维执行）
+## 4. 导入语料（一次性，运维执行）
 
-镜像**不包含**真实语料，公开政策文件在构建前放到 `corpus/ai-governance/`，随镜像进入 `/app/corpus`。部署后在云托管控制台的容器终端执行：
+镜像**已包含** `corpus/ai-governance/` 下的公开法规原文（来源见 [corpus/SOURCES.md](../corpus/SOURCES.md)），随镜像进入 `/app/corpus`。索引不在镜像里——首次部署后必须在云托管控制台的容器终端执行一次：
 
 ```bash
 python scripts/import_corpus.py \
@@ -31,9 +48,9 @@ python scripts/import_corpus.py \
   --source /app/corpus/ai-governance
 ```
 
-输出 `{"documents": n, "chunks": n, "failures": []}` 即成功。重复执行会按内容哈希替换旧版本，不会重复计块。导入完成前，运行仍可提交，但成员没有检索工具，引用校验会让结果失败——这不是部署故障。
+输出 `{"documents": 6, "chunks": 92, "failures": []}`（离线实测值）即成功。重复执行会按内容哈希替换旧版本，不会重复计块。新增资料需要先提交 Git、重新部署，再执行一次导入。导入完成前，运行仍可提交，但成员没有检索工具，引用校验会让结果失败——这不是部署故障。
 
-## 4. 部署后验证清单
+## 5. 部署后验证清单
 
 - [ ] `GET /api/health` 返回 `writable: true`（卷可写）
 - [ ] 浏览器登录成功，刷新后仍在线（HttpOnly Cookie 通过网关）
@@ -53,7 +70,7 @@ python scripts/smoke_check.py --base-url https://<默认域名> \
 
 脚本不打印密码和 Cookie。
 
-## 5. 排障
+## 6. 排障
 
 | 现象 | 检查 |
 |---|---|

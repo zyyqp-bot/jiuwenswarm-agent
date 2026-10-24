@@ -10,12 +10,12 @@
     {
       "check": "npm install succeeds",
       "result": "pass",
-      "detail": "added 65 packages, and audited 66 packages in 6s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
+      "detail": "added 65 packages, and audited 66 packages in 3s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
     },
     {
       "check": "npm run build succeeds",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 33 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-B8CYuuEL.css  \u001b[39m\u001b[1m\u001b[2m  6.34 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.88 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-Bw6VOtXc.js   \u001b[39m\u001b[1m\u001b[2m234.21 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 73.75 kB\u001b[22m\n\u001b[32m✓ built in 600ms\u001b[39m"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 33 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-B8CYuuEL.css  \u001b[39m\u001b[1m\u001b[2m  6.34 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.88 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-Bw6VOtXc.js   \u001b[39m\u001b[1m\u001b[2m234.21 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 73.75 kB\u001b[22m\n\u001b[32m✓ built in 646ms\u001b[39m"
     },
     {
       "check": "dist/index.html exists",

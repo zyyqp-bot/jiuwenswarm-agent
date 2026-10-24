@@ -10,7 +10,7 @@
     {
       "check": "the fallback keeps the goal in the research instruction",
       "result": "pass",
-      "detail": "目标：列出一个面向公众的生成式 AI 客服上线前的合规动作\n用 retrieve 工具检索本工作区语料（task_id=research），整理有出处的发现；每"
+      "detail": "目标：列出一个面向公众的生成式 AI 客服上线前的合规动作\n用 retrieve 工具检索本工作区语料（task_id=research）。检索词用 2-6 个"
     },
     {
       "check": "the fallback keeps the two tasks independent",
