@@ -19,8 +19,10 @@ from typing import Any
 from app.plan import PlanTask, PlanValidator
 from app.team_config import ASSIGNABLE_MEMBERS
 
-MAX_PLAN_TASKS = 4
-"""A public request must not be able to turn one goal into an unbounded graph."""
+MAX_PLAN_TASKS = 2
+"""The roster has two members; more tasks run serially per member and a live
+4-task plan hit the 300 s deadline with one task unstarted. A larger graph is
+a fallback, not a longer wait for the judge."""
 
 __all__ = [
     "PLAN_SCHEMA",
@@ -36,7 +38,7 @@ PLAN_SCHEMA: dict[str, Any] = {
     "properties": {
         "tasks": {
             "type": "array",
-            "maxItems": 4,
+            "maxItems": 2,
             "items": {
                 "type": "object",
                 "properties": {
@@ -53,9 +55,10 @@ PLAN_SCHEMA: dict[str, Any] = {
 }
 
 SYSTEM_PROMPT = (
-    "你是任务规划器。把用户目标拆成 2-4 个可由两名成员并行执行的任务。"
-    "assignee 只能是 research 或 engineering：research 负责检索法规并给出带出处的发现，"
+    "你是任务规划器。把用户目标拆成恰好 2 个任务：一个 assignee=research，"
+    "一个 assignee=engineering。research 负责检索法规并给出带出处的发现，"
     "engineering 负责检索同一语料并给出可执行的方案或清单，两者各自引用证据。"
+    "每个任务的产出控制在 3-6 条 claim，不要写成长篇报告；"
     "任务之间不要声明依赖；每个任务必须给出非空的 acceptance_ids。"
     "只通过结构化输出回答问题。"
 )
@@ -90,7 +93,7 @@ def fallback_plan(goal: str) -> list[PlanTask]:
                 "用 retrieve 工具检索本工作区语料（task_id=research）。"
                 "检索词用 2-6 个字的关键词（如「安全评估」「内容标识」），"
                 "不要拿整句目标去搜；可以分多次检索不同关键词。"
-                "整理有出处的发现；每条 fact 必须引用 retrieve 返回的 evidence id，"
+                "整理 3-6 条有出处的发现；每条 fact 必须引用 retrieve 返回的 evidence id，"
                 "最后用 submit_task_result 提交（task_id=research, outcome=success）。"
             ),
             acceptance_ids=("research_accept",),
@@ -103,7 +106,7 @@ def fallback_plan(goal: str) -> list[PlanTask]:
                 f"{block}\n"
                 "用 retrieve 工具检索本工作区语料（task_id=engineering），"
                 "检索词用 2-6 个字的关键词（如「安全评估」「算法备案」），"
-                "基于检索到的条文给出可执行的方案或清单；"
+                "基于检索到的条文给出 3-6 条可执行的方案或清单；"
                 "每条 fact 必须引用 retrieve 返回的 evidence id，"
                 "最后用 submit_task_result 提交（task_id=engineering, outcome=success）。"
             ),

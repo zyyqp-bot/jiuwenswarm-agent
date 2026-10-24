@@ -53,7 +53,7 @@
       "detail": "fallback"
     },
     {
-      "check": "a plan with too many tasks falls back",
+      "check": "a plan with more tasks than members falls back",
       "result": "pass",
       "detail": "source=fallback"
     },

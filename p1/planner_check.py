@@ -138,13 +138,13 @@ async def _run(checks: Checks) -> None:
         return {
             "tasks": [
                 dict(VALID_PLAN["tasks"][0], task_id=f"task-{index}")
-                for index in range(5)
+                for index in range(3)
             ]
         }
 
     crowded = await plan_goal(GOAL, model=object(), run=crowded_run)
     checks.add(
-        "a plan with too many tasks falls back",
+        "a plan with more tasks than members falls back",
         crowded.source == "fallback",
         f"source={crowded.source}",
     )
