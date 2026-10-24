@@ -40,15 +40,19 @@ def register_providers() -> None:
 
     The upstream import is lazy: importing ``app.hooks`` must not require
     agent-core on the path (the bridge unit checks run against the app alone).
-    The rail provider is registered in Task 5, when ``app.run_rail`` exists.
     """
     global _PROVIDERS_REGISTERED
     if _PROVIDERS_REGISTERED:
         return
 
-    from openjiuwen.harness.schema.deep_agent_spec import register_tool_provider
+    from openjiuwen.harness.schema.deep_agent_spec import (
+        register_rail_provider,
+        register_tool_provider,
+    )
 
+    from app.run_rail import make_bootstrap_rail
     from app.submit_tool import make_submit_tool
 
     register_tool_provider("app.submit_task_result", make_submit_tool)
+    register_rail_provider("app.run_bootstrap", make_bootstrap_rail)
     _PROVIDERS_REGISTERED = True

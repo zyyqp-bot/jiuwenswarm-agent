@@ -79,6 +79,11 @@ class RunBridge:
                 self._executions[task_id] = execution_id
             return execution_id
 
+    def plan_tasks(self) -> list[PlanTask]:
+        """Return the plan in declaration order (the order the graph must keep)."""
+        with self._lock:
+            return list(self._plan.values())
+
     def set_evidence(self, task_id: str, evidence_ids: Iterable[str]) -> None:
         """Replace the evidence ids this task's execution received."""
         with self._lock:

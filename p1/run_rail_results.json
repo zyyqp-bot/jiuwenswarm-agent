@@ -1,0 +1,32 @@
+{
+  "checks_passed": 5,
+  "checks_total": 5,
+  "checks": [
+    {
+      "check": "the graph is submitted exactly once",
+      "result": "pass",
+      "detail": "calls=1"
+    },
+    {
+      "check": "the bridge records that it bootstrapped",
+      "result": "pass",
+      "detail": "bootstrapped=True"
+    },
+    {
+      "check": "a rejected graph raises",
+      "result": "pass",
+      "detail": "native task graph was rejected: cycle"
+    },
+    {
+      "check": "without a team rail nothing is submitted",
+      "result": "pass",
+      "detail": "calls=0 bootstrapped=False"
+    },
+    {
+      "check": "the probe records the tools sent to the model",
+      "result": "pass",
+      "detail": "seen=['submit_task_result', 'create_task']"
+    }
+  ],
+  "scope": "rail and probe unit checks only; no team, no runner, no model call"
+}
