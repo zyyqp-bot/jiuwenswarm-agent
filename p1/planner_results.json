@@ -1,6 +1,6 @@
 {
-  "checks_passed": 15,
-  "checks_total": 15,
+  "checks_passed": 16,
+  "checks_total": 16,
   "checks": [
     {
       "check": "the fallback plan is valid for the fixed roster",
@@ -16,6 +16,11 @@
       "check": "the fallback keeps the two tasks independent",
       "result": "pass",
       "detail": "depends_on=()"
+    },
+    {
+      "check": "both fallback tasks retrieve for themselves",
+      "result": "pass",
+      "detail": "instructions=['目标：列出一个面向公众的生成式 AI 客服上线前的合规动作\\n用 retrieve', '目标：列出一个面向公众的生成式 AI 客服上线前的合规动作\\n用 retrieve']"
     },
     {
       "check": "the fallback never assigns the leader",

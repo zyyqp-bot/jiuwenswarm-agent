@@ -74,6 +74,11 @@ async def _run(checks: Checks) -> None:
         f"depends_on={fallback[1].depends_on}",
     )
     checks.add(
+        "both fallback tasks retrieve for themselves",
+        all(f"task_id={task.task_id}" in task.instruction for task in fallback),
+        f"instructions={[task.instruction[:40] for task in fallback]}",
+    )
+    checks.add(
         "the fallback never assigns the leader",
         all(task.assignee in ASSIGNABLE_MEMBERS for task in fallback),
         f"assignees={[task.assignee for task in fallback]}",

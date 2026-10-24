@@ -50,8 +50,8 @@ PLAN_SCHEMA: dict[str, Any] = {
 
 SYSTEM_PROMPT = (
     "你是任务规划器。把用户目标拆成 2-4 个可由两名成员并行执行的任务。"
-    "assignee 只能是 research 或 engineering：research 负责检索资料并给出带出处的发现，"
-    "engineering 负责在这些发现之上给出方案或清单。"
+    "assignee 只能是 research 或 engineering：research 负责检索法规并给出带出处的发现，"
+    "engineering 负责检索同一语料并给出可执行的方案或清单，两者各自引用证据。"
     "任务之间不要声明依赖；每个任务必须给出非空的 acceptance_ids。"
     "只通过结构化输出回答问题。"
 )
@@ -88,8 +88,10 @@ def fallback_plan(goal: str) -> list[PlanTask]:
             role="teammate",
             instruction=(
                 f"目标：{target}\n"
-                "只使用本任务实际收到的证据，给出可执行的方案或清单；"
-                "每条 fact 必须引用 evidence id，"
+                "用 retrieve 工具检索本工作区语料（task_id=engineering），"
+                "检索词用 2-6 个字的关键词（如「安全评估」「算法备案」），"
+                "基于检索到的条文给出可执行的方案或清单；"
+                "每条 fact 必须引用 retrieve 返回的 evidence id，"
                 "最后用 submit_task_result 提交（task_id=engineering, outcome=success）。"
             ),
             acceptance_ids=("engineering_accept",),
