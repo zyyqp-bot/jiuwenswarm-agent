@@ -1,0 +1,44 @@
+"""Preseeded workspaces: a corpus, a scope and the prompts that frame it.
+
+The engine carries no industry logic; a workspace is the configuration that
+turns it into one vertical. The public link exposes only these preseeded
+workspaces — it never accepts an upload.
+"""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+
+__all__ = ["Workspace", "WORKSPACES", "get_workspace", "workspace_summaries"]
+
+
+@dataclass(frozen=True)
+class Workspace:
+    """One vertical instance."""
+
+    name: str
+    description: str
+    corpus: str
+    access_scope: str
+
+
+WORKSPACES: dict[str, Workspace] = {
+    "ai-governance": Workspace(
+        name="ai-governance",
+        description="AI 治理与数据合规：公开政策法规的研读、引用与冲突报告",
+        corpus="ai-governance",
+        access_scope="public",
+    )
+}
+
+
+def get_workspace(name: str) -> Workspace | None:
+    """Return a preseeded workspace, or ``None``."""
+    return WORKSPACES.get(name)
+
+
+def workspace_summaries() -> list[dict[str, str]]:
+    """Return the public view of every workspace."""
+    return [
+        {"name": item.name, "description": item.description, "corpus": item.corpus}
+        for item in WORKSPACES.values()
+    ]

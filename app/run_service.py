@@ -187,14 +187,25 @@ class RunService:
         *,
         session_id: str,
         after_seq: int = 0,
+        heartbeat_seconds: float = 15.0,
     ) -> AsyncIterator[dict[str, Any]]:
-        """Yield snapshots newer than ``after_seq`` until the run is terminal."""
+        """Yield snapshots newer than ``after_seq`` until the run is terminal.
+
+        A heartbeat is emitted when nothing changed for ``heartbeat_seconds``,
+        so a planning phase that produces no snapshot does not leave the SSE
+        connection looking dead to a platform proxy.
+        """
         last = max(0, int(after_seq))
+        last_emit = time.monotonic()
         while True:
             record = self.get(run_id, session_id=session_id)
             if record.seq > last:
                 last = record.seq
+                last_emit = time.monotonic()
                 yield {"seq": last, "type": "snapshot", "snapshot": dict(record.snapshot)}
+            elif time.monotonic() - last_emit >= heartbeat_seconds:
+                last_emit = time.monotonic()
+                yield {"seq": last, "type": "heartbeat"}
             if record.terminal:
                 return
             await asyncio.sleep(min(self._poll, 0.1))

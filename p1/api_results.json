@@ -1,0 +1,77 @@
+{
+  "checks_passed": 14,
+  "checks_total": 14,
+  "checks": [
+    {
+      "check": "health is public",
+      "result": "pass",
+      "detail": "health without a cookie"
+    },
+    {
+      "check": "a run list without a cookie is rejected",
+      "result": "pass",
+      "detail": "401 expected"
+    },
+    {
+      "check": "a wrong password is rejected without a cookie",
+      "result": "pass",
+      "detail": "status=401 set-cookie=False"
+    },
+    {
+      "check": "a correct login sets a hardened cookie",
+      "result": "pass",
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJVOXBWN2puVFlELXItY3hVNlpGV0N3IiwiaWF0IjoxNzkyODI5NDY5fQ.4h_5wXp6GcQ1Ltf-0orlaSZXlZ4; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+    },
+    {
+      "check": "the preseeded workspace is listed",
+      "result": "pass",
+      "detail": "{\"workspaces\":[{\"name\":\"ai-governance\",\"description\":\"AI 治理与数据合规：公开政策法规的研读、引用与冲突报告\",\"corpus\":\"ai-governance\"}]}"
+    },
+    {
+      "check": "starting a run returns its id",
+      "result": "pass",
+      "detail": "{\"run_id\":\"run-1\"}"
+    },
+    {
+      "check": "the run detail never leaks a pid, credentials or the data directory",
+      "result": "pass",
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792829469.8205953,\"terminal\":true,\"snapshot"
+    },
+    {
+      "check": "the event stream starts with a snapshot frame",
+      "result": "pass",
+      "detail": "content_type=text/event-stream; charset=utf-8 frame=retry: 3000\n\nevent: snapshot\ndata: {\"seq\": 1, \"type\": \"snapshot\", \"snapshot\": {\"phase\": \"returned\", \"complete\": true, \"r"
+    },
+    {
+      "check": "another session cannot read the run",
+      "result": "pass",
+      "detail": "404 expected"
+    },
+    {
+      "check": "another session cannot stop the run",
+      "result": "pass",
+      "detail": "404 expected"
+    },
+    {
+      "check": "another session cannot stream the run",
+      "result": "pass",
+      "detail": "404 expected"
+    },
+    {
+      "check": "another session's run list is empty",
+      "result": "pass",
+      "detail": "{\"runs\":[]}"
+    },
+    {
+      "check": "capacity is reported as 503",
+      "result": "pass",
+      "detail": "{\"detail\":\"concurrent run capacity reached\"}"
+    },
+    {
+      "check": "an unknown workspace is a 400",
+      "result": "pass",
+      "detail": "{\"detail\":\"unknown workspace\"}"
+    }
+  ],
+  "scope": "API routing and auth with a fake run service; no subprocess, no model call"
+}
