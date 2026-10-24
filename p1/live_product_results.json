@@ -1,0 +1,57 @@
+{
+  "checks_passed": 10,
+  "checks_total": 10,
+  "checks": [
+    {
+      "check": "the committed corpus imports",
+      "result": "pass",
+      "detail": "imported={'documents': 6, 'chunks': 92, 'failures': []}"
+    },
+    {
+      "check": "the run ends through the native completion marker",
+      "result": "pass",
+      "detail": "phase=returned stop=team_completed error=None"
+    },
+    {
+      "check": "the planner produced or fell back to a valid graph",
+      "result": "pass",
+      "detail": "planner=tiny tasks=['T1', 'T2']"
+    },
+    {
+      "check": "every planned task produced a result by its assignee",
+      "result": "pass",
+      "detail": "planned={'T1': 'research', 'T2': 'engineering'} results=['T1', 'T2']"
+    },
+    {
+      "check": "the members produced cited facts",
+      "result": "pass",
+      "detail": "facts=11"
+    },
+    {
+      "check": "every cited fact uses evidence its task retrieved",
+      "result": "pass",
+      "detail": "wrong=[]"
+    },
+    {
+      "check": "the cited passages are in the snapshot",
+      "result": "pass",
+      "detail": "details=62"
+    },
+    {
+      "check": "no request carried a tool outside the allowlist",
+      "result": "pass",
+      "detail": "requests=70 denied=[]"
+    },
+    {
+      "check": "the report is complete under structural acceptance",
+      "result": "pass",
+      "detail": "outcome=complete limitations=()"
+    },
+    {
+      "check": "the report cites at least one retrieved passage",
+      "result": "pass",
+      "detail": "bytes=37903"
+    }
+  ],
+  "scope": "live product path: planner, retrieval, submission, structural acceptance"
+}
