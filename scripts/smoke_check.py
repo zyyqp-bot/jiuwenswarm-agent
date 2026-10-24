@@ -133,8 +133,10 @@ def run_checks(*, base_url: str, user: str, password: str, goal: str, wait_secon
         print(f"run did not terminate within {wait_seconds:.0f}s")
         return False
     print(f"   phase={record.get('phase')} stop_reason={record.get('stop_reason')}")
-    if record.get("error"):
-        print(f"run error: {record['error']}")
+    if record.get("phase") != "returned" or record.get("error"):
+        # A terminal failed or stopped run is not a successful smoke check.
+        print(f"run did not succeed: {record.get('error') or record.get('stop_reason')}")
+        return False
 
     _stage("report")
     status, raw = _request(opener, "GET", f"{base}/api/runs/{run_id}/report.md")

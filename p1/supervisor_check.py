@@ -226,9 +226,31 @@ async def _run(checks: Checks) -> None:
         )
 
 
+def _crash_check(checks: Checks) -> None:
+    with tempfile.TemporaryDirectory() as raw:
+        payload = {
+            "run_id": "run-crash",
+            "snapshot_path": str(Path(raw) / "snapshot.json"),
+            "results_path": str(Path(raw) / "results.json"),
+        }
+        snapshot = supervisor_module.record_crash(
+            payload, RuntimeError("preparation failed")
+        )
+        written = json.loads(Path(payload["snapshot_path"]).read_text(encoding="utf-8"))
+        checks.add(
+            "a preparation crash still writes a complete snapshot",
+            written.get("complete") is True
+            and written.get("phase") == "raised"
+            and "RuntimeError" in written.get("error", "")
+            and "preparation failed" in written.get("error", ""),
+            f"snapshot={written.get('phase')} error={str(written.get('error'))[:80]}",
+        )
+
+
 def main() -> int:
     checks = Checks()
     asyncio.run(_run(checks))
+    _crash_check(checks)
     return checks.report(
         RESULTS_PATH,
         scope="supervisor orchestration with a fake runner; no team, no model call",

@@ -1,6 +1,6 @@
 {
-  "checks_passed": 9,
-  "checks_total": 9,
+  "checks_passed": 10,
+  "checks_total": 10,
   "checks": [
     {
       "check": "the snapshot is written to disk",
@@ -46,6 +46,11 @@
       "check": "the final snapshot is the last one written",
       "result": "pass",
       "detail": "last_written='returned' phases=['streaming', 'streaming', 'returned', 'returned']"
+    },
+    {
+      "check": "a preparation crash still writes a complete snapshot",
+      "result": "pass",
+      "detail": "snapshot=raised error=RuntimeError: preparation failed\nNoneType: None\n"
     }
   ],
   "scope": "supervisor orchestration with a fake runner; no team, no model call"

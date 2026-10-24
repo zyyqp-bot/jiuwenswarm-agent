@@ -24,6 +24,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 from pathlib import Path
 from typing import Any, Callable
 
@@ -290,6 +291,34 @@ async def run_payload(
     return _snapshot(final_phase, complete=True)
 
 
+def record_crash(payload: dict[str, Any], exc: BaseException) -> dict[str, Any]:
+    """Persist a complete snapshot when preparation itself raises.
+
+    Without this, an import/config failure exits the child before any snapshot
+    exists, and the API can only report "exited with code 1" with no cause.
+    """
+    detail = "".join(traceback.format_exception_only(type(exc), exc)).strip()
+    trace = traceback.format_exc(limit=8)
+    snapshot = {
+        "run_id": str(payload.get("run_id") or ""),
+        "phase": "raised",
+        "complete": True,
+        "stream_stop_reason": "raised",
+        "error": f"{detail}\n{trace}"[-2000:],
+        "team_markers": [],
+        "results": {},
+    }
+    for key in ("snapshot_path", "results_path"):
+        path = payload.get(key)
+        if path:
+            try:
+                _atomic_write_json(Path(path), snapshot)
+            except OSError:
+                # Reported by the caller's exit code; do not mask the cause.
+                pass
+    return snapshot
+
+
 def main(argv: list[str]) -> int:
     """CLI: ``python app/supervisor.py --payload <path>``."""
     if "--payload" not in argv:
@@ -297,7 +326,10 @@ def main(argv: list[str]) -> int:
         return 2
     payload_path = Path(argv[argv.index("--payload") + 1])
     payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    snapshot = asyncio.run(run_payload(payload))
+    try:
+        snapshot = asyncio.run(run_payload(payload))
+    except BaseException as exc:  # noqa: BLE001 - the child must report its cause
+        snapshot = record_crash(payload, exc)
     print(json.dumps({"phase": snapshot["phase"], "error": snapshot["error"]}, ensure_ascii=False))
     # A run only succeeded if it ended through the native completion marker.
     # "returned" also covers idle_grace, deadline and stream_closed, which mean
