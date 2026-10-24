@@ -55,7 +55,7 @@
     {
       "check": "deploy/.env.example exists",
       "result": "pass",
-      "detail": "bytes=882"
+      "detail": "bytes=934"
     },
     {
       "check": "the env example lists every required setting",
@@ -70,12 +70,12 @@
     {
       "check": "the deploy guide states the single-instance and volume rules",
       "result": "pass",
-      "detail": "bytes=2735"
+      "detail": "bytes=3123"
     },
     {
       "check": "the deploy guide rules out public uploads",
       "result": "pass",
-      "detail": "bytes=2735"
+      "detail": "bytes=3123"
     },
     {
       "check": "the image carries the corpus seed directory",

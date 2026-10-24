@@ -30,7 +30,7 @@
     {
       "check": "a tampered cookie is rejected",
       "result": "pass",
-      "detail": "tampered=Ol-n_2YA"
+      "detail": "tampered=CmJX_fjA"
     },
     {
       "check": "a garbage cookie is rejected",
