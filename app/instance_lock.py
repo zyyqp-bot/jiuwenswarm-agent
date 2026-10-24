@@ -30,8 +30,11 @@ class InstanceLock:
     """A heartbeat file under ``data_dir`` that one process owns."""
 
     data_dir: Path
-    stale_seconds: float = 45.0
-    heartbeat_seconds: float = 15.0
+    # Four missed 5-second beats. Long enough that a live process is never
+    # taken over, short enough that a redeploy after SIGKILL does not wait a
+    # minute before the new container can start.
+    stale_seconds: float = 20.0
+    heartbeat_seconds: float = 5.0
     host: str = field(default_factory=socket.gethostname)
     pid: int = field(default_factory=os.getpid)
     clock: Callable[[], float] = time.time

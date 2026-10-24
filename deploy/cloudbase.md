@@ -75,7 +75,7 @@ python scripts/smoke_check.py --base-url https://<默认域名> \
 | 现象 | 检查 |
 |---|---|
 | 容器反复重启 | 日志里找 `SESSION_SECRET must be at least 32`、`placeholder`、`MODEL_BASE_URL` 或 `WORKBENCH_USERS` |
-| 启动即报 `another workbench instance` | 实例数不是 1，或上次进程刚被杀（锁 45 秒后自动过期）；确认只有一个实例 |
+| 启动即报 `another workbench instance` | 实例数不是 1，或上次进程刚被杀（锁 20 秒后自动过期）；确认只有一个实例 |
 | 启动报 `PermissionError` / 写 `/data` 失败 | 卷的属主不是容器用户（uid 10001）；在 CloudBase 调整卷权限或换一个可写目录 |
 | 登录 401 | 控制台环境变量是否有多余空格；改完要重新部署 |
 | 运行一直 `starting` | 看子进程日志：`upstream` 下载是否成功、`PYTHONPATH` 是否两个目录都在 |
