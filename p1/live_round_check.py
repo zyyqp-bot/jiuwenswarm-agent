@@ -94,6 +94,9 @@ DRY_RUN_ENV = "LIVE_ROUND_DRY_RUN"
 
 MAX_ROUND_SECONDS = 600.0
 SNAPSHOT_INTERVAL_SECONDS = 0.5
+STREAM_TICK_SECONDS = 1.0
+IDLE_GRACE_SECONDS = 12.0
+ROUND_DEADLINE_SECONDS = float(os.environ.get("LIVE_ROUND_DEADLINE_SECONDS", "300"))
 MAX_CAPTURED_RECORDS = 20_000
 
 NOT_RUN_ALWAYS = [
@@ -334,15 +337,53 @@ def _analyse_logs(records: list[dict[str, str]], team_tool_count: int | None) ->
 # --------------------------------------------------------------------------
 # round state and snapshots
 # --------------------------------------------------------------------------
+def _chunk_field(chunk: object, name: str):
+    if isinstance(chunk, dict):
+        return chunk.get(name)
+    return getattr(chunk, name, None)
+
+
+def _chunk_text_and_marker(chunk: object) -> tuple[str, str | None]:
+    """Return the text a chunk carries and, for team markers, its event type.
+
+    The framework puts content in ``payload`` (``OutputSchema`` is
+    ``type/index/payload``), not on ``content``/``text``. ``llm_output``
+    carries incremental content; ``answer`` carries the finalized result and
+    may repeat what the llm_output chunks already said, so the caller keeps
+    them apart.
+    """
+    payload = _chunk_field(chunk, "payload")
+    if not isinstance(payload, dict):
+        return "", None
+    event_type = payload.get("event_type")
+    if isinstance(event_type, str) and event_type.startswith("team."):
+        return "", event_type
+    chunk_type = _chunk_field(chunk, "type")
+    if chunk_type == "llm_output":
+        content = payload.get("content")
+        return (content, None) if isinstance(content, str) else ("", None)
+    if chunk_type == "answer":
+        content = payload.get("content") or payload.get("output")
+        return (content, None) if isinstance(content, str) else ("", None)
+    return "", None
+
+
 class _RoundState:
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.started = time.monotonic()
         self.events = 0
         self.chunks_with_text = 0
-        self.answer_parts: list[str] = []
+        self.llm_parts: list[str] = []
+        self.answer_text: str = ""
+        self.chunk_types: dict[str, int] = {}
+        self.markers: list[str] = []
+        self.saw_idle = False
+        self.saw_completed = False
+        self.idle_at: float | None = None
         self.stream_entered = False
         self.stream_ended = False
+        self.stop_reason: str | None = None
         self.midstream_writes = 0
         self.base_checks: list[dict] = []
         self.team_tool_count: int | None = None
@@ -370,7 +411,11 @@ def _build_payload(
     with state.lock:
         events = state.events
         chunks_with_text = state.chunks_with_text
-        answer = "".join(state.answer_parts).strip()
+        answer = (state.answer_text or "".join(state.llm_parts)).strip()
+        chunk_types = dict(state.chunk_types)
+        markers = list(state.markers)
+        saw_completed = state.saw_completed
+        stop_reason = state.stop_reason
         stream_entered = state.stream_entered
         stream_ended = state.stream_ended
         snapshot_index = state.midstream_writes
@@ -417,6 +462,27 @@ def _build_payload(
             "the round never started: no model credentials, so no request, rail, "
             "checkpoint or idle record could exist"
         )
+    if not dry_run and not blocked:
+        if saw_completed:
+            checks.add(
+                "the team emitted a completion marker",
+                True,
+                f"markers={markers[-5:]}, stop_reason={stop_reason!r}",
+            )
+        elif stop_reason == "idle_grace":
+            # Native completion requires at least one task; a plain query
+            # creates none, so the stream stays open by design.
+            observed_not_run.append(
+                "team completion marker: is_team_completed requires at least one task "
+                "and every task terminal; this round created none, so the stream was "
+                "stopped after the idle grace period"
+            )
+        else:
+            checks.add(
+                "the team emitted a completion marker",
+                False,
+                f"markers={markers[-5:]}, stop_reason={stop_reason!r}",
+            )
     spawn_calls = analysis["tool_calls"]["spawn_calls"]
     all_calls = analysis["tool_calls"]["tool_calls"]
     if all_calls:
@@ -446,6 +512,9 @@ def _build_payload(
         "dry_run": dry_run,
         "events": events,
         "chunks_with_text": chunks_with_text,
+        "chunk_types": chunk_types,
+        "team_markers": markers,
+        "stream_stop_reason": stop_reason,
         "answer_chars": len(answer),
         "answer_preview": answer[:200],
         "elapsed_s": round(elapsed, 1),
@@ -609,22 +678,86 @@ async def _run_round(
     # from inside it too: there may be no statement after the loop to hang a
     # final save on. The reporter thread covers the tail of the round as well.
     session_id = f"live-round-{int(time.time())}"
-    async for chunk in Runner.run_agent_team_streaming(
-        agent_team=spec, inputs={"query": QUERY}, session=session_id
-    ):
-        with state.lock:
-            state.events += 1
-            state.stream_entered = True
-            text = getattr(chunk, "content", None) or getattr(chunk, "text", None)
-            if text:
-                state.chunks_with_text += 1
-                state.answer_parts.append(str(text))
+    queue: asyncio.Queue = asyncio.Queue(maxsize=1024)
+    producer_error: list[BaseException] = []
+
+    async def _producer() -> None:
+        try:
+            async for item in Runner.run_agent_team_streaming(
+                agent_team=spec, inputs={"query": QUERY}, session=session_id
+            ):
+                await queue.put(item)
+        except BaseException as exc:  # noqa: BLE001 - reported on the main path
+            producer_error.append(exc)
+        finally:
+            await queue.put(None)
+
+    task = asyncio.create_task(_producer())
+    stop_reason: str | None = None
+    try:
+        while True:
+            try:
+                chunk = await asyncio.wait_for(queue.get(), timeout=STREAM_TICK_SECONDS)
+            except asyncio.TimeoutError:
+                now = time.monotonic()
+                with state.lock:
+                    idle_for = now - state.idle_at if state.idle_at else 0.0
+                    completed = state.saw_completed
+                    idle = state.saw_idle
+                if idle and not completed and idle_for >= IDLE_GRACE_SECONDS:
+                    stop_reason = "idle_grace"
+                    break
+                if now - state.started >= ROUND_DEADLINE_SECONDS:
+                    stop_reason = "deadline"
+                    break
+                continue
+
+            if chunk is None:
+                stop_reason = "stream_closed"
+                break
+
+            text, marker = _chunk_text_and_marker(chunk)
+            chunk_type = _chunk_field(chunk, "type")
+            with state.lock:
+                state.events += 1
+                state.stream_entered = True
+                if isinstance(chunk_type, str):
+                    state.chunk_types[chunk_type] = state.chunk_types.get(chunk_type, 0) + 1
+                if marker:
+                    state.markers.append(marker)
+                    if marker == "team.idle":
+                        state.saw_idle = True
+                        state.idle_at = time.monotonic()
+                    elif marker == "team.completed":
+                        state.saw_completed = True
+                if text:
+                    state.chunks_with_text += 1
+                    if chunk_type == "answer":
+                        state.answer_text = text
+                    else:
+                        state.llm_parts.append(text)
+
+            if marker == "team.completed":
+                stop_reason = "team_completed"
+                break
+    finally:
+        if not task.done():
+            task.cancel()
+            with contextlib.suppress(BaseException):
+                await task
+
+    if stop_reason in ("idle_grace", "deadline"):
+        with contextlib.suppress(Exception):
+            await Runner.stop_agent_team(team_name=spec.team_name, session_id=session_id)
+    else:
+        with contextlib.suppress(Exception):
+            await Runner.stop()
 
     with state.lock:
         state.stream_ended = True
-
-    with contextlib.suppress(Exception):
-        await Runner.stop()
+        state.stop_reason = stop_reason
+        if producer_error:
+            state.error = f"stream producer: {type(producer_error[0]).__name__}: {producer_error[0]}"
 
 
 def _verify_without_model_call(state: _RoundState) -> str | None:
@@ -940,6 +1073,9 @@ def _parent_main(dry_run: bool) -> int:
         "termination": termination,
         "events": child.get("events", 0),
         "chunks_with_text": child.get("chunks_with_text", 0),
+        "chunk_types": child.get("chunk_types", {}),
+        "team_markers": child.get("team_markers", []),
+        "stream_stop_reason": child.get("stream_stop_reason"),
         "answer_chars": child.get("answer_chars", 0),
         "answer_preview": child.get("answer_preview", ""),
         "usage": child.get("usage", {}),

@@ -1,7 +1,12 @@
 {
-  "checks_passed": 5,
-  "checks_total": 6,
+  "checks_passed": 18,
+  "checks_total": 18,
   "checks": [
+    {
+      "check": "model credentials are available (from env or .env.local)",
+      "result": "pass",
+      "detail": "MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME"
+    },
     {
       "check": "the team spec compiles with team_mode='predefined'",
       "result": "pass",
@@ -18,19 +23,74 @@
       "detail": "10 team tools; spawn=[]"
     },
     {
-      "check": "the log assertions fire on the framework's log line formats",
+      "check": "the round produced output",
       "result": "pass",
-      "detail": "7 derived checks; all fired"
+      "detail": "136 chunks, 47 with text, 78 chars in 20s"
+    },
+    {
+      "check": "the output is not an error message",
+      "result": "pass",
+      "detail": "因为源码版本决定了行为、接口和依赖的真实基线：如果版本不匹配，后续基于文档、记忆或旧样例所作的假设会全部失效，实现会偏离实际代码，最终导致返工甚至修错目标。"
+    },
+    {
+      "check": "the leader issued a model request",
+      "result": "pass",
+      "detail": "1 request(s); tool_count=[29]"
+    },
+    {
+      "check": "the request carried more tools than the team tool surface",
+      "result": "pass",
+      "detail": "request tool_count=29, materialised team tools=10; the difference is harness-supplied capability"
+    },
+    {
+      "check": "the provider reported token usage",
+      "result": "pass",
+      "detail": "1 response(s) with usage; input=14421, output=131"
+    },
+    {
+      "check": "the security rail handled the input",
+      "result": "pass",
+      "detail": "[BaseSecurityRail] get_user_input subject_id='SafetyPromptRail:before_model_call' raw_input_type=None"
+    },
+    {
+      "check": "a checkpoint was saved",
+      "result": "pass",
+      "detail": "{\"event_id\": \"b6dc4fc0-430d-4f6a-8e7f-ee33b231bca1\", \"event_type\": \"checkpoint_save\", \"log_level\": \"INFO\", \"timestamp\": \"2026-10-24T14:04:39.753453+08:00\", \"mod"
+    },
+    {
+      "check": "the task loop completed an iteration",
+      "result": "pass",
+      "detail": "iterations=[1]"
+    },
+    {
+      "check": "the team went idle",
+      "result": "pass",
+      "detail": "[team_leader] team went idle: {'team_leader': 'ready'}"
     },
     {
       "check": "the round process ran and exited",
       "result": "pass",
-      "detail": "returncode=1 after 18s"
+      "detail": "returncode=0 after 21s"
     },
     {
-      "check": "the round could start (model credentials available)",
-      "result": "fail",
-      "detail": "no MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME in the environment or .env.local"
+      "check": "the round process exited with status 0",
+      "result": "pass",
+      "detail": "returncode=0"
+    },
+    {
+      "check": "a result snapshot was persisted while the stream was running",
+      "result": "pass",
+      "detail": "midstream_writes=39, stream_entered=True"
+    },
+    {
+      "check": "the persisted snapshot is readable after the process ended",
+      "result": "pass",
+      "detail": "last_phase='returned', complete=True"
+    },
+    {
+      "check": "the round made at least one model request",
+      "result": "pass",
+      "detail": "requests=1"
     }
   ],
   "scope": "one real round against a real provider; costs money and is non-deterministic",
@@ -38,27 +98,46 @@
   "dry_run": false,
   "report": "parent_final",
   "termination": {
-    "returncode": 1,
+    "returncode": 0,
     "timed_out": false,
     "atexit_ran": true,
-    "stream_ended": false,
-    "stream_entered": false,
-    "midstream_writes": 0,
-    "last_phase": "no_credentials",
-    "classified": "nonzero_exit:1",
+    "stream_ended": true,
+    "stream_entered": true,
+    "midstream_writes": 39,
+    "last_phase": "returned",
+    "classified": "returned_normally",
     "child_stdout": "p1\\.live_round\\child_stdout.log"
   },
-  "events": 0,
-  "chunks_with_text": 0,
-  "answer_chars": 0,
-  "answer_preview": "",
-  "usage": {
-    "calls_with_usage": 0,
-    "input_tokens": 0,
-    "output_tokens": 0
+  "events": 136,
+  "chunks_with_text": 47,
+  "chunk_types": {
+    "message": 2,
+    "llm_reasoning": 84,
+    "llm_output": 46,
+    "context.usage": 1,
+    "llm_usage": 1,
+    "controller_output": 1,
+    "answer": 1
   },
-  "model_request_count": 0,
-  "model_requests": [],
+  "team_markers": [
+    "team.runtime_ready",
+    "team.idle"
+  ],
+  "stream_stop_reason": "idle_grace",
+  "answer_chars": 78,
+  "answer_preview": "因为源码版本决定了行为、接口和依赖的真实基线：如果版本不匹配，后续基于文档、记忆或旧样例所作的假设会全部失效，实现会偏离实际代码，最终导致返工甚至修错目标。",
+  "usage": {
+    "calls_with_usage": 1,
+    "input_tokens": 14421,
+    "output_tokens": 131
+  },
+  "model_request_count": 1,
+  "model_requests": [
+    {
+      "msg_count": 2,
+      "tool_count": 29
+    }
+  ],
   "tool_calls": {
     "tool_calls": [],
     "spawn_calls": []
@@ -79,18 +158,41 @@
     ],
     "spawn": []
   },
-  "framework_error_count": 0,
-  "framework_errors": [],
-  "child_error": null,
+  "framework_error_count": 8,
+  "framework_errors": [
+    {
+      "logger": "sys_operation",
+      "level": "ERROR",
+      "message": "{\"event_id\": \"ebdac291-6275-4425-a768-de8a748d05e5\", \"event_type\": \"sys_operation_error\", \"log_level\": \"ERROR\", \"timestamp\": \"2026-10-24T14:04:23.648039+08:00\", \"module_type\": \"sys_operation\", \"module_id\": \"sys_operation\", \"module_name\": \"sys_operation\", \"status\": \"success\", \"message\": \"Failed to execute write_file\", \"metadata\": {}, \"operation_name\": \"fs\", \"operation_mode\": \"local\", \"operation_desc\": \"local fs operation\", \"method_name\": \"write_file\", \"method_params\": {\"path\": \"C:\\\\Users\\\\19468\\\\"
+    },
+    {
+      "logger": "sys_operation",
+      "level": "ERROR",
+      "message": "{\"event_id\": \"c2d4e732-2ef4-4763-9edf-269e5be65b7e\", \"event_type\": \"sys_operation_error\", \"log_level\": \"ERROR\", \"timestamp\": \"2026-10-24T14:04:23.655546+08:00\", \"module_type\": \"sys_operation\", \"module_id\": \"sys_operation\", \"module_name\": \"sys_operation\", \"status\": \"success\", \"message\": \"Failed to execute write_file\", \"metadata\": {}, \"operation_name\": \"fs\", \"operation_mode\": \"local\", \"operation_desc\": \"local fs operation\", \"method_name\": \"write_file\", \"method_params\": {\"path\": \"C:\\\\Users\\\\19468\\\\"
+    },
+    {
+      "logger": "sys_operation",
+      "level": "ERROR",
+      "message": "{\"event_id\": \"c86e11a6-e0ae-42ac-b21b-ce339e3e97a6\", \"event_type\": \"sys_operation_error\", \"log_level\": \"ERROR\", \"timestamp\": \"2026-10-24T14:04:23.660807+08:00\", \"module_type\": \"sys_operation\", \"module_id\": \"sys_operation\", \"module_name\": \"sys_operation\", \"status\": \"success\", \"message\": \"Failed to execute write_file\", \"metadata\": {}, \"operation_name\": \"fs\", \"operation_mode\": \"local\", \"operation_desc\": \"local fs operation\", \"method_name\": \"write_file\", \"method_params\": {\"path\": \"C:\\\\Users\\\\19468\\\\"
+    },
+    {
+      "logger": "sys_operation",
+      "level": "ERROR",
+      "message": "{\"event_id\": \"5d22cf49-46ad-467f-96db-dc4d487f2e53\", \"event_type\": \"sys_operation_error\", \"log_level\": \"ERROR\", \"timestamp\": \"2026-10-24T14:04:23.666089+08:00\", \"module_type\": \"sys_operation\", \"module_id\": \"sys_operation\", \"module_name\": \"sys_operation\", \"status\": \"success\", \"message\": \"Failed to execute write_file\", \"metadata\": {}, \"operation_name\": \"fs\", \"operation_mode\": \"local\", \"operation_desc\": \"local fs operation\", \"method_name\": \"write_file\", \"method_params\": {\"path\": \"C:\\\\Users\\\\19468\\\\"
+    },
+    {
+      "logger": "sys_operation",
+      "level": "ERROR",
+      "message": "{\"event_id\": \"6bcae312-1108-47a9-8fe2-00dcfd185836\", \"event_type\": \"sys_operation_error\", \"log_level\": \"ERROR\", \"timestamp\": \"2026-10-24T14:04:23.670598+08:00\", \"module_type\": \"sys_operation\", \"module_id\": \"sys_operation\", \"module_name\": \"sys_operation\", \"status\": \"success\", \"message\": \"Failed to execute write_file\", \"metadata\": {}, \"operation_name\": \"fs\", \"operation_mode\": \"local\", \"operation_desc\": \"local fs operation\", \"method_name\": \"write_file\", \"method_params\": {\"path\": \"C:\\\\Users\\\\19468\\\\"
+    }
+  ],
+  "child_error": "stream producer: CancelledError: ",
   "not_run": [
     "scenario 3 (embedding outage -> keyword_only): no embedding provider configured",
     "scenario 7 (long tool chain and compression recall): no framework context rail wired",
     "scenario 10 (team memory single writer): team and member memory not wired",
     "scenario 2 runtime part (roster held during execution): needs members to execute tasks",
-    "the round never started: no model credentials, so no request, rail, checkpoint or idle record could exist",
-    "no tool call was observed in this round, so 'no spawn tool was invoked' has no evidence",
-    "the round process exit status: the child stopped before the round",
-    "a snapshot while the stream was running: the stream never started",
-    "the model request count: no request was attempted"
+    "team completion marker: is_team_completed requires at least one task and every task terminal; this round created none, so the stream was stopped after the idle grace period",
+    "no tool call was observed in this round, so 'no spawn tool was invoked' has no evidence"
   ]
 }

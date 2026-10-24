@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.22 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线），P1 进行中（工具门禁已从真实构造的 team 上验证；真实回合的断言收集已改为父/子进程测量，待凭据跑真回合）。
+版本：0.23 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合断言收集均已执行（真实回合 18/18，`returned_normally`）；下一步按大赛设计要求实现在线工作台。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -36,7 +36,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，18 项断言通过 |
 | P1 活工具集 | 已执行：`p1/live_tool_surface_check.py`，从真实构造的 team 读出 rail 自身的参数并物化 leader 工具集，对照实验证实缺口与修复，9 项断言通过 |
 | P1 真实回合 | 曾经跑通：真实端点 + Runner，Leader 完成一轮（`tool_count=29`、安全 rail 与 checkpoint 均生效）；当时观察到回合末进程未执行 atexit，推断为 `os._exit()`，该机制**尚未复现**（见 §13 更正） |
-| P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8 项断言通过；无凭据路径 5/6（唯一失败为凭据缺失）；不可达端点冒烟测试 12/18，确认真实请求 `tool_count=29` 与离线物化 10 个 team 工具的差集 |
+| P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
 
@@ -556,11 +556,17 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 | `--dry-run` | **8/8 通过** | 无凭据、无网络；见 [live_round_dry_run_results.json](p1/live_round_dry_run_results.json) |
 | 无凭据（真实模式） | 5/6 | 唯一失败是"模型凭据可用"；spec/build/工具面/日志断言仍被执行，见 [live_round_results.json](p1/live_round_results.json) |
 | 不可达端点冒烟 | 12/18 | 无费用；见 [live_round_plumbing_results.json](p1/live_round_plumbing_results.json)。**不是真实回合** |
-| 真实回合 | **未执行** | 凭据随本地目录删除丢失；待补 `.env.local` |
+| 真实回合（2026-10-24，deepseek-flash） | **18/18 通过** | 20 s；`returned_normally`、`atexit` 执行、39 次流内快照；1 次请求、`tool_count=29`、usage input=14421/output=131；答案 78 字。见 [live_round_results.json](p1/live_round_results.json) |
 
 冒烟测试（`MODEL_BASE_URL=http://127.0.0.1:9`，180 s 后由外部 `timeout` 终止）确认了三件事：①子进程在流内写下了 **348 次**快照，父进程在子进程被杀后仍写出完整报告；②真实请求的 `tool_count=29`，与本轮物化的 10 个 team 工具相差 19，差集确为 harness 自带能力；③`BaseSecurityRail` 与 `checkpoint_save` 在真实链路中出现。它没有产生答案、usage 或 `team went idle`，因此不能当作回合验收。
 
-> **更正（2026-10-24）**：此前把"回合末进程直接消失、atexit 与 finally 均未执行"归因为框架调用 `os._exit()`。复核两个上游仓库后，**该路径上没有 `os._exit`**：`jiuwenswarm` 的 18 处均在 sandbox daemon、gateway 重启与 debug dump，`agent-core` 中一处也没有；venv 中的出现也都与回合无关。同样现象也可能来自原生崩溃（Windows 非零退出码）、外部终止或流不返回。因此本文不再断言机制，改由父进程按退出码 + atexit 标记 + 最后快照分类；下次真实回合会给出测量结果。工程结论不变：**状态必须在流处理过程中落盘**——这一点已由 348 次快照在真实链路上验证。
+> **更正（2026-10-24，已实测）**：此前把"回合末进程直接消失、atexit 与 finally 均未执行"归因为框架调用 `os._exit()`。**该结论不成立。** 复核源码后，两棵上游在该路径上都没有 `os._exit`；随后用真实回合测量：进程 `returncode=0`、`atexit` 已执行、父进程分类为 `returned_normally`。
+>
+> 真正原因是：`TeamBackend.is_team_completed()` 的完成条件要求**至少存在一个任务且全部终态**（`team.py:1724-1739`，空看板直接返回 `None`），而那次回合只是一句话问答、没有创建任何任务。于是 `team.idle` 之后流**按设计保持打开**，诊断脚本被外部超时终止，才表现为"进程消失、atexit 不执行"。
+>
+> 这条事实直接影响产品：**没有任务的 run 永远不会触发 `team.completed`**。工作台每次 run 必须建任务（应用侧建图正好保证这一点）；一句话问答若要结束，只能由应用在 idle 宽限期后主动 stop（harness 已如此处理）。
+>
+> 工程结论不变：**状态必须在流处理过程中落盘**——本次真实回合写出 39 次快照，父进程在子进程退出后仍得到完整报告。另记录两条观测事实：①流中的文本在 `chunk.payload` 内（`llm_output` / `answer`），不在 `content`/`text` 上；②一次真实回合为 136 chunks，其中 46 个 `llm_output`、84 个 `llm_reasoning`、1 个 `answer`，provider usage 为 input=14421 / output=131。
 
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
