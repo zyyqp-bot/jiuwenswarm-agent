@@ -25,6 +25,10 @@ p1/.live_round/
 # tracked file.
 .env.local
 
+# Web dependencies and build output (the container rebuilds both)
+web/node_modules/
+web/dist/
+
 # OS / editor
 .DS_Store
 Thumbs.db
