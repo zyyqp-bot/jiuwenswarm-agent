@@ -10,7 +10,7 @@
     {
       "check": "the team builds",
       "result": "pass",
-      "detail": "built in 0.2s"
+      "detail": "built in 0.1s"
     },
     {
       "check": "the built leader holds no spawn tool",
