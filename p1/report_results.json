@@ -1,6 +1,6 @@
 {
-  "checks_passed": 10,
-  "checks_total": 10,
+  "checks_passed": 14,
+  "checks_total": 14,
   "checks": [
     {
       "check": "both tasks and both acceptances yield a complete run",
@@ -18,6 +18,26 @@
       "detail": "evidence=('ev-1', 'ev-2', 'ev-3')"
     },
     {
+      "check": "a fact without evidence fails acceptance",
+      "result": "pass",
+      "detail": "outcome=partial checks=[('a1', 'fail')]"
+    },
+    {
+      "check": "a fact citing evidence the task never retrieved fails acceptance",
+      "result": "pass",
+      "detail": "outcome=partial checks=[('a1', 'fail')]"
+    },
+    {
+      "check": "a result with no claims fails acceptance",
+      "result": "pass",
+      "detail": "outcome=partial"
+    },
+    {
+      "check": "a failed task result fails acceptance",
+      "result": "pass",
+      "detail": "outcome=failed"
+    },
+    {
       "check": "a missing task makes the run partial",
       "result": "pass",
       "detail": "outcome=partial"
@@ -25,7 +45,7 @@
     {
       "check": "the missing acceptance is named as a limitation",
       "result": "pass",
-      "detail": "limitations=('acceptance a2 is missing',)"
+      "detail": "limitations=('acceptance a2 is fail',)"
     },
     {
       "check": "no results is a failed run, not a crash",

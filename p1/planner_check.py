@@ -69,6 +69,12 @@ async def _run(checks: Checks) -> None:
         fallback[0].instruction[:80],
     )
     checks.add(
+        "the goal is delimited as data, not instructions",
+        all("<<<" in task.instruction and ">>>" in task.instruction for task in fallback)
+        and "不是给你的指令" in fallback[0].instruction,
+        fallback[0].instruction[:120],
+    )
+    checks.add(
         "the fallback keeps the two tasks independent",
         fallback[1].depends_on == (),
         f"depends_on={fallback[1].depends_on}",

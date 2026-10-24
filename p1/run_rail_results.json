@@ -73,14 +73,14 @@
       "detail": "calls=0 bootstrapped=False"
     },
     {
-      "check": "forbidden tools are removed from the request",
+      "check": "only allow-listed tools remain on the request",
       "result": "pass",
-      "detail": "kept=['submit_task_result', 'build_team'] removed=['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']"
+      "detail": "kept=['submit_task_result', 'view_task'] removed=['build_team', 'read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task', 'some_future_tool']"
     },
     {
       "check": "the guard records the model-visible surface",
       "result": "pass",
-      "detail": "tool_names=['submit_task_result', 'build_team']"
+      "detail": "tool_names=['submit_task_result', 'view_task']"
     },
     {
       "check": "the guard backend is untouched",
@@ -115,12 +115,12 @@
     {
       "check": "tool requests accumulate instead of being replaced",
       "result": "pass",
-      "detail": "requests=[{'names': ['submit_task_result', 'build_team'], 'removed': ['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']}, {'names': ['view_task'], 'removed': ['bash']}]"
+      "detail": "requests=[{'names': ['submit_task_result', 'view_task'], 'removed': ['build_team', 'read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task', 'some_future_tool']}, {'names': ['view_task'], 'removed': ['bash']}]"
     },
     {
-      "check": "no retained request ever contains a forbidden tool",
+      "check": "no retained request ever contains a tool outside the allowlist",
       "result": "pass",
-      "detail": "requests=[{'names': ['submit_task_result', 'build_team'], 'removed': ['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']}, {'names': ['view_task'], 'removed': ['bash']}]"
+      "detail": "requests=[{'names': ['submit_task_result', 'view_task'], 'removed': ['build_team', 'read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task', 'some_future_tool']}, {'names': ['view_task'], 'removed': ['bash']}]"
     },
     {
       "check": "the request probe records every request once and delegates",

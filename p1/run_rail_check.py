@@ -30,7 +30,7 @@ from app.request_probe import install_request_probe  # noqa: E402
 from app.run_bridge import RunBridge  # noqa: E402
 import app.run_rail as run_rail_module  # noqa: E402
 from app.run_rail import RunBootstrapRail  # noqa: E402
-from app.tool_guard import ToolSurfaceGuardRail, is_forbidden  # noqa: E402
+from app.tool_guard import ToolSurfaceGuardRail, is_allowed  # noqa: E402
 from checks.harness import Checks  # noqa: E402
 from openjiuwen.agent_teams.schema.task import (  # noqa: E402
     TaskGraphResult,
@@ -332,6 +332,7 @@ async def _run(checks: Checks) -> None:
     guard = ToolSurfaceGuardRail(guard_bridge)
     inputs = _ModelInputs([
         _Tool("submit_task_result"),
+        _Tool("view_task"),
         _Tool("build_team"),
         _Tool("read_file"),
         _Tool("bash"),
@@ -339,20 +340,21 @@ async def _run(checks: Checks) -> None:
         _Tool("member_complete_task"),
         _Tool("create_task"),
         _Tool("update_task"),
+        _Tool("some_future_tool"),
     ])
     await guard.before_model_call(type("Ctx", (), {"inputs": inputs})())
     checks.add(
-        "forbidden tools are removed from the request",
-        [tool.name for tool in inputs.tools] == ["submit_task_result", "build_team"]
+        "only allow-listed tools remain on the request",
+        [tool.name for tool in inputs.tools] == ["submit_task_result", "view_task"]
         and set(guard.removed) == {
-            "read_file", "bash", "spawn_passive_human",
-            "member_complete_task", "create_task", "update_task",
+            "build_team", "read_file", "bash", "spawn_passive_human",
+            "member_complete_task", "create_task", "update_task", "some_future_tool",
         },
         f"kept={[tool.name for tool in inputs.tools]} removed={guard.removed}",
     )
     checks.add(
         "the guard records the model-visible surface",
-        guard_bridge.tool_names == ["submit_task_result", "build_team"],
+        guard_bridge.tool_names == ["submit_task_result", "view_task"],
         f"tool_names={guard_bridge.tool_names}",
     )
     checks.add("the guard backend is untouched", not guard_backend.task_manager.calls, "no graph call from the guard")
@@ -370,7 +372,7 @@ async def _run(checks: Checks) -> None:
             f"skip={call_ctx.extra.get('_skip_tool')} result={call_ctx.inputs.tool_result}",
         )
 
-    allowed_ctx = _CallCtx("build_team")
+    allowed_ctx = _CallCtx("view_task")
     await guard.before_tool_call(allowed_ctx)
     checks.add(
         "an allowed tool call passes the execution gate",
@@ -392,9 +394,9 @@ async def _run(checks: Checks) -> None:
         f"requests={guard_bridge.tool_requests}",
     )
     checks.add(
-        "no retained request ever contains a forbidden tool",
+        "no retained request ever contains a tool outside the allowlist",
         all(
-            not is_forbidden(name)
+            is_allowed(name)
             for request in guard_bridge.tool_requests
             for name in request["names"]
         ),

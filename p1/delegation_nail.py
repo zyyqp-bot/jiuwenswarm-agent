@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "p1"))
 
-from app.tool_guard import is_forbidden  # noqa: E402
+from app.tool_guard import is_allowed  # noqa: E402
 from checks.harness import Checks  # noqa: E402
 from live_round_check import _load_credentials  # noqa: E402
 
@@ -70,7 +70,7 @@ PLAN = [
 ]
 
 def _forbidden(names: list[str]) -> list[str]:
-    return [name for name in names if is_forbidden(name)]
+    return [name for name in names if not is_allowed(name)]
 
 
 async def _run(checks: Checks, credentials: dict[str, str]) -> None:

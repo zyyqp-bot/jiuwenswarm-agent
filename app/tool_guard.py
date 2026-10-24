@@ -17,10 +17,9 @@ document can name ``bash`` and it will run.
 error ToolMessage, the same mechanism ``AgentModeRail._reject_tool`` uses, so
 the tool's ``invoke`` is never called.
 
-The denylist also carries the app's ownership decisions: a member may not
-complete its own task outside ``submit_task_result`` (``member_complete_task``),
-and the leader may not mutate the board the application submitted
-(``create_task`` / ``update_task``).
+The surface is an allowlist, not a denylist. Ownership follows the same rule:
+a member cannot complete its own task outside ``submit_task_result``, and the
+leader cannot mutate the board the application submitted.
 """
 from __future__ import annotations
 
@@ -33,42 +32,32 @@ from app.hooks import get_bridge
 from app.request_probe import _tool_name
 from app.run_bridge import RunBridge
 
-# Exact names observed on the real request plus their close relatives.
-FORBIDDEN_NAMES = frozenset(
+# Deny by default. A denylist only covers names someone remembered; a future
+# harness tool (or one not observed in the last request) would be both
+# advertised and executable. These are the only tools the product needs:
+#
+# - submit_task_result: the member's sole way to turn work into a checked
+#   result (it calls the member's own task manager);
+# - retrieve: the workspace corpus, mounted only when one exists;
+# - view_task / async_tasks_list / async_task_output: read-only coordination.
+#
+# Deliberately absent: every shell/file/spawn/upload tool, member_complete_task
+# (the app owns completion), create_task/update_task (the app owns the board),
+# build_team (no nested teams), verify_task (the current plans have no
+# reviewers), shutdown_member, and anything added to the harness later.
+ALLOWED_TOOL_NAMES = frozenset(
     {
-        "read_file",
-        "read_file_stream",
-        "write_file",
-        "write_file_stream",
-        "edit_file",
-        "glob",
-        "list_files",
-        "list_directories",
-        "grep",
-        "search_files",
-        "bash",
-        "powershell",
-        "execute_cmd",
-        "execute_cmd_stream",
-        "execute_cmd_background",
-        "execute_code",
-        "execute_code_stream",
-        "upload_file",
-        "upload_file_stream",
-        "download_file",
-        "download_file_stream",
-        # The app owns task completion and the task board.
-        "member_complete_task",
-        "create_task",
-        "update_task",
-        "org_dissolve_organization",
+        "submit_task_result",
+        "retrieve",
+        "view_task",
+        "async_tasks_list",
+        "async_task_output",
     }
 )
-FORBIDDEN_PREFIXES = ("spawn_",)
 
 
-def is_forbidden(name: str) -> bool:
-    return name in FORBIDDEN_NAMES or any(name.startswith(prefix) for prefix in FORBIDDEN_PREFIXES)
+def is_allowed(name: str) -> bool:
+    return name in ALLOWED_TOOL_NAMES
 
 
 def _call_name(inputs: Any) -> str:
@@ -102,7 +91,7 @@ class ToolSurfaceGuardRail(DeepAgentRail):
             name = _tool_name(tool)
             if not name:
                 continue
-            if is_forbidden(name):
+            if not is_allowed(name):
                 removed.append(name)
                 continue
             kept.append(tool)
@@ -117,7 +106,7 @@ class ToolSurfaceGuardRail(DeepAgentRail):
     async def before_tool_call(self, ctx: Any) -> None:
         inputs = getattr(ctx, "inputs", None)
         name = _call_name(inputs)
-        if not name or not is_forbidden(name):
+        if not name or is_allowed(name):
             return
 
         tool_call = getattr(inputs, "tool_call", None)

@@ -14,12 +14,18 @@ from __future__ import annotations
 import json
 import os
 import threading
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 from app.aggregator import Aggregator, FinalResult
-from app.models import AcceptanceCheck, AcceptanceResult, TaskResult
+from app.models import (
+    AcceptanceCheck,
+    AcceptanceResult,
+    ClaimKind,
+    TaskOutcome,
+    TaskResult,
+)
 from app.plan import PlanTask
 from app.run_bridge import APP_VERIFIER
 
@@ -34,25 +40,32 @@ def build_report(
     unverified: Iterable[str] = (),
     unavailable: Iterable[str] = (),
     usage: Any = None,
+    evidence_by_task: Mapping[str, Iterable[str]] | None = None,
 ) -> FinalResult:
-    """Merge accepted results into the run's final result."""
+    """Merge accepted results into the run's final result.
+
+    Acceptance is structural: a task passes only when it produced a successful
+    result with claims, every fact cites evidence, and every cited id is one
+    the task actually retrieved. ``evidence_by_task`` is the run snapshot's
+    ``evidence`` map; when omitted (unit callers) the membership check is
+    skipped rather than invented.
+    """
     by_task = {result.task_id: result for result in results}
+    retrieved = {
+        task_id: set(ids) for task_id, ids in (evidence_by_task or {}).items()
+    }
     required: list[str] = []
     acceptance: dict[str, AcceptanceCheck] = {}
     for task in plan:
         result = by_task.get(task.task_id)
-        cited = (
-            tuple(sorted({eid for claim in result.claims for eid in claim.evidence_ids}))
-            if result is not None
-            else ()
+        passed, cited = _structural_verdict(
+            result, retrieved.get(task.task_id, set()) if evidence_by_task is not None else None
         )
         for acceptance_id in task.acceptance_ids:
             required.append(acceptance_id)
-            if result is None:
-                continue
             acceptance[acceptance_id] = AcceptanceCheck(
                 acceptance_id=acceptance_id,
-                result=AcceptanceResult.PASS,
+                result=AcceptanceResult.PASS if passed else AcceptanceResult.FAIL,
                 verifier=APP_VERIFIER,
                 evidence_refs=cited,
             )
@@ -65,6 +78,23 @@ def build_report(
         unavailable_evidence_ids=unavailable,
         usage=usage,
     )
+
+
+def _structural_verdict(
+    result: TaskResult | None, retrieved: set[str] | None
+) -> tuple[bool, tuple[str, ...]]:
+    """Decide one task's structural acceptance and the evidence it cited."""
+    if result is None or result.outcome is not TaskOutcome.SUCCESS:
+        return False, ()
+    if not result.claims:
+        return False, ()
+    cited = tuple(sorted({eid for claim in result.claims for eid in claim.evidence_ids}))
+    for claim in result.claims:
+        if claim.kind is ClaimKind.FACT and not claim.evidence_ids:
+            return False, cited
+        if retrieved is not None and any(eid not in retrieved for eid in claim.evidence_ids):
+            return False, cited
+    return True, cited
 
 
 def report_markdown(

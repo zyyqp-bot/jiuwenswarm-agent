@@ -87,6 +87,95 @@ def main() -> int:
         f"evidence={complete.evidence_refs}",
     )
 
+    # Acceptance is structural, so it must reject claims the task cannot
+    # support -- not sign every declared id as soon as a result exists.
+    uncited = build_report(
+        run_id="run-2",
+        results=[
+            TaskResult(
+                run_id="run-2",
+                task_id="research",
+                execution_id="run-2:research:1",
+                producer="research",
+                outcome=TaskOutcome.SUCCESS,
+                claims=(Claim(text="凭空的事实", kind=ClaimKind.FACT, evidence_ids=()),),
+            )
+        ],
+        plan=PLAN[:1],
+        evidence_by_task={"research": ["ev-1"]},
+    )
+    checks.add(
+        "a fact without evidence fails acceptance",
+        uncited.outcome.value != "complete"
+        and any(check.result.value == "fail" for check in uncited.acceptance_checks),
+        f"outcome={uncited.outcome.value} checks={[(c.acceptance_id, c.result.value) for c in uncited.acceptance_checks]}",
+    )
+
+    foreign = build_report(
+        run_id="run-3",
+        results=[
+            TaskResult(
+                run_id="run-3",
+                task_id="research",
+                execution_id="run-3:research:1",
+                producer="research",
+                outcome=TaskOutcome.SUCCESS,
+                claims=(
+                    Claim(text="引用了别的任务的证据", kind=ClaimKind.FACT, evidence_ids=("ev-9",)),
+                ),
+            )
+        ],
+        plan=PLAN[:1],
+        evidence_by_task={"research": ["ev-1"]},
+    )
+    checks.add(
+        "a fact citing evidence the task never retrieved fails acceptance",
+        foreign.outcome.value != "complete"
+        and any(check.result.value == "fail" for check in foreign.acceptance_checks),
+        f"outcome={foreign.outcome.value} checks={[(c.acceptance_id, c.result.value) for c in foreign.acceptance_checks]}",
+    )
+
+    empty = build_report(
+        run_id="run-4",
+        results=[
+            TaskResult(
+                run_id="run-4",
+                task_id="research",
+                execution_id="run-4:research:1",
+                producer="research",
+                outcome=TaskOutcome.SUCCESS,
+            )
+        ],
+        plan=PLAN[:1],
+    )
+    checks.add(
+        "a result with no claims fails acceptance",
+        empty.outcome.value != "complete"
+        and any(check.result.value == "fail" for check in empty.acceptance_checks),
+        f"outcome={empty.outcome.value}",
+    )
+
+    failed_task = build_report(
+        run_id="run-5",
+        results=[
+            TaskResult(
+                run_id="run-5",
+                task_id="research",
+                execution_id="run-5:research:1",
+                producer="research",
+                outcome=TaskOutcome.ERROR,
+                claims=(Claim(text="x", kind=ClaimKind.INFERENCE),),
+            )
+        ],
+        plan=PLAN[:1],
+    )
+    checks.add(
+        "a failed task result fails acceptance",
+        failed_task.outcome.value != "complete"
+        and any(check.result.value == "fail" for check in failed_task.acceptance_checks),
+        f"outcome={failed_task.outcome.value}",
+    )
+
     partial = build_report(run_id="run-1", results=RESULTS[:1], plan=PLAN)
     checks.add(
         "a missing task makes the run partial",

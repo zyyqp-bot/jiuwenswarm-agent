@@ -417,7 +417,12 @@ class RunService:
         try:
             plan = [PlanTask(**raw) for raw in record.plan]
             results = _results_from_snapshot(record)
-            final = build_report(run_id=record.run_id, results=results, plan=plan)
+            final = build_report(
+                run_id=record.run_id,
+                results=results,
+                plan=plan,
+                evidence_by_task=record.snapshot.get("evidence") or {},
+            )
             write_report(run_dir, final, task_results=results)
         except Exception as exc:  # noqa: BLE001 - the run's state is authoritative
             record.report_error = f"{type(exc).__name__}: {exc}"
