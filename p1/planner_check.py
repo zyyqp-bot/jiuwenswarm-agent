@@ -128,6 +128,21 @@ async def _run(checks: Checks) -> None:
     cycle = await plan_goal(GOAL, model=object(), run=cycle_run)
     checks.add("a cycle falls back", cycle.source == "fallback", cycle.source)
 
+    async def crowded_run(goal, schema):
+        return {
+            "tasks": [
+                dict(VALID_PLAN["tasks"][0], task_id=f"task-{index}")
+                for index in range(5)
+            ]
+        }
+
+    crowded = await plan_goal(GOAL, model=object(), run=crowded_run)
+    checks.add(
+        "a plan with too many tasks falls back",
+        crowded.source == "fallback",
+        f"source={crowded.source}",
+    )
+
     async def broken_run(goal, schema):
         raise RuntimeError("model unavailable")
 

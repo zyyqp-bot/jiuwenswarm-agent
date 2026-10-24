@@ -43,7 +43,7 @@ class LoginBody(BaseModel):
 
 
 class RunBody(BaseModel):
-    goal: str = Field(min_length=1)
+    goal: str = Field(min_length=1, max_length=2000)
     workspace: str = "ai-governance"
 
 
@@ -53,6 +53,7 @@ def create_app(
     service: RunService,
     codec: SessionCodec | None = None,
     static_dir: Path | None = None,
+    lifespan: Any = None,
 ) -> FastAPI:
     """Build the FastAPI app around an injected run service."""
     _ensure_data_dir(settings.data_dir)
@@ -64,7 +65,9 @@ def create_app(
         max_runs_per_day=settings.max_runs_per_day,
     )
 
-    app = FastAPI(title="Evidence Workbench", docs_url=None, redoc_url=None)
+    app = FastAPI(
+        title="Evidence Workbench", docs_url=None, redoc_url=None, lifespan=lifespan
+    )
 
     def require_session(request: Request) -> Session:
         session = session_codec.decode(request.cookies.get(COOKIE_NAME, ""))

@@ -1,6 +1,6 @@
 {
-  "checks_passed": 16,
-  "checks_total": 16,
+  "checks_passed": 20,
+  "checks_total": 20,
   "checks": [
     {
       "check": "the correct password is accepted",
@@ -30,7 +30,7 @@
     {
       "check": "a tampered cookie is rejected",
       "result": "pass",
-      "detail": "tampered=ataGQ69A"
+      "detail": "tampered=-QF2pyEA"
     },
     {
       "check": "a garbage cookie is rejected",
@@ -56,6 +56,26 @@
       "check": "production refuses a short session secret",
       "result": "pass",
       "detail": "SESSION_SECRET must be at least 32 characters in production"
+    },
+    {
+      "check": "production refuses the template session secret",
+      "result": "pass",
+      "detail": "SESSION_SECRET is still the placeholder from deploy/.env.example; generate a real secret"
+    },
+    {
+      "check": "production refuses placeholder account passwords",
+      "result": "pass",
+      "detail": "WORKBENCH_USERS password for 'judge1' is still a placeholder"
+    },
+    {
+      "check": "production refuses to start without model credentials",
+      "result": "pass",
+      "detail": "MODEL_BASE_URL, MODEL_API_KEY and MODEL_NAME are required in production; missing MODEL_BASE_URL, MODEL_API_KEY, MODEL_NAME"
+    },
+    {
+      "check": "a fully configured production process starts",
+      "result": "pass",
+      "detail": "users=['judge1']"
     },
     {
       "check": "development generates an ephemeral secret per process",

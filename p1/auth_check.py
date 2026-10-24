@@ -132,6 +132,81 @@ def main() -> int:
         production_short or "no error",
     )
 
+    # A copied .env.example must not boot: the secret and passwords in it are
+    # public, and a forged cookie only needs the secret.
+    placeholder_secret = ""
+    try:
+        Settings.from_env(
+            {
+                "WORKBENCH_ENV": "production",
+                "SESSION_SECRET": "replace-with-at-least-32-random-characters",
+                "WORKBENCH_USERS": "judge1:replace-me",
+                "MODEL_BASE_URL": "https://example.test/v1",
+                "MODEL_API_KEY": "replace-with-provider-key",
+                "MODEL_NAME": "test-model",
+            }
+        )
+    except RuntimeError as exc:
+        placeholder_secret = str(exc)
+    checks.add(
+        "production refuses the template session secret",
+        "placeholder" in placeholder_secret.lower(),
+        placeholder_secret or "no error",
+    )
+
+    placeholder_user = ""
+    try:
+        Settings.from_env(
+            {
+                "WORKBENCH_ENV": "production",
+                "SESSION_SECRET": "a" * 40,
+                "WORKBENCH_USERS": "judge1:replace-me",
+                "MODEL_BASE_URL": "https://example.test/v1",
+                "MODEL_API_KEY": "real-looking-key",
+                "MODEL_NAME": "test-model",
+            }
+        )
+    except RuntimeError as exc:
+        placeholder_user = str(exc)
+    checks.add(
+        "production refuses placeholder account passwords",
+        "placeholder" in placeholder_user.lower(),
+        placeholder_user or "no error",
+    )
+
+    missing_model = ""
+    try:
+        Settings.from_env(
+            {
+                "WORKBENCH_ENV": "production",
+                "SESSION_SECRET": "a" * 40,
+                "WORKBENCH_USERS": "judge1:secret-one",
+            }
+        )
+    except RuntimeError as exc:
+        missing_model = str(exc)
+    checks.add(
+        "production refuses to start without model credentials",
+        "MODEL" in missing_model,
+        missing_model or "no error",
+    )
+
+    usable = Settings.from_env(
+        {
+            "WORKBENCH_ENV": "production",
+            "SESSION_SECRET": "a" * 40,
+            "WORKBENCH_USERS": "judge1:secret-one",
+            "MODEL_BASE_URL": "https://example.test/v1",
+            "MODEL_API_KEY": "provider-key",
+            "MODEL_NAME": "test-model",
+        }
+    )
+    checks.add(
+        "a fully configured production process starts",
+        usable.environment == "production" and list(usable.users) == ["judge1"],
+        f"users={list(usable.users)}",
+    )
+
     first = Settings.from_env(_dev_env())
     second = Settings.from_env(_dev_env())
     checks.add(

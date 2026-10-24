@@ -60,6 +60,12 @@ async def _expect_raises(checks, label, awaitable_factory, expected: type[Except
 async def _async_checks(checks: Checks, db_path: Path) -> None:
     index = await KnowledgeIndex.open(db_path, corpus="docs", access_scope=SCOPE)
 
+    # Two concurrent runs may open the same corpus; WAL plus a busy timeout
+    # keeps a first retrieval from failing with "database is locked".
+    async with index._db.execute("PRAGMA journal_mode") as cursor:  # noqa: SLF001
+        mode = str((await cursor.fetchone())[0]).lower()
+    checks.add("the index runs in WAL mode", mode == "wal", f"journal_mode={mode}")
+
     first_ids = await index.add_document(
         source_uri="docs/research.md", source_revision="r1", text=DOC_ONE
     )

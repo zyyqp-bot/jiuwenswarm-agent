@@ -1,6 +1,6 @@
 {
-  "checks_passed": 18,
-  "checks_total": 18,
+  "checks_passed": 19,
+  "checks_total": 19,
   "checks": [
     {
       "check": "Dockerfile exists at the repository root",
@@ -86,6 +86,11 @@
       "check": "app/main.py exposes a module-level ASGI app",
       "result": "pass",
       "detail": "\"\"\"ASGI entrypoint: ``uvicorn app.main:app``.\n\nThis module is the only place that builds the application from the proces"
+    },
+    {
+      "check": "the entrypoint holds the single-instance lock and a shutdown lifespan",
+      "result": "pass",
+      "detail": "\"\"\"ASGI entrypoint: ``uvicorn app.main:app``.\n\nThis module is the only place that builds the application from the process\nenvironment. ``app.api.create_app`` st"
     },
     {
       "check": "the smoke check exercises health, login, a run and the stream",

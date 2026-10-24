@@ -19,6 +19,9 @@ from typing import Any
 from app.plan import PlanTask, PlanValidator
 from app.team_config import ASSIGNABLE_MEMBERS
 
+MAX_PLAN_TASKS = 4
+"""A public request must not be able to turn one goal into an unbounded graph."""
+
 __all__ = [
     "PLAN_SCHEMA",
     "PlanOutcome",
@@ -33,6 +36,7 @@ PLAN_SCHEMA: dict[str, Any] = {
     "properties": {
         "tasks": {
             "type": "array",
+            "maxItems": 4,
             "items": {
                 "type": "object",
                 "properties": {
@@ -205,6 +209,8 @@ def _parse(raw: Any) -> list[PlanTask] | None:
         return None
     entries = raw.get("tasks")
     if not isinstance(entries, list) or not entries:
+        return None
+    if len(entries) > MAX_PLAN_TASKS:
         return None
     tasks: list[PlanTask] = []
     try:

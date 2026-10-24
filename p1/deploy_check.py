@@ -148,6 +148,11 @@ def main() -> int:
         bool(re.search(r"(?m)^app\s*=", entry_text)),
         entry_text[:120] or "missing app/main.py",
     )
+    checks.add(
+        "the entrypoint holds the single-instance lock and a shutdown lifespan",
+        "InstanceLock" in entry_text and "managed_lifespan" in entry_text,
+        entry_text[:160],
+    )
     smoke = ROOT / "scripts" / "smoke_check.py"
     smoke_text = _read(smoke)
     checks.add(

@@ -145,6 +145,11 @@ class KnowledgeIndex:
         connection = await aiosqlite.connect(str(db_path))
         try:
             connection.row_factory = aiosqlite.Row
+            # Concurrent runs share one corpus file; WAL lets readers proceed
+            # during a write, and the timeout turns a momentary writer lock
+            # into a short wait instead of a tool error in front of the model.
+            await connection.execute("PRAGMA journal_mode=WAL")
+            await connection.execute("PRAGMA busy_timeout=5000")
             await connection.executescript(_SCHEMA)
             await connection.commit()
         except Exception:

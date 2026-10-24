@@ -46,17 +46,40 @@ class Settings:
             raise RuntimeError("WORKBENCH_ENV must be 'development' or 'production'")
 
         secret = str(values.get("SESSION_SECRET", "")).strip()
+        users = _parse_users(values.get("WORKBENCH_USERS", ""))
         if environment == "production":
             if len(secret) < MIN_PRODUCTION_SECRET:
                 raise RuntimeError(
                     f"SESSION_SECRET must be at least {MIN_PRODUCTION_SECRET} characters in production"
+                )
+            if _is_placeholder(secret):
+                raise RuntimeError(
+                    "SESSION_SECRET is still the placeholder from deploy/.env.example; "
+                    "generate a real secret"
+                )
+            if not users:
+                raise RuntimeError("WORKBENCH_USERS must define at least one account in production")
+            for user, password in users.items():
+                if _is_placeholder(password):
+                    raise RuntimeError(
+                        f"WORKBENCH_USERS password for {user!r} is still a placeholder"
+                    )
+            missing = [
+                key
+                for key in ("MODEL_BASE_URL", "MODEL_API_KEY", "MODEL_NAME")
+                if not str(values.get(key, "")).strip()
+            ]
+            if missing:
+                raise RuntimeError(
+                    "MODEL_BASE_URL, MODEL_API_KEY and MODEL_NAME are required in production; "
+                    f"missing {', '.join(missing)}"
                 )
         elif not secret:
             secret = secrets.token_urlsafe(32)
 
         return cls(
             data_dir=Path(values.get("WORKBENCH_DATA_DIR", "./data")).expanduser().resolve(),
-            users=_parse_users(values.get("WORKBENCH_USERS", "")),
+            users=users,
             session_secret=secret,
             environment=environment,
             model_base_url=str(values.get("MODEL_BASE_URL", "")).strip(),
@@ -77,6 +100,15 @@ class Settings:
             "MODEL_API_KEY": self.model_api_key,
             "MODEL_NAME": self.model_name,
         }
+
+
+_PLACEHOLDER_MARKERS = ("replace", "change-me", "changeme", "your-", "xxx")
+
+
+def _is_placeholder(value: str) -> bool:
+    """A copied example value is public, so it authenticates nobody."""
+    lowered = value.strip().lower()
+    return any(marker in lowered for marker in _PLACEHOLDER_MARKERS)
 
 
 def _int_env(values: Mapping[str, str], key: str, default: int) -> int:

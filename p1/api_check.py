@@ -187,6 +187,16 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             and any(item["name"] == "ai-governance" for item in workspaces.json()["workspaces"]),
             workspaces.text[:120],
         )
+        oversized = await alice.post(
+            "/api/runs",
+            json={"goal": "x" * 2001, "workspace": "ai-governance"},
+        )
+        checks.add(
+            "an oversized goal is rejected",
+            oversized.status_code == 422,
+            f"status={oversized.status_code}",
+        )
+
         started = await alice.post("/api/runs", json={"goal": "check compliance", "workspace": "ai-governance"})
         run_id = started.json().get("run_id", "") if started.status_code == 200 else ""
         checks.add("starting a run returns its id", started.status_code == 200 and run_id.startswith("run-"), started.text[:120])

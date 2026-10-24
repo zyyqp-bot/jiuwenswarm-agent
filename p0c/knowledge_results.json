@@ -1,7 +1,12 @@
 {
-  "checks_passed": 22,
-  "checks_total": 22,
+  "checks_passed": 23,
+  "checks_total": 23,
   "checks": [
+    {
+      "check": "the index runs in WAL mode",
+      "result": "pass",
+      "detail": "journal_mode=wal"
+    },
     {
       "check": "import writes at least one chunk per document",
       "result": "pass",

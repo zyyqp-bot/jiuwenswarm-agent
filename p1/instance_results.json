@@ -1,0 +1,37 @@
+{
+  "checks_passed": 6,
+  "checks_total": 6,
+  "checks": [
+    {
+      "check": "acquiring the lock writes it",
+      "result": "pass",
+      "detail": "C:\\Users\\19468\\AppData\\Local\\Temp\\tmp3gbn2dg6\\instance.lock"
+    },
+    {
+      "check": "a second live instance is refused",
+      "result": "pass",
+      "detail": "another workbench instance (host-a:111) is using C:\\Users\\19468\\AppData\\Local\\Temp\\tmp3gbn2dg6; CloudBase must run a single instance"
+    },
+    {
+      "check": "a stale lock is taken over after a crash",
+      "result": "pass",
+      "detail": "{\"host\": \"host-b\", \"pid\": 222, \"heartbeat\": 2000.0}"
+    },
+    {
+      "check": "the heartbeat keeps the lock fresh",
+      "result": "pass",
+      "detail": "blocked=True"
+    },
+    {
+      "check": "the lifespan keeps the lock while serving",
+      "result": "pass",
+      "detail": "lock=True closed=False"
+    },
+    {
+      "check": "the lifespan closes the service and releases the lock",
+      "result": "pass",
+      "detail": "closed=True lock=False"
+    }
+  ],
+  "scope": "single-instance lock and lifespan"
+}

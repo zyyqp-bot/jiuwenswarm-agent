@@ -1,6 +1,6 @@
 {
-  "checks_passed": 16,
-  "checks_total": 16,
+  "checks_passed": 17,
+  "checks_total": 17,
   "checks": [
     {
       "check": "the fallback plan is valid for the fixed roster",
@@ -46,6 +46,11 @@
       "check": "a cycle falls back",
       "result": "pass",
       "detail": "fallback"
+    },
+    {
+      "check": "a plan with too many tasks falls back",
+      "result": "pass",
+      "detail": "source=fallback"
     },
     {
       "check": "an exception falls back",
