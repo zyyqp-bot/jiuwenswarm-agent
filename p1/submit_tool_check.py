@@ -1,12 +1,16 @@
 """P1: the run bridge accepts exactly one well-formed result per execution.
 
 The bridge is where "who wrote this", "did they cite evidence they actually
-received", and "does the completion gate accept it" meet. Each of the five
-cases here is a way a result could otherwise slip past a gate: wrong author,
-unknown evidence, a replay, or an empty shell.
+received", "does the completion gate accept it", and "did the native board
+actually move" meet. Each case here is a way a result could otherwise slip
+past a gate: wrong author, unknown evidence, a replay, an empty shell, or a
+native completion that was rejected while the member was told it succeeded.
 
-Offline: no team, no runner, no model. The native completion callback is a
-counter.
+The native completion callback is the member's own task manager. The bridge
+must check its returned ``TaskOpResult``, and a rejected completion must leave
+the execution unsubmitted so the member can retry.
+
+Offline: no team, no runner, no model.
 
 Run: .venv/Scripts/python.exe p1/submit_tool_check.py
 """
@@ -19,10 +23,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from app.hooks import register_bridge, unregister_bridge  # noqa: E402
 from app.models import AcceptanceCheck, AcceptanceResult, Claim, ClaimKind, TaskOutcome  # noqa: E402
 from app.plan import PlanTask  # noqa: E402
 from app.run_bridge import RunBridge  # noqa: E402
+from app.submit_tool import make_submit_tool  # noqa: E402
 from checks.harness import Checks  # noqa: E402
+from openjiuwen.agent_teams.schema.task import TaskOpResult  # noqa: E402
 
 RESULTS_PATH = Path(__file__).resolve().parent / "submit_tool_results.json"
 
@@ -59,7 +66,6 @@ async def _run(checks: Checks) -> None:
     # --- case 1: the assignee, a supported fact, no artifact refs ----------
     bridge = _bridge()
     completed: list[str] = []
-    bridge.bind_native_complete(lambda task_id: _record(completed, task_id))
     execution = bridge.execution_for("research")
     outcome = await bridge.submit(
         producer="research_member",
@@ -68,6 +74,7 @@ async def _run(checks: Checks) -> None:
         outcome=TaskOutcome.SUCCESS,
         claims=[_claim()],
         acceptance=ACCEPTANCE,
+        complete=_complete_ok(completed),
     )
     stored = bridge.results().get("research")
     checks.add("the assignee's supported result is accepted", outcome.ok, outcome.error or "accepted")
@@ -143,9 +150,102 @@ async def _run(checks: Checks) -> None:
         outcome.error,
     )
 
+    # --- case 6: the native board rejects the completion -------------------
+    rejected = _bridge()
+    execution = rejected.execution_for("research")
+    outcome = await rejected.submit(
+        producer="research_member", task_id="research", execution_id=execution,
+        outcome=TaskOutcome.SUCCESS, claims=[_claim()], acceptance=ACCEPTANCE,
+        complete=_complete_rejected(),
+    )
+    checks.add(
+        "a native completion rejection fails the submission",
+        not outcome.ok and "native completion rejected" in outcome.error,
+        outcome.error,
+    )
+    checks.add(
+        "a rejected completion leaves the execution unsubmitted",
+        rejected.results() == {},
+        f"results={list(rejected.results())}",
+    )
 
-async def _record(completed: list[str], task_id: str) -> None:
-    completed.append(task_id)
+    # --- case 7: the native board raises -----------------------------------
+    broken = _bridge()
+    execution = broken.execution_for("research")
+    outcome = await broken.submit(
+        producer="research_member", task_id="research", execution_id=execution,
+        outcome=TaskOutcome.SUCCESS, claims=[_claim()], acceptance=ACCEPTANCE,
+        complete=_complete_raises(),
+    )
+    checks.add(
+        "a native completion exception fails the submission",
+        not outcome.ok and "native completion failed" in outcome.error,
+        outcome.error,
+    )
+    checks.add(
+        "an exception leaves the execution unsubmitted",
+        broken.results() == {},
+        f"results={list(broken.results())}",
+    )
+
+    # --- case 8: acceptance is judged by the app, not self-reported --------
+    app_judged = _bridge()
+    execution = app_judged.execution_for("research")
+    outcome = await app_judged.submit(
+        producer="research_member", task_id="research", execution_id=execution,
+        outcome=TaskOutcome.SUCCESS, claims=[_claim()],
+        acceptance={},
+        complete=_complete_ok([]),
+    )
+    checks.add(
+        "the app's structural acceptance needs no model-supplied verdict",
+        outcome.ok,
+        outcome.error or "accepted",
+    )
+
+    # --- case 9: the producer is bound at build time, never by the model ---
+    bound = RunBridge(run_id="run-factory", plan=PLAN)
+    register_bridge("run-factory", bound)
+    try:
+        tool = make_submit_tool(
+            {"run_id": "run-factory"},
+            type("Ctx", (), {"member_name": "research_member"})(),
+        )
+        checks.add("the factory binds the build context's member", tool.producer == "research_member", tool.producer)
+        missing = ""
+        try:
+            make_submit_tool({"run_id": "run-factory"}, type("Ctx", (), {})())
+        except RuntimeError as exc:
+            missing = str(exc)
+        checks.add(
+            "a context without a member name refuses to build the tool",
+            "member_name" in missing,
+            missing or "no error",
+        )
+    finally:
+        unregister_bridge("run-factory")
+
+
+def _complete_ok(completed: list[str]):
+    async def complete(task_id: str) -> TaskOpResult:
+        completed.append(task_id)
+        return TaskOpResult.success()
+
+    return complete
+
+
+def _complete_rejected():
+    async def complete(task_id: str) -> TaskOpResult:
+        return TaskOpResult.fail("task is assigned to another member")
+
+    return complete
+
+
+def _complete_raises():
+    async def complete(task_id: str) -> TaskOpResult:
+        raise RuntimeError("native board unavailable")
+
+    return complete
 
 
 def main() -> int:

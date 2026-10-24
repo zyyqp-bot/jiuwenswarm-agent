@@ -34,6 +34,7 @@ from app.plan import PlanTask, PlanValidator
 from app.request_probe import install_request_probe
 from app.run_bridge import RunBridge
 from app.stream_chunks import chunk_text_and_marker
+from app.team_config import ASSIGNABLE_MEMBERS
 
 SNAPSHOT_INTERVAL_SECONDS = 0.5
 IDLE_GRACE_SECONDS = 12.0
@@ -70,14 +71,6 @@ async def run_payload(
     snapshot_path = Path(payload["snapshot_path"])
     results_path = Path(payload["results_path"]) if payload.get("results_path") else None
 
-    plan = [PlanTask(**raw) for raw in payload.get("plan") or []]
-    members = [str(member) for member in payload.get("members") or []]
-    bridge = RunBridge(
-        run_id=run_id,
-        plan=plan,
-        evidence_by_task=payload.get("evidence_by_task") or {},
-    )
-
     state: dict[str, Any] = {
         "phase": "starting",
         "stop_reason": None,
@@ -86,6 +79,19 @@ async def run_payload(
         "error": None,
     }
     lock = threading.Lock()
+
+    parse_error = ""
+    try:
+        plan = [PlanTask(**raw) for raw in payload.get("plan") or []]
+    except Exception as exc:  # noqa: BLE001 - a malformed plan is a failed run, not a crash
+        plan = []
+        parse_error = f"malformed plan: {type(exc).__name__}: {exc}"
+
+    bridge = RunBridge(
+        run_id=run_id,
+        plan=plan,
+        evidence_by_task=payload.get("evidence_by_task") or {},
+    )
 
     def _snapshot(phase: str, *, complete: bool) -> dict[str, Any]:
         with lock:
@@ -108,7 +114,22 @@ async def run_payload(
             _atomic_write_json(results_path, snapshot)
         return snapshot
 
-    report = PlanValidator(members=members).validate(plan)
+    if parse_error:
+        with lock:
+            state["error"] = parse_error
+        return _snapshot("invalid_plan", complete=True)
+
+    roster = list(ASSIGNABLE_MEMBERS)
+    payload_members = [str(member) for member in payload.get("members") or []]
+    if payload_members and set(payload_members) != set(roster):
+        with lock:
+            state["error"] = (
+                f"members must be exactly {sorted(roster)} (the native scheduler "
+                f"rejects any other assignee, including the leader); got {sorted(payload_members)}"
+            )
+        return _snapshot("invalid_plan", complete=True)
+
+    report = PlanValidator(members=roster).validate(plan)
     if not report.valid:
         with lock:
             state["error"] = "; ".join(
@@ -138,6 +159,7 @@ async def run_payload(
     reporter.start()
     start_time = time.monotonic()
 
+    final_phase = "returned"
     try:
         try:
             runner = (runner_factory or _default_runner)()
@@ -217,12 +239,22 @@ async def run_payload(
         except BaseException as exc:  # noqa: BLE001 - SystemExit included
             with lock:
                 state["error"] = f"{type(exc).__name__}: {exc}"
-            return _snapshot("raised", complete=True)
+            final_phase = "raised"
     finally:
+        # The reporter builds its snapshot under the state lock but writes
+        # outside it. Joining before the final write is what stops an in-flight
+        # "streaming" snapshot from landing after "returned".
         stop_reporter.set()
+        reporter.join(timeout=5.0)
         unregister_bridge(run_id)
 
-    return _snapshot("returned", complete=True)
+    with lock:
+        if not state["error"]:
+            fatal = bridge.snapshot()["fatal_errors"]
+            if fatal:
+                state["error"] = "; ".join(str(item) for item in fatal)
+
+    return _snapshot(final_phase, complete=True)
 
 
 def main(argv: list[str]) -> int:
@@ -234,7 +266,15 @@ def main(argv: list[str]) -> int:
     payload = json.loads(payload_path.read_text(encoding="utf-8"))
     snapshot = asyncio.run(run_payload(payload))
     print(json.dumps({"phase": snapshot["phase"], "error": snapshot["error"]}, ensure_ascii=False))
-    return 0 if snapshot["phase"] in ("returned", "streaming") else 1
+    # A run only succeeded if it ended through the native completion marker.
+    # "returned" also covers idle_grace, deadline and stream_closed, which mean
+    # the board did not finish.
+    ok = (
+        snapshot["phase"] == "returned"
+        and not snapshot["error"]
+        and snapshot.get("stream_stop_reason") == "team_completed"
+    )
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

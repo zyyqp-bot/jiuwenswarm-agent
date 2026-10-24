@@ -1,6 +1,6 @@
 {
-  "checks_passed": 7,
-  "checks_total": 7,
+  "checks_passed": 14,
+  "checks_total": 14,
   "checks": [
     {
       "check": "the assignee's supported result is accepted",
@@ -36,6 +36,41 @@
       "check": "an empty submission is rejected",
       "result": "pass",
       "detail": "empty result: no claims and no artifacts"
+    },
+    {
+      "check": "a native completion rejection fails the submission",
+      "result": "pass",
+      "detail": "native completion rejected: task is assigned to another member"
+    },
+    {
+      "check": "a rejected completion leaves the execution unsubmitted",
+      "result": "pass",
+      "detail": "results=[]"
+    },
+    {
+      "check": "a native completion exception fails the submission",
+      "result": "pass",
+      "detail": "native completion failed: RuntimeError: native board unavailable"
+    },
+    {
+      "check": "an exception leaves the execution unsubmitted",
+      "result": "pass",
+      "detail": "results=[]"
+    },
+    {
+      "check": "the app's structural acceptance needs no model-supplied verdict",
+      "result": "pass",
+      "detail": "accepted"
+    },
+    {
+      "check": "the factory binds the build context's member",
+      "result": "pass",
+      "detail": "research_member"
+    },
+    {
+      "check": "a context without a member name refuses to build the tool",
+      "result": "pass",
+      "detail": "submit_task_result needs a BuildContext.member_name"
     }
   ],
   "scope": "bridge unit checks only; no team, no runner, no model call"

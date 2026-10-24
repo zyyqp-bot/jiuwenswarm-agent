@@ -1,26 +1,36 @@
-"""Enforce the public tool surface at the last point that matters: the request.
+"""Enforce the public tool surface on the request **and** at execution.
+
+Two layers, and only the second is a boundary.
 
 The team configurator injects a ``SYS_OPERATION`` rail for every leader and
-teammate (the worktree shell guard), independently of
-``DeepAgentSpec.enable_sys_operation``. The built leader therefore still
-registers ``read_file``/``bash``/``powershell`` — measured on a real request.
+teammate, independently of ``DeepAgentSpec.enable_sys_operation``. The built
+leader therefore still registers ``read_file``/``bash``/``powershell`` —
+measured on a real request.
 
-This rail runs in ``before_model_call``, after every rail has registered its
-tools and immediately before the ReAct agent assembles the request. It filters
-``ctx.inputs.tools`` in place and records what remains, so the model never sees
-a shell or filesystem tool even though the resource exists.
+``before_model_call`` filters ``ctx.inputs.tools`` so the model is not
+*advertised* a shell or filesystem tool. That is not enough: the dispatcher
+executes any model-emitted name present in ``ability_manager._tools``
+(``if tool_name in self._tools``), advertised or not. A prompt-injected
+document can name ``bash`` and it will run.
 
-Residual risk, recorded rather than hidden: a rail that calls such a tool
-itself (without the model) is not blocked by this filter. Every current tool
-invocation in this run is model-driven.
+``before_tool_call`` is the execution gate. It sets ``_skip_tool`` and an
+error ToolMessage, the same mechanism ``AgentModeRail._reject_tool`` uses, so
+the tool's ``invoke`` is never called.
+
+The denylist also carries the app's ownership decisions: a member may not
+complete its own task outside ``submit_task_result`` (``member_complete_task``),
+and the leader may not mutate the board the application submitted
+(``create_task`` / ``update_task``).
 """
 from __future__ import annotations
 
 from typing import Any
 
+from openjiuwen.core.foundation.llm import ToolMessage
 from openjiuwen.harness.rails.base import DeepAgentRail
 
 from app.hooks import get_bridge
+from app.request_probe import _tool_name
 from app.run_bridge import RunBridge
 
 # Exact names observed on the real request plus their close relatives.
@@ -47,6 +57,11 @@ FORBIDDEN_NAMES = frozenset(
         "upload_file_stream",
         "download_file",
         "download_file_stream",
+        # The app owns task completion and the task board.
+        "member_complete_task",
+        "create_task",
+        "update_task",
+        "org_dissolve_organization",
     }
 )
 FORBIDDEN_PREFIXES = ("spawn_",)
@@ -56,20 +71,19 @@ def is_forbidden(name: str) -> bool:
     return name in FORBIDDEN_NAMES or any(name.startswith(prefix) for prefix in FORBIDDEN_PREFIXES)
 
 
-def _tool_name(tool: Any) -> str:
-    name = getattr(tool, "name", None)
-    if isinstance(name, str) and name:
-        return name
-    card = getattr(tool, "card", None)
-    if card is not None:
-        card_name = getattr(card, "name", None)
-        if isinstance(card_name, str) and card_name:
-            return card_name
-    return ""
+def _call_name(inputs: Any) -> str:
+    """Return the tool name from a BEFORE_TOOL_CALL context."""
+    tool_call = getattr(inputs, "tool_call", None)
+    if tool_call is not None:
+        name = getattr(tool_call, "name", None)
+        if isinstance(name, str) and name:
+            return name
+    name = getattr(inputs, "tool_name", None)
+    return name if isinstance(name, str) else ""
 
 
 class ToolSurfaceGuardRail(DeepAgentRail):
-    """Remove forbidden tools from the model request and record the result."""
+    """Filter the request surface and refuse denied tools at execution."""
 
     def __init__(self, bridge: RunBridge) -> None:
         super().__init__()
@@ -95,7 +109,23 @@ class ToolSurfaceGuardRail(DeepAgentRail):
 
         inputs.tools = kept
         self.removed = removed
-        self.bridge.record_tool_names([_tool_name(tool) for tool in kept if _tool_name(tool)])
+        self.bridge.record_tool_request(
+            [_tool_name(tool) for tool in kept if _tool_name(tool)],
+            removed=removed,
+        )
+
+    async def before_tool_call(self, ctx: Any) -> None:
+        inputs = getattr(ctx, "inputs", None)
+        name = _call_name(inputs)
+        if not name or not is_forbidden(name):
+            return
+
+        tool_call = getattr(inputs, "tool_call", None)
+        message = f"tool '{name}' is not available in this workbench"
+        ctx.extra["_skip_tool"] = True
+        inputs.tool_result = {"error": message}
+        inputs.tool_msg = ToolMessage(content=message, tool_call_id=getattr(tool_call, "id", "") or "")
+        self.bridge.record_blocked_tool(name)
 
 
 def make_tool_guard(params: dict[str, Any], context: Any) -> ToolSurfaceGuardRail:

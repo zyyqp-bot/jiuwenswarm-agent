@@ -23,8 +23,26 @@ from typing import Any, Awaitable, Callable, Iterable, Mapping, Sequence
 from app.citations import CitationValidator
 from app.completion import CompletionGate
 from app.execution import ExecutionLedger
-from app.models import AcceptanceCheck, Claim, TaskOutcome, TaskResult, non_blank, usable_artifacts
+from app.models import (
+    AcceptanceCheck,
+    AcceptanceResult,
+    Claim,
+    TaskOutcome,
+    TaskResult,
+    non_blank,
+    usable_artifacts,
+)
 from app.plan import PlanTask
+
+APP_VERIFIER = "app.structural"
+"""Who signs the application's structural acceptance checks.
+
+The producer cannot sign its own acceptance: ``CompletionGate`` compares this
+name against ``TaskResult.producer``. Semantic acceptance (does the report
+actually satisfy the task?) belongs to the reviewer flow in Plan 2; this name
+covers only what the application itself checked — a non-empty result whose
+fact citations resolved against evidence the task received.
+"""
 
 
 @dataclass(frozen=True)
@@ -56,17 +74,15 @@ class RunBridge:
         self._executions: dict[str, str] = {}
         self._results: dict[str, TaskResult] = {}
         self._submitted: set[tuple[str, str]] = set()
-        self._complete: Callable[[str], Awaitable[None]] | None = None
+        self._reported_acceptance: dict[str, dict[str, str]] = {}
         self._lock = threading.Lock()
         self.bootstrapped = False
         self.tool_names: list[str] = []
+        self.tool_requests: list[dict[str, list[str]]] = []
+        self.blocked_tools: list[str] = []
         self.tool_events: list[str] = []
         self.errors: list[str] = []
-
-    # -- wiring -------------------------------------------------------------
-    def bind_native_complete(self, complete: Callable[[str], Awaitable[None]]) -> None:
-        """Bind the callback that completes the native task after acceptance."""
-        self._complete = complete
+        self.fatal_errors: list[str] = []
 
     def execution_for(self, task_id: str) -> str:
         """Return this task's execution id, opening the first one when needed."""
@@ -108,18 +124,65 @@ class RunBridge:
                 del self.tool_events[:-100]
 
     def record_tool_names(self, names: Sequence[str]) -> None:
-        """Record the tool names sent to the model on the latest request."""
+        """Record the tool names sent to the model on one request."""
+        self.record_tool_request(names)
+
+    def record_tool_request(self, names: Sequence[str], *, removed: Sequence[str] = ()) -> None:
+        """Append one request's tool list; the history is never overwritten.
+
+        A single request is not evidence about a run: an early request that
+        leaked ``bash`` would disappear if only the latest list were kept.
+        """
+        request = {"names": [str(name) for name in names], "removed": [str(name) for name in removed]}
         with self._lock:
-            self.tool_names = [str(name) for name in names]
+            self.tool_names = request["names"]
+            self.tool_requests.append(request)
+            if len(self.tool_requests) > 100:
+                del self.tool_requests[:-100]
+
+    def record_blocked_tool(self, name: str) -> None:
+        """Record a model-emitted call that the execution gate refused."""
+        if not name:
+            return
+        with self._lock:
+            self.blocked_tools.append(str(name))
+            if len(self.blocked_tools) > 100:
+                del self.blocked_tools[:-100]
+
+    def fail(self, message: str) -> None:
+        """Record a run-fatal error (as opposed to a rejected submission)."""
+        with self._lock:
+            self.fatal_errors.append(str(message))
+            self.errors.append(str(message))
 
     # -- submission ---------------------------------------------------------
-    async def submit(self, **kwargs: Any) -> SubmitOutcome:
+    async def submit(
+        self,
+        *,
+        producer: str,
+        task_id: str,
+        execution_id: str,
+        outcome: TaskOutcome,
+        claims: Sequence[Claim],
+        artifact_refs: Sequence[str] = (),
+        acceptance: Mapping[str, AcceptanceCheck] | None = None,
+        complete: Callable[[str], Awaitable[Any]] | None = None,
+    ) -> SubmitOutcome:
         """Validate and store one result, recording every rejection for diagnostics."""
-        outcome = await self._submit(**kwargs)
-        if not outcome.ok:
+        verdict = await self._submit(
+            producer=producer,
+            task_id=task_id,
+            execution_id=execution_id,
+            outcome=outcome,
+            claims=claims,
+            artifact_refs=artifact_refs,
+            acceptance=acceptance,
+            complete=complete,
+        )
+        if not verdict.ok:
             with self._lock:
-                self.errors.append(outcome.error)
-        return outcome
+                self.errors.append(verdict.error)
+        return verdict
 
     async def _submit(
         self,
@@ -131,8 +194,16 @@ class RunBridge:
         claims: Sequence[Claim],
         artifact_refs: Sequence[str] = (),
         acceptance: Mapping[str, AcceptanceCheck] | None = None,
+        complete: Callable[[str], Awaitable[Any]] | None = None,
     ) -> SubmitOutcome:
-        """Validate and store one result, then complete the native task."""
+        """Validate a result, move the native task, and only then store it.
+
+        The native completion is the member's own ``TeamTaskManager.complete``
+        (bound at build time from the member's ``TeamBackend``). Its returned
+        ``TaskOpResult`` is checked: the framework reports a self-only refusal
+        by returning ``ok=False``, not by raising. Storing the result first
+        would tell the member it succeeded while the board had not moved.
+        """
         from app.execution import StaleExecutionError, UnknownExecutionError
 
         plan_task = self._plan.get(task_id)
@@ -156,9 +227,6 @@ class RunBridge:
         if not artifacts:
             artifacts = (f"claims:{task_id}:{execution_id}",)
 
-        if not usable_artifacts(artifacts):
-            return SubmitOutcome(False, "empty result: no claims and no artifacts")
-
         report = self._citations.validate(
             named_claims, available_evidence_ids=self._evidence.get(task_id, set())
         )
@@ -181,6 +249,16 @@ class RunBridge:
         except (UnknownExecutionError, StaleExecutionError) as exc:
             return SubmitOutcome(False, f"execution check failed: {exc}")
 
+        cited = tuple(sorted({eid for claim in named_claims for eid in claim.evidence_ids}))
+        app_acceptance = {
+            acceptance_id: AcceptanceCheck(
+                acceptance_id=acceptance_id,
+                result=AcceptanceResult.PASS,
+                verifier=APP_VERIFIER,
+                evidence_refs=cited,
+            )
+            for acceptance_id in plan_task.acceptance_ids
+        }
         decision = self._completion.evaluate(
             run_id=self.run_id,
             task_id=task_id,
@@ -189,24 +267,33 @@ class RunBridge:
             reviewers=plan_task.reviewers,
             require_reviewer=False,
             required_acceptance_ids=plan_task.acceptance_ids,
-            acceptance=acceptance,
+            acceptance=app_acceptance,
         )
         if not decision.allowed:
             reason = decision.reason.value if decision.reason else "rejected"
             return SubmitOutcome(False, f"completion gate blocked: {reason}: {decision.detail or ''}".strip())
 
+        if complete is not None:
+            try:
+                native = await complete(task_id)
+            except Exception as exc:  # noqa: BLE001 - reported, the execution stays open
+                return SubmitOutcome(False, f"native completion failed: {type(exc).__name__}: {exc}")
+            if native is not None and not getattr(native, "ok", True):
+                reason = getattr(native, "reason", "") or "rejected"
+                return SubmitOutcome(False, f"native completion rejected: {reason}")
+
         with self._lock:
+            if key in self._submitted:
+                return SubmitOutcome(
+                    False, f"execution {execution_id!r} already submitted a result for {task_id!r}"
+                )
             self._results[task_id] = result
             self._submitted.add(key)
-
-        if self._complete is not None:
-            try:
-                await self._complete(task_id)
-            except Exception as exc:  # noqa: BLE001 - reported, the result is kept
-                return SubmitOutcome(
-                    False,
-                    f"result accepted but native completion failed: {type(exc).__name__}: {exc}",
-                )
+            if acceptance:
+                self._reported_acceptance[task_id] = {
+                    str(acceptance_id): check.result.value
+                    for acceptance_id, check in acceptance.items()
+                }
         return SubmitOutcome(True)
 
     # -- observation --------------------------------------------------------
@@ -220,8 +307,12 @@ class RunBridge:
                 "run_id": self.run_id,
                 "bootstrapped": self.bootstrapped,
                 "tool_names": list(self.tool_names),
+                "tool_requests": [dict(request) for request in self.tool_requests],
+                "blocked_tools": list(self.blocked_tools),
                 "tool_events": list(self.tool_events),
                 "errors": list(self.errors),
+                "fatal_errors": list(self.fatal_errors),
+                "reported_acceptance": dict(self._reported_acceptance),
                 "results": {
                     task_id: {
                         "producer": result.producer,

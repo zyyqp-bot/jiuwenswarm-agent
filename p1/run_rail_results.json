@@ -1,6 +1,6 @@
 {
-  "checks_passed": 8,
-  "checks_total": 8,
+  "checks_passed": 17,
+  "checks_total": 17,
   "checks": [
     {
       "check": "no submission before build_team completes",
@@ -18,9 +18,14 @@
       "detail": "bootstrapped=True"
     },
     {
-      "check": "a rejected graph raises",
+      "check": "a rejected graph aborts the callback chain",
       "result": "pass",
-      "detail": "native task graph was rejected: cycle; team='team-1' roster={'team_leader': True, 'research': True, 'engineering': True} initialized=None"
+      "detail": "[110600] callback execution aborted: native task graph was rejected: cycle; team='team-1' roster={'team_leader': True, 'research': True, 'engineering': True} initialized=None"
+    },
+    {
+      "check": "a rejected graph lands in the run's fatal errors",
+      "result": "pass",
+      "detail": "fatal=[\"native task graph was rejected: cycle; team='team-1' roster={'team_leader': True, 'research': True, 'engineering': True} initialized=None\"]"
     },
     {
       "check": "without a team rail nothing is submitted",
@@ -30,17 +35,57 @@
     {
       "check": "forbidden tools are removed from the request",
       "result": "pass",
-      "detail": "kept=['submit_task_result', 'create_task'] removed=['read_file', 'bash', 'spawn_passive_human']"
+      "detail": "kept=['submit_task_result', 'build_team'] removed=['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']"
     },
     {
       "check": "the guard records the model-visible surface",
       "result": "pass",
-      "detail": "tool_names=['submit_task_result', 'create_task']"
+      "detail": "tool_names=['submit_task_result', 'build_team']"
     },
     {
       "check": "the guard backend is untouched",
       "result": "pass",
       "detail": "no graph call from the guard"
+    },
+    {
+      "check": "a model-emitted bash call is skipped",
+      "result": "pass",
+      "detail": "skip=True result={'error': \"tool 'bash' is not available in this workbench\"}"
+    },
+    {
+      "check": "a model-emitted member_complete_task call is skipped",
+      "result": "pass",
+      "detail": "skip=True result={'error': \"tool 'member_complete_task' is not available in this workbench\"}"
+    },
+    {
+      "check": "a model-emitted create_task call is skipped",
+      "result": "pass",
+      "detail": "skip=True result={'error': \"tool 'create_task' is not available in this workbench\"}"
+    },
+    {
+      "check": "an allowed tool call passes the execution gate",
+      "result": "pass",
+      "detail": "extra={} result=None"
+    },
+    {
+      "check": "blocked tool calls are recorded",
+      "result": "pass",
+      "detail": "blocked=['bash', 'member_complete_task', 'create_task']"
+    },
+    {
+      "check": "tool requests accumulate instead of being replaced",
+      "result": "pass",
+      "detail": "requests=[{'names': ['submit_task_result', 'build_team'], 'removed': ['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']}, {'names': ['view_task'], 'removed': ['bash']}]"
+    },
+    {
+      "check": "no retained request ever contains a forbidden tool",
+      "result": "pass",
+      "detail": "requests=[{'names': ['submit_task_result', 'build_team'], 'removed': ['read_file', 'bash', 'spawn_passive_human', 'member_complete_task', 'create_task', 'update_task']}, {'names': ['view_task'], 'removed': ['bash']}]"
+    },
+    {
+      "check": "the request probe records every request once and delegates",
+      "result": "pass",
+      "detail": "recorded=[['submit_task_result', 'bash'], ['view_task']] original_calls=2"
     }
   ],
   "scope": "rail and guard unit checks only; no team, no runner, no model call"

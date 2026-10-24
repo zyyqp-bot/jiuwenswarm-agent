@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.24 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁、真实回合断言收集与工作台运行时钉子均已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；下一步按大赛设计要求实现在线工作台。
+版本：0.25 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁、真实回合断言收集与工作台运行时钉子均已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7），并已通过整支独立审查与三条 Critical 修复（钉子复跑 7/7）；下一步按大赛设计要求实现在线工作台。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -589,6 +589,23 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 钉子刻意使用两个**相互独立**的任务：带依赖的任务会让第一个任务成为"关键任务"并强制经过原生 reviewer 投票，那属于另一条验证路径，不应混进"委派是否成立"的证明。
 
+**P1 第六部分（整支审查与修复）已执行**：独立 reviewer 审查了 7 个提交，结论是"快乐路径成立，但三条核心安全性质尚未真正成立"。逐条对照固定提交的上游源码确认后，全部修复并以离线断言钉住；钉子重跑 7/7。
+
+三条 Critical（均已修复）：
+
+1. **应用的原生完成对成员任务是静默空操作**。`TeamTaskManager.complete` 是 self-only（`task.assignee != self.member_name` 时返回 `TaskOpResult.fail`，不抛异常）；此前 rail 绑定的是 **leader 的** task manager，且 bridge 只捕获异常、不看返回值，于是成员被告知"成功"而看板没有移动。修复：`make_submit_tool` 从 `BuildContext.extras["team.team_backend"]` 取**成员自己的** `TeamTaskManager`，completion 在落库之前执行并检查 `ok`；被拒绝或抛异常时执行保持 open、结果不落库，成员可重试。钉子在没有 `member_complete_task` 的路径上仍以 `team.completed` 结束，证明修复的是真实完成路径。
+2. **原生 `member_complete_task` 绕过整个完成门禁**。scheduled 成员默认拥有该工具，可用空 note 直接完成任务。修复：`app/tool_guard.py` 把 `member_complete_task` 并入拒绝集（连同 `create_task`/`update_task`/`org_dissolve_organization`——应用拥有任务板，leader 不得在计划校验之外改写）。
+3. **请求过滤不是执行边界**。dispatcher 对 `ability_manager._tools` 中存在的任何模型给出的名字都会执行，未广告不等于不能调用。修复：`ToolSurfaceGuardRail.before_tool_call` 实现执行级拒绝——置 `ctx.extra["_skip_tool"]`、写入错误 `ToolMessage`（与 `AgentModeRail._reject_tool` 同一机制），工具的 `invoke` 不会被调用，并记录 `blocked_tools`。
+
+六条 Important（均已修复）：图提交失败改为 `AbortError` 并把 fatal 提升进 supervisor 的 `error`/退出码；成员名册由 `app/team_config.py` 的 `ASSIGNABLE_MEMBERS` 派生，payload 名册不一致直接 `invalid_plan`；reporter 线程在最终快照前 join；工具请求列表改为累积（`tool_requests`）并记录被移除项；恢复请求探针与 producer 绑定的离线断言；验收改为应用侧结构化签名（`app.structural`），不再由成员自签。
+
+新增/更新的离线断言：[p1/submit_tool_check.py](p1/submit_tool_check.py) 14 项、[p1/run_rail_check.py](p1/run_rail_check.py) 17 项、[p1/supervisor_check.py](p1/supervisor_check.py) 9 项。全量离线套件 26 个脚本 0 失败。
+
+审查同时确认了两处**不属于本计划、必须由 Plan 2 承接**的功能缺口，现明确登记：
+
+- 预执行 `DependencyGate` 的业务有效性（前置结果是否真的满足下游输入）尚未接入原生调度交接；
+- reviewer 流程（`IN_REVIEW` 投票、拒绝返工）未接入；当前"先存结果、后等裁决"的路径在 Plan 2 必须改为裁决通过后才接受，并开启新 execution。
+
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
 下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：
@@ -634,6 +651,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-24 | 0.25 | R04、R08、R11 | 整支审查后的修复：成员自有 task manager 完成并检查 `TaskOpResult`；`member_complete_task`/`create_task`/`update_task` 执行级拒绝；请求过滤之外的 `before_tool_call` 执行边界；`AbortError` + fatal 提升；固定可指派名册；reporter join；请求历史累积；应用侧结构化验收 | 离线 26 脚本 0 失败；真实钉子 7/7；两处 Plan 2 缺口已登记 |
 | 2026-10-12 | 0.22 | R01、R06 | 跑通真实回合：真实端点 + Runner，Leader 完成一轮；发现回合末 `os._exit()`，改写"先保存后返回"为流内落盘；记录真实工具数 29 与物化 10 的差异 | 回合跑通；脚本级断言收集未跑完 |
 | 2026-10-12 | 0.21 | R02 | 从真实构造的 team 上验证 leader 工具集：读 rail 自身参数物化工具集，对照实验证实 `enable_hitt` 是缺口来源；审核后合并两个脚本并去掉硬编码与手抄规则 | 9 项断言通过；真实回合仍未跑 |
 | 2026-10-12 | 0.20 | R02、R13 | 启动 P1：验证 leader 的 spawn 工具门禁，发现 `predefined` 未覆盖 `spawn_passive_human`（由 `enable_hitt` 控制，而链上默认 True），适配层显式关闭该门禁并纳入 `validate_roster_closed`；更正 §13 中此前的错误结论 | 9 项断言通过；工具挂载仍需真实 runtime |

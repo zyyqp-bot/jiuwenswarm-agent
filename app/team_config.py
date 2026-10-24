@@ -53,6 +53,16 @@ ENGINEERING = {
     "prompt": "Propose interfaces and verifiable steps.",
 }
 
+ASSIGNABLE_MEMBERS: tuple[str, ...] = (RESEARCH["member_name"], ENGINEERING["member_name"])
+"""Who the native scheduler may assign a task to.
+
+The leader is excluded: ``TeamTaskManager._validate_task_owner`` and
+``add_graph`` reject leader-assigned tasks, and the leader's job is
+coordination. A payload may not widen this roster — the plan validator must
+reject an assignee the scheduler would refuse, rather than failing later at
+bootstrap.
+"""
+
 
 def agents_templates() -> dict[str, dict[str, Any]]:
     return {

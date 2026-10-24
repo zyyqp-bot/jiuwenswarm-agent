@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "p1"))
 
+from app.tool_guard import is_forbidden  # noqa: E402
 from checks.harness import Checks  # noqa: E402
 from live_round_check import _load_credentials  # noqa: E402
 
@@ -50,8 +51,7 @@ PLAN = [
             "用给定证据回答：为什么开发前要先核对源码版本？"
             "可用证据 id 仅为 ev-1、ev-2。"
             "用 submit_task_result 提交，task_id=research，outcome=success；"
-            "至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选；"
-            "acceptance 提交 [{acceptance_id: research_accept, result: pass, verifier: program}]。"
+            "至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选。"
         ),
         "acceptance_ids": ["research_accept"],
         "assignee": "research",
@@ -62,29 +62,15 @@ PLAN = [
         "instruction": (
             "基于给定证据给出一条工程建议。可用证据 id 仅为 ev-1、ev-2。"
             "用 submit_task_result 提交，task_id=engineering，outcome=success；"
-            "至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选；"
-            "acceptance 提交 [{acceptance_id: engineering_accept, result: pass, verifier: program}]。"
+            "至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选。"
         ),
         "acceptance_ids": ["engineering_accept"],
         "assignee": "engineering",
     },
 ]
 
-FORBIDDEN_TOOLS = (
-    "shell",
-    "bash",
-    "cmd",
-    "powershell",
-    "read_file",
-    "write_file",
-    "edit_file",
-    "list_dir",
-    "spawn_",
-)
-
-
 def _forbidden(names: list[str]) -> list[str]:
-    return [name for name in names if any(part in name.lower() for part in FORBIDDEN_TOOLS)]
+    return [name for name in names if is_forbidden(name)]
 
 
 async def _run(checks: Checks, credentials: dict[str, str]) -> None:
@@ -99,7 +85,7 @@ async def _run(checks: Checks, credentials: dict[str, str]) -> None:
             "等待成员提交；如果任务已完成，直接给出简短总结。"
         ),
         "plan": PLAN,
-        "members": ["team_leader", "research", "engineering"],
+        "members": ["research", "engineering"],
         "credentials": credentials,
         "evidence_by_task": EVIDENCE,
         "session_id": f"session-{run_id}",
@@ -129,7 +115,11 @@ async def _run(checks: Checks, credentials: dict[str, str]) -> None:
     ]
     checks.add(
         "a fact claim cites evidence this run delivered",
-        bool(facts) and all(set(claim.get("evidence_ids") or []) <= seeded for claim in facts),
+        bool(facts)
+        and all(
+            (claim.get("evidence_ids") or []) and set(claim["evidence_ids"]) <= seeded
+            for claim in facts
+        ),
         f"facts={facts}",
     )
     checks.add(
@@ -137,17 +127,18 @@ async def _run(checks: Checks, credentials: dict[str, str]) -> None:
         "team.completed" in (snapshot.get("team_markers") or []),
         f"markers={snapshot.get('team_markers')} stop={snapshot.get('stream_stop_reason')!r}",
     )
+    requests = snapshot.get("tool_requests") or []
     tools = snapshot.get("tool_names") or []
     checks.add(
         "the request carries the submit tool",
-        "submit_task_result" in tools,
-        f"tools={tools}",
+        any("submit_task_result" in request.get("names", []) for request in requests),
+        f"last_tools={tools}",
     )
-    leaked = _forbidden(tools)
+    leaked = [name for request in requests for name in _forbidden(request.get("names") or [])]
     checks.add(
-        "the request carries no shell, file or spawn tool",
-        not leaked,
-        f"forbidden={leaked}",
+        "no retained request carries a shell, file, spawn or board tool",
+        bool(requests) and not leaked,
+        f"requests={len(requests)} forbidden={leaked}",
     )
     errors = snapshot.get("errors") or []
     identity_errors = [error for error in errors if "not the assignee" in error]

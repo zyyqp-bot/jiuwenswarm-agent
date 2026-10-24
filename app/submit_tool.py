@@ -81,7 +81,13 @@ _SCHEMA = {
 class SubmitTaskResultTool(TeamTool):
     """Submit a structured, citation-checked result for the caller's task."""
 
-    def __init__(self, bridge: RunBridge, *, producer: str) -> None:
+    def __init__(
+        self,
+        bridge: RunBridge,
+        *,
+        producer: str,
+        complete: Any = None,
+    ) -> None:
         super().__init__(
             ToolCard(
                 id="app.submit_task_result",
@@ -94,6 +100,7 @@ class SubmitTaskResultTool(TeamTool):
         )
         self.bridge = bridge
         self.producer = producer
+        self.complete = complete
         self.card.input_params = _SCHEMA
 
     async def invoke(self, inputs: dict[str, Any], **kwargs: Any) -> ToolOutput:
@@ -102,7 +109,7 @@ class SubmitTaskResultTool(TeamTool):
         except ValueError:
             return ToolOutput(success=False, error="'outcome' must be one of success, partial, error")
 
-        task_id = str(kwargs.get("task_id") or inputs.get("task_id") or "").strip()
+        task_id = str(inputs.get("task_id") or "").strip()
         if not task_id:
             return ToolOutput(success=False, error="'task_id' is required")
 
@@ -125,6 +132,7 @@ class SubmitTaskResultTool(TeamTool):
             claims=claims,
             artifact_refs=tuple(str(ref) for ref in inputs.get("artifact_refs") or []),
             acceptance=acceptance,
+            complete=self.complete,
         )
         return ToolOutput(success=verdict.ok, error=verdict.error or None)
 
@@ -165,8 +173,37 @@ def _parse_acceptance(raw_items: Any) -> dict[str, AcceptanceCheck]:
 
 
 def make_submit_tool(params: dict[str, Any], context: Any) -> SubmitTaskResultTool:
-    """Provider factory: resolve the run bridge and bind the member's identity."""
+    """Provider factory: resolve the run bridge and bind the member's identity.
+
+    The native completion is the **member's own** task manager, taken from the
+    build context's team backend. The leader's manager cannot complete a
+    teammate's task (``TeamTaskManager.complete`` is self-only), so binding it
+    there — as the first implementation did — made every teammate completion a
+    silent no-op.
+    """
     producer = getattr(context, "member_name", None)
     if not producer:
         raise RuntimeError("submit_task_result needs a BuildContext.member_name")
-    return SubmitTaskResultTool(get_bridge(params["run_id"]), producer=str(producer))
+    return SubmitTaskResultTool(
+        get_bridge(params["run_id"]),
+        producer=str(producer),
+        complete=_member_complete(context),
+    )
+
+
+def _member_complete(context: Any) -> Any:
+    """Return an async completion bound to this member's task manager, or None."""
+    try:
+        from openjiuwen.agent_teams.rails.team_context import get_team_backend
+    except Exception:  # noqa: BLE001 - offline checks build the tool directly
+        return None
+
+    backend = get_team_backend(context)
+    manager = getattr(backend, "task_manager", None) if backend is not None else None
+    if manager is None:
+        return None
+
+    async def complete(task_id: str) -> Any:
+        return await manager.complete(task_id=task_id)
+
+    return complete

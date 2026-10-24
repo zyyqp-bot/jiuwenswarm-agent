@@ -10,7 +10,7 @@
     {
       "check": "the team builds",
       "result": "pass",
-      "detail": "built in 0.1s"
+      "detail": "built in 0.2s"
     },
     {
       "check": "the built leader holds no spawn tool",
@@ -60,6 +60,9 @@
   },
   "events": 0,
   "chunks_with_text": 0,
+  "chunk_types": {},
+  "team_markers": [],
+  "stream_stop_reason": null,
   "answer_chars": 0,
   "answer_preview": "",
   "usage": {

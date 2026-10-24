@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from openjiuwen.core.runner.callback import AbortError
 from openjiuwen.harness.rails.base import DeepAgentRail
 
 from app.hooks import get_bridge
@@ -39,19 +40,19 @@ SUBMIT_RETRY_SECONDS = 1.0
 class RunBootstrapRail(DeepAgentRail):
     """Submit the app's task graph once the native task manager is ready."""
 
-    def __init__(self, bridge: RunBridge, *, leader_name: str) -> None:
+    def __init__(self, bridge: RunBridge) -> None:
         super().__init__()
         self.bridge = bridge
-        self.leader_name = leader_name
 
     # -- hook wiring --------------------------------------------------------
     async def before_task_iteration(self, ctx: Any) -> None:
         await self._try_bootstrap(ctx, loud=False, attempts=1)
 
     async def before_model_call(self, ctx: Any) -> None:
-        # After build_team returns, the next model call is the first hook that
-        # certainly runs post-commit; give it a short window.
-        await self._try_bootstrap(ctx, loud=False, attempts=3)
+        # A quiet backup for the window after build_team commits. One attempt,
+        # no sleep: a sleeping hook here blocks the leader's own turn, and the
+        # authoritative submission is after_tool_call(build_team).
+        await self._try_bootstrap(ctx, loud=False, attempts=1)
 
     async def after_tool_call(self, ctx: Any) -> None:
         inputs = getattr(ctx, "inputs", None)
@@ -71,11 +72,10 @@ class RunBootstrapRail(DeepAgentRail):
         last_error = ""
         manager: Any = None
         for attempt in range(1, attempts + 1):
+            if self.bridge.bootstrapped:
+                return
             manager = self._task_manager(ctx)
             if manager is not None and getattr(manager, "db", None) is not None:
-                self.bridge.bind_native_complete(
-                    lambda task_id, ready=manager: ready.complete(task_id=task_id)
-                )
                 try:
                     result = await manager.add_graph(plan_to_graph(self.bridge.plan_tasks()))
                 except Exception as exc:  # noqa: BLE001 - recorded, re-raised when loud
@@ -97,8 +97,11 @@ class RunBootstrapRail(DeepAgentRail):
 
         detail = await self._diagnose(manager) if manager is not None else self._agent_shape(ctx)
         message = f"{last_error}; {detail}"
-        self.bridge.errors.append(message)
-        raise RuntimeError(message)
+        self.bridge.fail(message)
+        # ``trigger`` swallows ordinary exceptions; only ``AbortError`` is
+        # re-raised. A plain RuntimeError would leave the run streaming until
+        # the idle grace expires.
+        raise AbortError(reason=message)
 
     # -- resolution ---------------------------------------------------------
     @staticmethod
@@ -205,7 +208,5 @@ class RunBootstrapRail(DeepAgentRail):
 
 
 def make_bootstrap_rail(params: dict[str, Any], context: Any) -> RunBootstrapRail:
-    """Provider factory: resolve the run bridge and remember which member mounted it."""
-    bridge = get_bridge(params["run_id"])
-    member_name = getattr(context, "member_name", None) or "leader"
-    return RunBootstrapRail(bridge, leader_name=str(member_name))
+    """Provider factory: resolve the run bridge."""
+    return RunBootstrapRail(get_bridge(params["run_id"]))

@@ -15,6 +15,7 @@ import asyncio
 import json
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +63,24 @@ class _FakeRunner:
         return _iterate()
 
 
-def _payload(directory: Path, *, assignee: str = "research") -> dict:
+class _SlowRunner(_FakeRunner):
+    """Yield late enough for the reporter thread to have a write in flight."""
+
+    def run_agent_team_streaming(self, *, agent_team, inputs, session):
+        async def _iterate():
+            await asyncio.sleep(0.05)
+            for chunk in _chunks():
+                yield chunk
+
+        return _iterate()
+
+
+def _payload(
+    directory: Path,
+    *,
+    assignee: str = "research",
+    members: list[str] | None = None,
+) -> dict:
     return {
         "run_id": "run-sup-1",
         "goal": "answer the question",
@@ -75,7 +93,7 @@ def _payload(directory: Path, *, assignee: str = "research") -> dict:
                 "assignee": assignee,
             }
         ],
-        "members": ["research", "engineering", "team_leader"],
+        "members": members or ["research", "engineering"],
         "credentials": {
             "MODEL_BASE_URL": "http://127.0.0.1:9",
             "MODEL_API_KEY": "x",
@@ -141,6 +159,70 @@ async def _run(checks: Checks) -> None:
             "an invalid plan stops before the runner starts",
             snapshot["phase"] == "invalid_plan" and fake.started is False,
             f"phase={snapshot['phase']!r} started={fake.started}",
+        )
+
+    # --- a roster the payload invents is rejected ---------------------------
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        fake = _FakeRunner()
+        snapshot = await run_payload(
+            _payload(directory, members=["research", "engineering", "team_leader"]),
+            runner_factory=lambda: fake,
+        )
+        checks.add(
+            "a payload roster that differs from the fixed team is rejected",
+            snapshot["phase"] == "invalid_plan"
+            and "members" in (snapshot["error"] or "")
+            and fake.started is False,
+            f"phase={snapshot['phase']!r} error={snapshot['error']!r}",
+        )
+
+    # --- a fatal bridge error reaches the run state -------------------------
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        fake = _FakeRunner()
+        original_bridge = supervisor_module.RunBridge
+
+        class _FatalBridge(original_bridge):  # type: ignore[misc, valid-type]
+            def __init__(self, **kwargs) -> None:
+                super().__init__(**kwargs)
+                self.fatal_errors.append("graph submission failed: cycle")
+
+        supervisor_module.RunBridge = _FatalBridge
+        try:
+            snapshot = await run_payload(_payload(directory), runner_factory=lambda: fake)
+        finally:
+            supervisor_module.RunBridge = original_bridge
+        checks.add(
+            "a fatal bridge error fails the run",
+            snapshot["error"] is not None and "cycle" in snapshot["error"],
+            f"error={snapshot['error']!r} phase={snapshot['phase']!r}",
+        )
+
+    # --- the reporter cannot overwrite the final snapshot -------------------
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        original_write = supervisor_module._atomic_write_json
+        original_interval = supervisor_module.SNAPSHOT_INTERVAL_SECONDS
+        phases: list[str] = []
+
+        def _slow_write(path, payload):
+            phases.append(str(payload.get("phase")))
+            if payload.get("phase") == "streaming":
+                time.sleep(0.15)
+            original_write(path, payload)
+
+        supervisor_module._atomic_write_json = _slow_write
+        supervisor_module.SNAPSHOT_INTERVAL_SECONDS = 0.01
+        try:
+            snapshot = await run_payload(_payload(directory), runner_factory=_SlowRunner)
+        finally:
+            supervisor_module._atomic_write_json = original_write
+            supervisor_module.SNAPSHOT_INTERVAL_SECONDS = original_interval
+        checks.add(
+            "the final snapshot is the last one written",
+            phases[-1] == "returned" and snapshot["phase"] == "returned",
+            f"last_written={phases[-1] if phases else None!r} phases={phases}",
         )
 
 
