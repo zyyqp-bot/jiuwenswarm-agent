@@ -1,0 +1,32 @@
+{
+  "checks_passed": 5,
+  "checks_total": 5,
+  "checks": [
+    {
+      "check": "leader disables sys_operation",
+      "result": "pass",
+      "detail": "enable_sys_operation=False"
+    },
+    {
+      "check": "teammate disables sys_operation",
+      "result": "pass",
+      "detail": "enable_sys_operation=False"
+    },
+    {
+      "check": "teammate mounts the submit tool",
+      "result": "pass",
+      "detail": "tools=['app.submit_task_result']"
+    },
+    {
+      "check": "leader mounts the bootstrap rail",
+      "result": "pass",
+      "detail": "rails=['app.run_bootstrap']"
+    },
+    {
+      "check": "capability gates stay closed",
+      "result": "pass",
+      "detail": "hitt=False bridge=False swarmflow=False"
+    }
+  ],
+  "scope": "template compilation only; no team build, no model call"
+}
