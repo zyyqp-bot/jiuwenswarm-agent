@@ -72,6 +72,9 @@ class FakeRunService:
         record = self.get(run_id, session_id=session_id)
         yield {"seq": record.seq, "type": "snapshot", "snapshot": record.snapshot}
 
+    def admission_counts(self, session_id):
+        return {"running_global": 0, "running_session": 0, "runs_today": 0}
+
 
 def _settings(data_dir: Path) -> Settings:
     return Settings.from_env(
@@ -203,10 +206,35 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             unknown.text[:120],
         )
 
+    session_cap_settings = Settings.from_env(
+        {
+            "WORKBENCH_ENV": "development",
+            "WORKBENCH_USERS": "judge:secret",
+            "WORKBENCH_DATA_DIR": str(data_dir),
+            "WORKBENCH_MAX_CONCURRENT_PER_SESSION": "1",
+        }
+    )
+    session_app = create_app(settings=session_cap_settings, service=_SessionCapService())
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=session_app), base_url="http://test"
+    ) as dave:
+        await _login(dave)
+        refused = await dave.post("/api/runs", json={"goal": "x", "workspace": "ai-governance"})
+        checks.add(
+            "a full session is a 429",
+            refused.status_code == 429 and refused.json().get("detail") == "session_capacity",
+            refused.text[:120],
+        )
+
 
 class _CapacityService(FakeRunService):
     async def start(self, **kwargs):
         raise AtCapacity("concurrent run capacity reached")
+
+
+class _SessionCapService(FakeRunService):
+    def admission_counts(self, session_id):
+        return {"running_global": 0, "running_session": 1, "runs_today": 0}
 
 
 def main() -> int:

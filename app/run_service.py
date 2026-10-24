@@ -232,6 +232,18 @@ class RunService:
         self._processes.clear()
         self._monitors.clear()
 
+    def admission_counts(self, session_id: str) -> dict[str, int]:
+        """Return the three counts the admission limits need."""
+        return {
+            "running_global": sum(1 for record in self._records.values() if not record.terminal),
+            "running_session": sum(
+                1
+                for record in self._records.values()
+                if not record.terminal and record.session_id == session_id
+            ),
+            "runs_today": self.runs_today(session_id),
+        }
+
     def runs_today(self, session_id: str) -> int:
         """Count this session's runs started in the last 24 hours."""
         cutoff = time.time() - 86400

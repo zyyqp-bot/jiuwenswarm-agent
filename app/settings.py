@@ -33,6 +33,7 @@ class Settings:
     model_api_key: str
     model_name: str
     max_concurrent_runs: int
+    max_concurrent_per_session: int
     max_runs_per_day: int
     run_deadline_seconds: int
 
@@ -62,6 +63,9 @@ class Settings:
             model_api_key=str(values.get("MODEL_API_KEY", "")).strip(),
             model_name=str(values.get("MODEL_NAME", "")).strip(),
             max_concurrent_runs=_int_env(values, "WORKBENCH_MAX_CONCURRENT_RUNS", 2),
+            max_concurrent_per_session=_int_env(
+                values, "WORKBENCH_MAX_CONCURRENT_PER_SESSION", 1
+            ),
             max_runs_per_day=_int_env(values, "WORKBENCH_MAX_RUNS_PER_DAY", 30),
             run_deadline_seconds=_int_env(values, "WORKBENCH_ROUND_DEADLINE_SECONDS", 300),
         )

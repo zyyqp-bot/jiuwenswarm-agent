@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.auth import COOKIE_NAME, Session, SessionCodec, credentials_ok
+from app.limits import LimitExceeded, Limits
 from app.run_service import AtCapacity, RunNotFound, RunRecord, RunService
 from app.settings import Settings
 from app.workspaces import get_workspace, workspace_summaries
@@ -57,6 +58,11 @@ def create_app(
     _ensure_data_dir(settings.data_dir)
     session_codec = codec or SessionCodec(settings.session_secret)
     static_root = static_dir if static_dir is not None else REPO_ROOT / "web" / "dist"
+    limits = Limits(
+        max_concurrent_global=settings.max_concurrent_runs,
+        max_concurrent_per_session=settings.max_concurrent_per_session,
+        max_runs_per_day=settings.max_runs_per_day,
+    )
 
     app = FastAPI(title="Evidence Workbench", docs_url=None, redoc_url=None)
 
@@ -116,6 +122,10 @@ def create_app(
     async def start_run(body: RunBody, session: Session = Depends(require_session)) -> dict[str, str]:
         if get_workspace(body.workspace) is None:
             raise HTTPException(status_code=400, detail="unknown workspace")
+        try:
+            limits.check_start(**service.admission_counts(session.sid))
+        except LimitExceeded as exc:
+            raise HTTPException(status_code=exc.status_code, detail=exc.code) from None
         try:
             record = await service.start(
                 session_id=session.sid,

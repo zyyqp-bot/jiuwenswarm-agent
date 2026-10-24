@@ -1,0 +1,42 @@
+{
+  "checks_passed": 7,
+  "checks_total": 7,
+  "checks": [
+    {
+      "check": "a request under every limit is admitted",
+      "result": "pass",
+      "detail": "admitted"
+    },
+    {
+      "check": "the global cap is a 503",
+      "result": "pass",
+      "detail": "error=global_capacity"
+    },
+    {
+      "check": "the global message names the limit and the current value",
+      "result": "pass",
+      "detail": "global concurrency limit 2 reached (running 2); try again when a run finishes"
+    },
+    {
+      "check": "the session cap is a 429",
+      "result": "pass",
+      "detail": "error=session_capacity"
+    },
+    {
+      "check": "the daily quota is a 429",
+      "result": "pass",
+      "detail": "error=daily_quota"
+    },
+    {
+      "check": "the daily message says quota is exhausted",
+      "result": "pass",
+      "detail": "daily run quota 3 is exhausted (3 started in the last 24 hours)"
+    },
+    {
+      "check": "a non-positive limit is refused at construction",
+      "result": "pass",
+      "detail": "max_concurrent_global must be positive"
+    }
+  ],
+  "scope": "admission limit arithmetic only; no service, no model call"
+}
