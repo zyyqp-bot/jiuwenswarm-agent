@@ -74,7 +74,9 @@ def fallback_plan(goal: str) -> list[PlanTask]:
             role="teammate",
             instruction=(
                 f"目标：{target}\n"
-                "用 retrieve 工具检索本工作区语料（task_id=research），"
+                "用 retrieve 工具检索本工作区语料（task_id=research）。"
+                "检索词用 2-6 个字的关键词（如「安全评估」「内容标识」），"
+                "不要拿整句目标去搜；可以分多次检索不同关键词。"
                 "整理有出处的发现；每条 fact 必须引用 retrieve 返回的 evidence id，"
                 "最后用 submit_task_result 提交（task_id=research, outcome=success）。"
             ),

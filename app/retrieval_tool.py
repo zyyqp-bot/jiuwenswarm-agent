@@ -61,7 +61,10 @@ class RetrievalTool(TeamTool):
                 name="retrieve",
                 description=(
                     "Retrieve evidence passages from this workspace's corpus. "
-                    "Facts in submit_task_result must cite ids returned here."
+                    "Use short keywords (2-6 characters, e.g. 安全评估), not a "
+                    "full sentence: the index matches phrases. Quote exact "
+                    "phrases when needed. Facts in submit_task_result must "
+                    "cite ids returned here."
                 ),
             )
         )
