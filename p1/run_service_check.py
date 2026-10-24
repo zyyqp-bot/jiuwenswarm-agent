@@ -76,6 +76,18 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         )
         checks.add("the run id is recorded", record.run_id.startswith("run-"), record.run_id)
 
+        report_dir = data_dir / "runs" / record.run_id
+        report_md = report_dir / "report.md"
+        report_json = report_dir / "report.json"
+        checks.add(
+            "a terminal run writes its report",
+            report_md.is_file()
+            and report_json.is_file()
+            and "done" in report_md.read_text(encoding="utf-8")
+            and "ev-1" in report_md.read_text(encoding="utf-8"),
+            f"files={sorted(path.name for path in report_dir.iterdir())}",
+        )
+
         # -- a live stream sees every snapshot ------------------------------
         live = await service.start(session_id="sid-1", goal="do the work", workspace="demo")
         events = [

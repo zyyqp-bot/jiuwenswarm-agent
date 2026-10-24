@@ -1,6 +1,6 @@
 {
-  "checks_passed": 13,
-  "checks_total": 13,
+  "checks_passed": 14,
+  "checks_total": 14,
   "checks": [
     {
       "check": "a completed supervisor snapshot becomes a returned record",
@@ -15,7 +15,12 @@
     {
       "check": "the run id is recorded",
       "result": "pass",
-      "detail": "run-20261024T080958-700ae9"
+      "detail": "run-20261024T081243-759148"
+    },
+    {
+      "check": "a terminal run writes its report",
+      "result": "pass",
+      "detail": "files=['payload.json', 'report.json', 'report.md', 'snapshot.json']"
     },
     {
       "check": "the live event stream is ordered",
@@ -40,7 +45,7 @@
     {
       "check": "the owning session lists only its own runs",
       "result": "pass",
-      "detail": "runs=['run-20261024T080958-700ae9', 'run-20261024T080959-df1039']"
+      "detail": "runs=['run-20261024T081243-759148', 'run-20261024T081243-276721']"
     },
     {
       "check": "a crashing supervisor becomes a failed run",

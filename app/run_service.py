@@ -25,6 +25,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.models import Claim, ClaimKind, TaskOutcome, TaskResult
+from app.plan import PlanTask
+from app.report import build_report, write_report
 from app.settings import Settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +60,8 @@ class RunRecord:
     process_pid: int | None = None
     terminal: bool = False
     stop_requested: bool = False
+    plan: list[dict] = field(default_factory=list)
+    report_error: str | None = None
 
 
 class RunService:
@@ -125,6 +130,7 @@ class RunService:
                 session_id=session_id,
                 goal=goal.strip(),
                 workspace=workspace,
+                plan=list(plan or []),
             )
             self._records[run_id] = record
 
@@ -177,6 +183,7 @@ class RunService:
         record.phase = "stopped"
         record.stop_reason = "stopped_by_user"
         record.error = None
+        self._write_report(record)
         record.terminal = True
         _ensure_snapshot(record)
         return record
@@ -255,6 +262,7 @@ class RunService:
                         record.stop_reason = document.get("stream_stop_reason")
                         record.error = document.get("error")
                         if document.get("complete"):
+                            self._write_report(record)
                             record.terminal = True
                             return
 
@@ -267,6 +275,7 @@ class RunService:
                         record.error = record.error or (
                             f"supervisor exited with code {process.returncode}"
                         )
+                    self._write_report(record)
                     record.terminal = True
                     _ensure_snapshot(record)
                     return
@@ -276,6 +285,7 @@ class RunService:
                     await process.wait()
                     record.phase = "failed"
                     record.error = "run deadline exceeded"
+                    self._write_report(record)
                     record.terminal = True
                     _ensure_snapshot(record)
                     return
@@ -286,11 +296,54 @@ class RunService:
         except Exception as exc:  # noqa: BLE001 - the record must still terminate
             record.phase = "failed"
             record.error = f"monitor failed: {type(exc).__name__}: {exc}"
+            self._write_report(record)
             record.terminal = True
             _ensure_snapshot(record)
         finally:
             self._processes.pop(record.run_id, None)
             _ensure_snapshot(record)
+
+    def _write_report(self, record: RunRecord) -> None:
+        """Write the report once, never letting a report failure fail the run."""
+        run_dir = self._settings.data_dir / "runs" / record.run_id
+        if (run_dir / "report.json").exists():
+            return
+        try:
+            plan = [PlanTask(**raw) for raw in record.plan]
+            results = _results_from_snapshot(record)
+            final = build_report(run_id=record.run_id, results=results, plan=plan)
+            write_report(run_dir, final, task_results=results)
+        except Exception as exc:  # noqa: BLE001 - the run's state is authoritative
+            record.report_error = f"{type(exc).__name__}: {exc}"
+
+
+def _results_from_snapshot(record: RunRecord) -> list[TaskResult]:
+    """Rebuild accepted results from the snapshot the child wrote."""
+    results: list[TaskResult] = []
+    for task_id, raw in (record.snapshot.get("results") or {}).items():
+        if not isinstance(raw, dict):
+            continue
+        claims = tuple(
+            Claim(
+                text=str(item.get("text", "")),
+                kind=ClaimKind(str(item.get("kind") or "inference")),
+                evidence_ids=tuple(str(item_id) for item_id in item.get("evidence_ids") or ()),
+            )
+            for item in raw.get("claims") or []
+            if isinstance(item, dict)
+        )
+        results.append(
+            TaskResult(
+                run_id=record.run_id,
+                task_id=str(task_id),
+                execution_id=str(raw.get("execution_id") or f"{record.run_id}:{task_id}:1"),
+                producer=str(raw.get("producer") or ""),
+                outcome=TaskOutcome(str(raw.get("outcome") or "success")),
+                artifact_refs=tuple(str(item) for item in raw.get("artifact_refs") or ()),
+                claims=claims,
+            )
+        )
+    return results
 
 
 def _new_run_id() -> str:

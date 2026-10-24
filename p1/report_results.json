@@ -1,0 +1,57 @@
+{
+  "checks_passed": 10,
+  "checks_total": 10,
+  "checks": [
+    {
+      "check": "both tasks and both acceptances yield a complete run",
+      "result": "pass",
+      "detail": "outcome=complete limitations=()"
+    },
+    {
+      "check": "the answer keeps claim kinds",
+      "result": "pass",
+      "detail": "## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估"
+    },
+    {
+      "check": "the evidence from every successful task is kept",
+      "result": "pass",
+      "detail": "evidence=('ev-1', 'ev-2', 'ev-3')"
+    },
+    {
+      "check": "a missing task makes the run partial",
+      "result": "pass",
+      "detail": "outcome=partial"
+    },
+    {
+      "check": "the missing acceptance is named as a limitation",
+      "result": "pass",
+      "detail": "limitations=('acceptance a2 is missing',)"
+    },
+    {
+      "check": "no results is a failed run, not a crash",
+      "result": "pass",
+      "detail": "outcome=failed limitations=('no task result was produced',)"
+    },
+    {
+      "check": "the Markdown has the required sections",
+      "result": "pass",
+      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 验收\n\n- a1: pass（app.structural）\n- a2: pass（app.structural）\n\n## 限"
+    },
+    {
+      "check": "the Markdown keeps the claim text, kind and evidence id",
+      "result": "pass",
+      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 验收\n\n- a1: pass（app.structural）\n- a2: pass（app.structural）\n\n## 限制\n\n- 无\n\n## 证据\n\n- `ev-1`\n- `ev-2`\n- `ev-3`\n\n## 分任务明细\n\n### research（success，research）\n- [fact] 政策要求进行安"
+    },
+    {
+      "check": "report.json and report.md are written atomically",
+      "result": "pass",
+      "detail": "files=['report.json', 'report.md']"
+    },
+    {
+      "check": "report.md on disk matches the returned Markdown",
+      "result": "pass",
+      "detail": "markdown round-trip"
+    }
+  ],
+  "scope": "report assembly with fixtures; no team, no model call"
+}

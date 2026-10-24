@@ -58,7 +58,13 @@ def main(argv: list[str]) -> int:
             run_id,
             "streaming",
             complete=False,
-            results={"research": {"producer": "research", "claims": [{"text": "fake"}], "artifact_refs": []}},
+            results={"research": {
+                "producer": "research",
+                "outcome": "success",
+                "execution_id": "fake:research:1",
+                "artifact_refs": ["claims:research"],
+                "claims": [{"text": "done", "kind": "inference", "evidence_ids": ["ev-1"]}],
+            }},
         ),
     )
     time.sleep(0.05)
@@ -73,7 +79,13 @@ def main(argv: list[str]) -> int:
             run_id,
             "returned",
             complete=True,
-            results={"research": {"producer": "research", "claims": [{"text": "done"}], "artifact_refs": []}},
+            results={"research": {
+                "producer": "research",
+                "outcome": "success",
+                "execution_id": "fake:research:1",
+                "artifact_refs": ["claims:research"],
+                "claims": [{"text": "done", "kind": "inference", "evidence_ids": ["ev-1"]}],
+            }},
         ),
     )
     return 0
