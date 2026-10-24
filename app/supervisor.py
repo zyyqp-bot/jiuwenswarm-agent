@@ -31,6 +31,7 @@ from app.agent_template import build_workbench_config
 from app.config_adapter import compile_team_spec
 from app.hooks import register_bridge, register_providers, unregister_bridge
 from app.plan import PlanTask, PlanValidator
+from app.planner import model_from_credentials, resolve_plan
 from app.request_probe import install_request_probe
 from app.run_bridge import RunBridge
 from app.stream_chunks import chunk_text_and_marker
@@ -80,11 +81,21 @@ async def run_payload(
     }
     lock = threading.Lock()
 
+    # The plan is resolved before the bridge exists: an explicit payload plan
+    # wins, otherwise the goal is planned here. Planning failures fall back to
+    # the template inside resolve_plan; only a malformed explicit plan fails
+    # the run, and it must fail rather than silently run a different graph.
     parse_error = ""
+    plan_source = "payload"
     try:
-        plan = [PlanTask(**raw) for raw in payload.get("plan") or []]
+        credentials = payload.get("credentials") or {}
+        model = model_from_credentials(credentials) if credentials.get("MODEL_API_KEY") else None
+        outcome = await resolve_plan(payload.get("plan"), goal, model=model)
+        plan = outcome.tasks
+        plan_source = outcome.source
     except Exception as exc:  # noqa: BLE001 - a malformed plan is a failed run, not a crash
         plan = []
+        plan_source = "invalid"
         parse_error = f"malformed plan: {type(exc).__name__}: {exc}"
 
     bridge = RunBridge(
@@ -105,6 +116,8 @@ async def run_payload(
                 "phase": phase,
                 "complete": complete,
                 "stream_stop_reason": state["stop_reason"],
+                "planner": plan_source,
+                "plan": [task.model_dump(mode="json") for task in plan],
                 "team_markers": list(state["markers"]),
                 "error": state["error"],
                 "results_path": str(results_path) if results_path else None,

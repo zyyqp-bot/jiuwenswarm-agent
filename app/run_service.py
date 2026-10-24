@@ -282,6 +282,10 @@ class RunService:
                         record.phase = str(document.get("phase") or record.phase)
                         record.stop_reason = document.get("stream_stop_reason")
                         record.error = document.get("error")
+                        # The child plans when the request carried no plan; adopt
+                        # it so the report describes the graph that actually ran.
+                        if isinstance(document.get("plan"), list) and document["plan"]:
+                            record.plan = document["plan"]
                         if document.get("complete"):
                             self._write_report(record)
                             record.terminal = True

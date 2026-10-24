@@ -1,0 +1,82 @@
+{
+  "checks_passed": 15,
+  "checks_total": 15,
+  "checks": [
+    {
+      "check": "the fallback plan is valid for the fixed roster",
+      "result": "pass",
+      "detail": "tasks=['research', 'engineering']"
+    },
+    {
+      "check": "the fallback keeps the goal in the research instruction",
+      "result": "pass",
+      "detail": "目标：列出一个面向公众的生成式 AI 客服上线前的合规动作\n用 retrieve 工具检索本工作区语料（task_id=research），整理有出处的发现；每"
+    },
+    {
+      "check": "the fallback keeps the two tasks independent",
+      "result": "pass",
+      "detail": "depends_on=()"
+    },
+    {
+      "check": "the fallback never assigns the leader",
+      "result": "pass",
+      "detail": "assignees=['research', 'engineering']"
+    },
+    {
+      "check": "the model schema does not advertise dependencies",
+      "result": "pass",
+      "detail": "properties=['acceptance_ids', 'assignee', 'instruction', 'task_id']"
+    },
+    {
+      "check": "a valid model plan is used and marked as tiny",
+      "result": "pass",
+      "detail": "source=tiny tasks=['research', 'engineering']"
+    },
+    {
+      "check": "an unknown assignee falls back",
+      "result": "pass",
+      "detail": "source=fallback"
+    },
+    {
+      "check": "a cycle falls back",
+      "result": "pass",
+      "detail": "fallback"
+    },
+    {
+      "check": "an exception falls back",
+      "result": "pass",
+      "detail": "fallback"
+    },
+    {
+      "check": "prose instead of a plan falls back",
+      "result": "pass",
+      "detail": "fallback"
+    },
+    {
+      "check": "a slow planner falls back",
+      "result": "pass",
+      "detail": "fallback"
+    },
+    {
+      "check": "an explicit payload plan is used without calling the model",
+      "result": "pass",
+      "detail": "source=payload"
+    },
+    {
+      "check": "no payload plan plans from the goal",
+      "result": "pass",
+      "detail": "source=tiny"
+    },
+    {
+      "check": "a missing model still produces a valid plan",
+      "result": "pass",
+      "detail": "source=fallback"
+    },
+    {
+      "check": "the planner model config matches the run credentials",
+      "result": "pass",
+      "detail": "model=deepseek-v3"
+    }
+  ],
+  "scope": "planner validation and fallback with an injected model; no model call"
+}
