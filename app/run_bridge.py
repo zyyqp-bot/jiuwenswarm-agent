@@ -68,6 +68,7 @@ class RunBridge:
         self._evidence: dict[str, set[str]] = {
             task_id: set(ids) for task_id, ids in (evidence_by_task or {}).items()
         }
+        self._evidence_details: dict[str, dict[str, str]] = {}
         self._ledger = ExecutionLedger()
         self._citations = CitationValidator()
         self._completion = CompletionGate(self._ledger)
@@ -108,12 +109,34 @@ class RunBridge:
         with self._lock:
             self._evidence[task_id] = set(evidence_ids)
 
-    def add_evidence(self, task_id: str, evidence_ids: Iterable[str]) -> None:
-        """Add ids the task's retrieval tool just returned."""
+    def add_evidence(
+        self,
+        task_id: str,
+        evidence_ids: Iterable[str],
+        details: Iterable[Mapping[str, Any]] | None = None,
+    ) -> None:
+        """Add ids the task's retrieval tool just returned.
+
+        ``details`` carries the passage behind each id. The snapshot is the
+        API process's only view of a run, so the evidence drawer cannot
+        re-open the corpus for a run that already finished; the passage must
+        travel with the ids.
+        """
         with self._lock:
             self._evidence.setdefault(task_id, set()).update(
                 str(item) for item in evidence_ids
             )
+            for item in details or ():
+                evidence_id = str(item.get("evidence_id") or "")
+                if not evidence_id:
+                    continue
+                self._evidence_details[evidence_id] = {
+                    "evidence_id": evidence_id,
+                    "text": str(item.get("text") or ""),
+                    "source_uri": str(item.get("source_uri") or ""),
+                    "source_revision": str(item.get("source_revision") or ""),
+                    "locator": str(item.get("locator") or ""),
+                }
 
     def assignee_for(self, task_id: str) -> str | None:
         """Return the task's assignee, or ``None`` when it is not in the plan."""
@@ -400,6 +423,10 @@ class RunBridge:
                 "pending_reviews": sorted(self._pending_results),
                 "evidence": {
                     task_id: sorted(ids) for task_id, ids in self._evidence.items()
+                },
+                "evidence_details": {
+                    evidence_id: dict(item)
+                    for evidence_id, item in sorted(self._evidence_details.items())
                 },
                 "tool_names": list(self.tool_names),
                 "tool_requests": [dict(request) for request in self.tool_requests],

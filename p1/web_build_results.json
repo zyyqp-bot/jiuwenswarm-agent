@@ -1,6 +1,6 @@
 {
-  "checks_passed": 10,
-  "checks_total": 10,
+  "checks_passed": 14,
+  "checks_total": 14,
   "checks": [
     {
       "check": "web/package.json exists",
@@ -10,12 +10,12 @@
     {
       "check": "npm install succeeds",
       "result": "pass",
-      "detail": "added 65 packages, and audited 66 packages in 2s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
+      "detail": "added 65 packages, and audited 66 packages in 6s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
     },
     {
       "check": "npm run build succeeds",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 30 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-C2Cz9yEo.css  \u001b[39m\u001b[1m\u001b[2m  4.27 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.48 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-Bh8Swyh1.js   \u001b[39m\u001b[1m\u001b[2m230.01 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 72.39 kB\u001b[22m\n\u001b[32m✓ built in 595ms\u001b[39m"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 33 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-B8CYuuEL.css  \u001b[39m\u001b[1m\u001b[2m  6.34 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.88 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-Bw6VOtXc.js   \u001b[39m\u001b[1m\u001b[2m234.21 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 73.75 kB\u001b[22m\n\u001b[32m✓ built in 600ms\u001b[39m"
     },
     {
       "check": "dist/index.html exists",
@@ -30,17 +30,17 @@
     {
       "check": "index.html references a hashed JS asset",
       "result": "pass",
-      "detail": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"color-scheme\" content=\"light\" />\n    <title>JiuwenSwarm 证据工作台</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-Bh8Swy"
+      "detail": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"color-scheme\" content=\"light\" />\n    <title>JiuwenSwarm 证据工作台</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-Bw6VOt"
     },
     {
       "check": "the bundle calls /api/runs",
       "result": "pass",
-      "detail": "bundle_bytes=229552"
+      "detail": "bundle_bytes=233525"
     },
     {
       "check": "the bundle calls /api/login",
       "result": "pass",
-      "detail": "bundle_bytes=229552"
+      "detail": "bundle_bytes=233525"
     },
     {
       "check": "the bundle keeps no credential in localStorage",
@@ -51,6 +51,26 @@
       "check": "api.js exports the run API",
       "result": "pass",
       "detail": "all exported"
+    },
+    {
+      "check": "the bundle contains the task-graph pane",
+      "result": "pass",
+      "detail": "bundle_bytes=233525"
+    },
+    {
+      "check": "the bundle contains the evidence-drawer pane",
+      "result": "pass",
+      "detail": "bundle_bytes=233525"
+    },
+    {
+      "check": "the bundle contains the report-pane pane",
+      "result": "pass",
+      "detail": "bundle_bytes=233525"
+    },
+    {
+      "check": "Report.jsx fetches the run report",
+      "result": "pass",
+      "detail": "// The terminal report: the artifact a judge actually takes away.\n//\n// The server writes report.md when a run ends; thi"
     }
   ],
   "scope": "SPA build and API wiring"

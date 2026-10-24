@@ -297,32 +297,6 @@ button.ghost.danger {
   font-size: 0.9rem;
 }
 
-.task-strip {
-  list-style: none;
-  margin: 0 0 1rem;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.task-chip {
-  display: grid;
-  gap: 0.1rem;
-  min-width: 140px;
-  padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.task-chip strong {
-  color: var(--ink);
-  font-size: 0.88rem;
-}
-
 .status-completed {
   border-color: #bfe5d2;
   background: #f2fbf6;
@@ -337,4 +311,188 @@ button.ghost.danger {
 .status-blocked {
   border-color: #f3d9b3;
   background: #fff8ee;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 1100px) {
+  .panes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem;
+  min-width: 0;
+}
+
+.task-graph {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.graph-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.column-label {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.graph-node {
+  display: grid;
+  gap: 0.15rem;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.graph-node strong {
+  font-size: 0.86rem;
+}
+
+.graph-node span {
+  color: var(--muted);
+}
+
+.graph-node.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.graph-node small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.evidence-drawer {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem;
+  min-width: 0;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.drawer-header h2 {
+  margin: 0;
+}
+
+button.ghost.small,
+a.ghost.small {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.claim-list,
+.evidence-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.claim {
+  width: 100%;
+  text-align: left;
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-weight: 400;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.6rem;
+}
+
+.claim.active {
+  background: var(--accent-soft);
+  border-color: #b9ccff;
+}
+
+.claim-kind {
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.68rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.evidence-item {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.evidence-item code {
+  font-size: 0.7rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.evidence-text {
+  margin: 0.35rem 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.evidence-meta {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.report-pane {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+
+.report-body {
+  margin: 0;
+  padding: 0.8rem;
+  background: var(--canvas);
+  border-radius: 8px;
+  font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 420px;
+  overflow: auto;
 }

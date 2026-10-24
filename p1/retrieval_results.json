@@ -1,6 +1,6 @@
 {
-  "checks_passed": 14,
-  "checks_total": 14,
+  "checks_passed": 15,
+  "checks_total": 15,
   "checks": [
     {
       "check": "every supported document is imported",
@@ -46,6 +46,11 @@
       "check": "the bridge records exactly the returned evidence for the task",
       "result": "pass",
       "detail": "evidence={'research': ['a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f']}"
+    },
+    {
+      "check": "the bridge records the passage behind each evidence id",
+      "result": "pass",
+      "detail": "detail={'evidence_id': 'a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f', 'text': '安全评估应当每年进行一次。', 'source_uri': 'a.txt', 'source_revision': '1c067a3e0e4f78d2', 'locator': 'chars:0-13'}"
     },
     {
       "check": "a member cannot retrieve for another member's task",

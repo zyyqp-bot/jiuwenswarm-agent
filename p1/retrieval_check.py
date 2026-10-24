@@ -135,10 +135,23 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             result.success and bool(returned),
             f"success={result.success} ids={returned} error={result.error}",
         )
+        snapshot = bridge.snapshot()
         checks.add(
             "the bridge records exactly the returned evidence for the task",
-            bridge.snapshot().get("evidence", {}).get("research") == sorted(returned),
-            f"evidence={bridge.snapshot().get('evidence')}",
+            snapshot.get("evidence", {}).get("research") == sorted(returned),
+            f"evidence={snapshot.get('evidence')}",
+        )
+        # The workbench's evidence drawer needs the passage itself, not just
+        # its id: the snapshot is the only thing the API process can read.
+        details = snapshot.get("evidence_details", {})
+        first = returned[0] if returned else ""
+        checks.add(
+            "the bridge records the passage behind each evidence id",
+            bool(first)
+            and details.get(first, {}).get("text")
+            and details[first].get("source_uri")
+            and details[first].get("locator"),
+            f"detail={details.get(first)}",
         )
 
         refused = await tool.invoke({"task_id": "engineering", "query": "安全评估"})

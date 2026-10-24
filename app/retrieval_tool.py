@@ -121,21 +121,22 @@ class RetrievalTool(TeamTool):
             )
 
         evidence_ids = [item.evidence_id for item in evidence]
-        self.bridge.add_evidence(task_id, evidence_ids)
+        passages = [
+            {
+                "evidence_id": item.evidence_id,
+                "text": item.text,
+                "source_uri": item.source_uri,
+                "source_revision": item.source_revision,
+                "locator": item.locator,
+            }
+            for item in evidence
+        ]
+        self.bridge.add_evidence(task_id, evidence_ids, passages)
         return ToolOutput(
             success=True,
             data={
                 "evidence_ids": evidence_ids,
-                "evidence": [
-                    {
-                        "evidence_id": item.evidence_id,
-                        "text": item.text,
-                        "source_uri": item.source_uri,
-                        "source_revision": item.source_revision,
-                        "locator": item.locator,
-                    }
-                    for item in evidence
-                ],
+                "evidence": passages,
                 "retrieval_method": evidence[0].retrieval_method if evidence else "",
             },
         )

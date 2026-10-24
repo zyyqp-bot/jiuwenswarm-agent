@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api.js";
+import EvidenceDrawer from "./EvidenceDrawer.jsx";
+import Report from "./Report.jsx";
+import TaskGraph from "./TaskGraph.jsx";
 
 const PHASE_LABELS = {
   starting: "启动中",
@@ -102,13 +105,30 @@ function RunList({ runs, selected, onSelect }) {
 }
 
 function RunDetail({ detail }) {
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [claimEvidenceIds, setClaimEvidenceIds] = useState(null);
+
+  useEffect(() => {
+    setSelectedTask(null);
+    setClaimEvidenceIds(null);
+  }, [detail?.run_id]);
+
   if (!detail) {
     return <p className="muted">选择一次运行，查看任务与证据。</p>;
   }
   const snapshot = detail.snapshot || {};
   const tasks = snapshot.tasks || [];
   const evidence = snapshot.evidence || {};
-  const evidenceCount = Object.keys(evidence).length;
+  const evidenceCount = Object.values(evidence).reduce(
+    (total, ids) => total + (ids?.length || 0),
+    0,
+  );
+
+  function selectTask(taskId) {
+    setSelectedTask(taskId);
+    setClaimEvidenceIds(null);
+  }
+
   return (
     <section className="run-detail">
       <header>
@@ -134,15 +154,23 @@ function RunDetail({ detail }) {
         </div>
       </dl>
       {detail.error ? <p className="error">{detail.error}</p> : null}
-      <ul className="task-strip">
-        {tasks.map((task) => (
-          <li key={task.task_id} className={`task-chip status-${task.status || "pending"}`}>
-            <strong>{task.task_id}</strong>
-            <span>{task.assignee || "未分配"}</span>
-            <span>{task.status || "pending"}</span>
-          </li>
-        ))}
-      </ul>
+
+      <div className="panes">
+        <section className="pane graph-pane">
+          <h2>任务图</h2>
+          <TaskGraph tasks={tasks} selectedTask={selectedTask} onSelect={selectTask} />
+        </section>
+        <EvidenceDrawer
+          evidence={evidence}
+          details={snapshot.evidence_details}
+          results={snapshot.results}
+          selectedTask={selectedTask}
+          claimEvidenceIds={claimEvidenceIds}
+          onSelectClaim={setClaimEvidenceIds}
+        />
+      </div>
+
+      <Report runId={detail.run_id} terminal={Boolean(detail.terminal)} />
     </section>
   );
 }
