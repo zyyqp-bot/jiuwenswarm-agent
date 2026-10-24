@@ -10,12 +10,12 @@
     {
       "check": "each result was produced by its assignee",
       "result": "pass",
-      "detail": "producers={'research': 'research', 'engineering': 'engineering'}"
+      "detail": "producers={'engineering': 'engineering', 'research': 'research'}"
     },
     {
       "check": "a fact claim cites evidence this run delivered",
       "result": "pass",
-      "detail": "facts=[{'text': '开发前必须先核对源码版本：代码的实际行为、接口与依赖关系由具体版本决定，不先确认基线版本就动手，等于在未经验证的假设上做设计，结论无法追溯、也无法复现（依据 ev-1、ev-2）。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}, {'text': '本任务可引用的证据范围仅为 ev-1、ev-2 两条，工程建议的取证与结论都必须限定在这两条证据之内，不得引入未授权证据。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}]"
+      "detail": "facts=[{'text': '本任务的可用证据仅限 ev-1 与 ev-2 两条，任何工程建议都必须在这两条证据的范围内成立，不得引入第三条来源。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}, {'text': '开发前必须先核对源码版本：源码是接口行为、字段与配置的唯一事实来源，只有确认实际用于构建/运行的版本（版本号、分支、commit），后续开发、依赖配置与调试才建立在正确的基线上，否则所有基于该源码的判断都可能失效。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}, {'text': '跳过版本核对会直接带来返工与误判成本：按旧版本或错误分支的接口、字段、配置去实现，通常要到联调或运行期才暴露不一致，排查与回退的成本远高于开发前一次性确认版本。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}]"
     },
     {
       "check": "the run ended through the native completion marker",
@@ -25,12 +25,12 @@
     {
       "check": "the request carries the submit tool",
       "result": "pass",
-      "detail": "last_tools=['submit_task_result', 'org_create_organization', 'org_invite_team', 'org_list_available_teams', 'org_list_configured_teams', 'org_activate_and_invite_team', 'org_list_expert_groups', 'org_create_and_invite_expert_team', 'org_view_organization', 'skill_tool', 'build_team', 'shutdown_member', 'view_task', 'send_message', 'async_tasks_list', 'async_task_output', 'async_task_cancel', 'group_send_message', 'workspace_meta']"
+      "detail": "last_tools=['submit_task_result', 'build_team', 'view_task', 'async_tasks_list', 'async_task_output']"
     },
     {
       "check": "no retained request carries a shell, file, spawn or board tool",
       "result": "pass",
-      "detail": "requests=42 forbidden=[]"
+      "detail": "requests=32 forbidden=[]"
     },
     {
       "check": "no submission was rejected for identity",

@@ -345,16 +345,17 @@ async def _run(checks: Checks) -> None:
     await guard.before_model_call(type("Ctx", (), {"inputs": inputs})())
     checks.add(
         "only allow-listed tools remain on the request",
-        [tool.name for tool in inputs.tools] == ["submit_task_result", "view_task"]
+        [tool.name for tool in inputs.tools]
+        == ["submit_task_result", "view_task", "build_team"]
         and set(guard.removed) == {
-            "build_team", "read_file", "bash", "spawn_passive_human",
+            "read_file", "bash", "spawn_passive_human",
             "member_complete_task", "create_task", "update_task", "some_future_tool",
         },
         f"kept={[tool.name for tool in inputs.tools]} removed={guard.removed}",
     )
     checks.add(
         "the guard records the model-visible surface",
-        guard_bridge.tool_names == ["submit_task_result", "view_task"],
+        guard_bridge.tool_names == ["submit_task_result", "view_task", "build_team"],
         f"tool_names={guard_bridge.tool_names}",
     )
     checks.add("the guard backend is untouched", not guard_backend.task_manager.calls, "no graph call from the guard")

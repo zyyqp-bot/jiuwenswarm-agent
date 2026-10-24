@@ -39,16 +39,20 @@ from app.run_bridge import RunBridge
 # - submit_task_result: the member's sole way to turn work into a checked
 #   result (it calls the member's own task manager);
 # - retrieve: the workspace corpus, mounted only when one exists;
+# - build_team: starts the fixed, preconfigured team. The native board appears
+#   only after this call, so the bootstrap rail submits the app's graph on its
+#   completion. The roster is fixed in the spec; this cannot spawn new members;
 # - view_task / async_tasks_list / async_task_output: read-only coordination.
 #
 # Deliberately absent: every shell/file/spawn/upload tool, member_complete_task
 # (the app owns completion), create_task/update_task (the app owns the board),
-# build_team (no nested teams), verify_task (the current plans have no
-# reviewers), shutdown_member, and anything added to the harness later.
+# verify_task (the current plans have no reviewers), shutdown_member, messaging,
+# and anything added to the harness later.
 ALLOWED_TOOL_NAMES = frozenset(
     {
         "submit_task_result",
         "retrieve",
+        "build_team",
         "view_task",
         "async_tasks_list",
         "async_task_output",
