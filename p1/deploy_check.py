@@ -153,6 +153,11 @@ def main() -> int:
         "InstanceLock" in entry_text and "managed_lifespan" in entry_text,
         entry_text[:160],
     )
+    checks.add(
+        "the entrypoint seeds a fresh volume from the baked corpus",
+        "ensure_corpus" in entry_text and "WORKBENCH_SEED_CORPUS" in entry_text,
+        entry_text[:160],
+    )
     smoke = ROOT / "scripts" / "smoke_check.py"
     smoke_text = _read(smoke)
     checks.add(

@@ -40,7 +40,7 @@ JIUWENSWARM_ARCHIVE=<jiuwenswarm 同提交 tar.gz 的可达地址>
 
 ## 4. 导入语料（一次性，运维执行）
 
-镜像**已包含** `corpus/ai-governance/` 下的公开法规原文（来源见 [corpus/SOURCES.md](../corpus/SOURCES.md)），随镜像进入 `/app/corpus`。索引不在镜像里——首次部署后必须在云托管控制台的容器终端执行一次：
+镜像**已包含** `corpus/ai-governance/` 下的公开法规原文（来源见 [corpus/SOURCES.md](../corpus/SOURCES.md)），随镜像进入 `/app/corpus`。**首次启动会自动建立索引**（数据卷上没有 `corpus.db` 时，服务在开始接收请求前导入 `/app/corpus`；设置 `WORKBENCH_SEED_CORPUS=0` 可关闭）。只有新增资料或重建索引时才需要手动执行：
 
 ```bash
 python scripts/import_corpus.py \
@@ -48,7 +48,7 @@ python scripts/import_corpus.py \
   --source /app/corpus/ai-governance
 ```
 
-输出 `{"documents": 6, "chunks": 92, "failures": []}`（离线实测值）即成功。重复执行会按内容哈希替换旧版本，不会重复计块。新增资料需要先提交 Git、重新部署，再执行一次导入。导入完成前，运行仍可提交，但成员没有检索工具，引用校验会让结果失败——这不是部署故障。
+输出 `{"documents": 6, "chunks": 92, "failures": []}`（离线实测值）即成功。重复执行会按内容哈希替换旧版本，不会重复计块。新增资料需要先提交 Git、重新部署，再执行一次导入（首次启动的自动导入只在 `corpus.db` 不存在时触发）。导入完成前，运行仍可提交，但成员没有检索工具，引用校验会让结果失败——这不是部署故障。
 
 ## 5. 部署后验证清单
 

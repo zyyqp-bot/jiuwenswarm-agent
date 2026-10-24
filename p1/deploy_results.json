@@ -1,6 +1,6 @@
 {
-  "checks_passed": 19,
-  "checks_total": 19,
+  "checks_passed": 20,
+  "checks_total": 20,
   "checks": [
     {
       "check": "Dockerfile exists at the repository root",
@@ -55,7 +55,7 @@
     {
       "check": "deploy/.env.example exists",
       "result": "pass",
-      "detail": "bytes=934"
+      "detail": "bytes=1026"
     },
     {
       "check": "the env example lists every required setting",
@@ -70,12 +70,12 @@
     {
       "check": "the deploy guide states the single-instance and volume rules",
       "result": "pass",
-      "detail": "bytes=3123"
+      "detail": "bytes=3240"
     },
     {
       "check": "the deploy guide rules out public uploads",
       "result": "pass",
-      "detail": "bytes=3123"
+      "detail": "bytes=3240"
     },
     {
       "check": "the image carries the corpus seed directory",
@@ -89,6 +89,11 @@
     },
     {
       "check": "the entrypoint holds the single-instance lock and a shutdown lifespan",
+      "result": "pass",
+      "detail": "\"\"\"ASGI entrypoint: ``uvicorn app.main:app``.\n\nThis module is the only place that builds the application from the process\nenvironment. ``app.api.create_app`` st"
+    },
+    {
+      "check": "the entrypoint seeds a fresh volume from the baked corpus",
       "result": "pass",
       "detail": "\"\"\"ASGI entrypoint: ``uvicorn app.main:app``.\n\nThis module is the only place that builds the application from the process\nenvironment. ``app.api.create_app`` st"
     },
