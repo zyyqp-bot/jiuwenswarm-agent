@@ -40,7 +40,7 @@
     {
       "check": "a correct login sets a hardened cookie",
       "result": "pass",
-      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJVLTd2RTRuc1ZXUnpRLUlLdkpOZkFBIiwiaWF0IjoxNzkyODMyMTkxfQ.Ad38uL2GTTJlUpb-HUwSr0KZoQc; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJlRFVrMGZpdlZuNHNwTWtmWjJZUy1BIiwiaWF0IjoxNzkyODMyNDQ4fQ.ujQfvA8sYuGfm5oJ9_TAZjaXGW0; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
     },
     {
       "check": "the preseeded workspace is listed",
@@ -60,7 +60,7 @@
     {
       "check": "the run detail never leaks a pid, credentials or the data directory",
       "result": "pass",
-      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792832191.1673064,\"terminal\":true,\"snapshot"
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792832448.0599985,\"terminal\":true,\"snapshot"
     },
     {
       "check": "the run list omits the snapshot",
