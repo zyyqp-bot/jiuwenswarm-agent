@@ -24,6 +24,7 @@ leader's own turn.
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any
 
 from openjiuwen.core.runner.callback import AbortError
@@ -35,6 +36,7 @@ from app.task_bridge import plan_to_graph
 
 SUBMIT_ATTEMPTS = 10
 SUBMIT_RETRY_SECONDS = 1.0
+BOARD_REFRESH_SECONDS = 1.0
 
 
 class RunBootstrapRail(DeepAgentRail):
@@ -43,6 +45,7 @@ class RunBootstrapRail(DeepAgentRail):
     def __init__(self, bridge: RunBridge) -> None:
         super().__init__()
         self.bridge = bridge
+        self._last_board_at = 0.0
 
     # -- hook wiring --------------------------------------------------------
     async def before_task_iteration(self, ctx: Any) -> None:
@@ -63,6 +66,10 @@ class RunBootstrapRail(DeepAgentRail):
             loud=name == "build_team",
             attempts=SUBMIT_ATTEMPTS if name == "build_team" else 1,
         )
+        if self.bridge.bootstrapped:
+            manager = self._task_manager(ctx)
+            if manager is not None:
+                await self._record_board(manager)
 
     # -- the attempt --------------------------------------------------------
     async def _try_bootstrap(self, ctx: Any, *, loud: bool, attempts: int) -> None:
@@ -84,6 +91,7 @@ class RunBootstrapRail(DeepAgentRail):
                 else:
                     if result.ok:
                         self.bridge.mark_bootstrapped()
+                        await self._record_board(manager, force=True)
                         return
                     last_error = f"native task graph was rejected: {result.reason}"
             else:
@@ -102,6 +110,20 @@ class RunBootstrapRail(DeepAgentRail):
         # re-raised. A plain RuntimeError would leave the run streaming until
         # the idle grace expires.
         raise AbortError(reason=message)
+
+    async def _record_board(self, manager: Any, *, force: bool = False) -> None:
+        """Project the native board, throttled; a read failure is not fatal."""
+        now = time.monotonic()
+        if not force and now - self._last_board_at < BOARD_REFRESH_SECONDS:
+            return
+        self._last_board_at = now
+        try:
+            result = await manager.list_tasks_with_deps()
+            tasks = [task.model_dump() for task in getattr(result, "tasks", [])]
+        except Exception as exc:  # noqa: BLE001 - diagnostics only
+            self.bridge.errors.append(f"task board refresh failed: {type(exc).__name__}: {exc}")
+            return
+        self.bridge.record_task_board(tasks)
 
     # -- resolution ---------------------------------------------------------
     @staticmethod

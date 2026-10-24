@@ -77,6 +77,7 @@ class RunBridge:
         self._reported_acceptance: dict[str, dict[str, str]] = {}
         self._lock = threading.Lock()
         self.bootstrapped = False
+        self._tasks: list[dict[str, Any]] = []
         self.tool_names: list[str] = []
         self.tool_requests: list[dict[str, list[str]]] = []
         self.blocked_tools: list[str] = []
@@ -113,6 +114,11 @@ class RunBridge:
                 return False
             self.bootstrapped = True
             return True
+
+    def record_task_board(self, tasks: Sequence[Mapping[str, Any]]) -> None:
+        """Replace the projected native task board."""
+        with self._lock:
+            self._tasks = [dict(task) for task in tasks]
 
     def record_tool_event(self, name: str) -> None:
         """Record one completed tool call, for run diagnostics."""
@@ -306,6 +312,7 @@ class RunBridge:
             return {
                 "run_id": self.run_id,
                 "bootstrapped": self.bootstrapped,
+                "tasks": [dict(task) for task in self._tasks],
                 "tool_names": list(self.tool_names),
                 "tool_requests": [dict(request) for request in self.tool_requests],
                 "blocked_tools": list(self.blocked_tools),

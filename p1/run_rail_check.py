@@ -31,7 +31,11 @@ import app.run_rail as run_rail_module  # noqa: E402
 from app.run_rail import RunBootstrapRail  # noqa: E402
 from app.tool_guard import ToolSurfaceGuardRail, is_forbidden  # noqa: E402
 from checks.harness import Checks  # noqa: E402
-from openjiuwen.agent_teams.schema.task import TaskGraphResult  # noqa: E402
+from openjiuwen.agent_teams.schema.task import (  # noqa: E402
+    TaskGraphResult,
+    TaskListResult,
+    TaskSummary,
+)
 from openjiuwen.core.runner.callback import AbortError  # noqa: E402
 
 RESULTS_PATH = Path(__file__).resolve().parent / "run_rail_results.json"
@@ -51,12 +55,25 @@ class _Manager:
     def __init__(self, result: TaskGraphResult) -> None:
         self.result = result
         self.calls: list[list] = []
+        self.board_calls = 0
         self.db = None
         self.team_name = "team-1"
 
     async def add_graph(self, specs: list) -> TaskGraphResult:
         self.calls.append(list(specs))
         return self.result
+
+    async def list_tasks_with_deps(self, status=None) -> TaskListResult:
+        self.board_calls += 1
+        task = TaskSummary(
+            task_id="research",
+            title="collect evidence",
+            status="in_progress",
+            assignee="research",
+            blocked_by=["engineering"],
+            updated_at=1,
+        )
+        return TaskListResult(tasks=[task], count=1)
 
 
 class _MemberDao:
@@ -131,6 +148,7 @@ class _CallCtx:
 async def _run(checks: Checks) -> None:
     run_rail_module.SUBMIT_ATTEMPTS = 2
     run_rail_module.SUBMIT_RETRY_SECONDS = 0.0
+    run_rail_module.BOARD_REFRESH_SECONDS = 10.0
     # --- waits for the backend ---------------------------------------------
     backend = _Backend(TaskGraphResult.success(tasks=[]), db=None)
     bridge = RunBridge(run_id="run-1", plan=PLAN)
@@ -153,6 +171,43 @@ async def _run(checks: Checks) -> None:
         f"calls={len(backend.task_manager.calls)}",
     )
     checks.add("the bridge records that it bootstrapped", bridge.bootstrapped is True, f"bootstrapped={bridge.bootstrapped}")
+
+    # --- the native board reaches the snapshot -----------------------------
+    tasks = bridge.snapshot().get("tasks") or []
+    checks.add(
+        "the native task board is projected into the snapshot",
+        tasks
+        == [
+            {
+                "task_id": "research",
+                "title": "collect evidence",
+                "status": "in_progress",
+                "assignee": "research",
+                "blocked_by": ["engineering"],
+                "updated_at": 1,
+            }
+        ],
+        f"tasks={tasks}",
+    )
+    checks.add(
+        "the board is read once after bootstrap",
+        backend.task_manager.board_calls == 1,
+        f"board_calls={backend.task_manager.board_calls}",
+    )
+    await rail.after_tool_call(_Ctx(_Agent(TeamToolRail(backend)), tool_name="view_task"))
+    await rail.after_tool_call(_Ctx(_Agent(TeamToolRail(backend)), tool_name="view_task"))
+    checks.add(
+        "board refreshes are throttled",
+        backend.task_manager.board_calls == 1,
+        f"board_calls={backend.task_manager.board_calls}",
+    )
+    run_rail_module.BOARD_REFRESH_SECONDS = 0.0
+    await rail.after_tool_call(_Ctx(_Agent(TeamToolRail(backend)), tool_name="view_task"))
+    checks.add(
+        "the board refreshes after the interval",
+        backend.task_manager.board_calls == 2,
+        f"board_calls={backend.task_manager.board_calls}",
+    )
 
     # --- a rejected graph is loud on the explicit attempt -------------------
     failed = _Backend(TaskGraphResult.fail("cycle"), db=_Db())

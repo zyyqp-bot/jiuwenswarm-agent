@@ -1,6 +1,6 @@
 {
-  "checks_passed": 17,
-  "checks_total": 17,
+  "checks_passed": 21,
+  "checks_total": 21,
   "checks": [
     {
       "check": "no submission before build_team completes",
@@ -16,6 +16,26 @@
       "check": "the bridge records that it bootstrapped",
       "result": "pass",
       "detail": "bootstrapped=True"
+    },
+    {
+      "check": "the native task board is projected into the snapshot",
+      "result": "pass",
+      "detail": "tasks=[{'task_id': 'research', 'title': 'collect evidence', 'status': 'in_progress', 'assignee': 'research', 'blocked_by': ['engineering'], 'updated_at': 1}]"
+    },
+    {
+      "check": "the board is read once after bootstrap",
+      "result": "pass",
+      "detail": "board_calls=1"
+    },
+    {
+      "check": "board refreshes are throttled",
+      "result": "pass",
+      "detail": "board_calls=1"
+    },
+    {
+      "check": "the board refreshes after the interval",
+      "result": "pass",
+      "detail": "board_calls=2"
     },
     {
       "check": "a rejected graph aborts the callback chain",
