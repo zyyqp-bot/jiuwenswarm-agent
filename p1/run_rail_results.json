@@ -1,9 +1,14 @@
 {
-  "checks_passed": 5,
-  "checks_total": 5,
+  "checks_passed": 8,
+  "checks_total": 8,
   "checks": [
     {
-      "check": "the graph is submitted exactly once",
+      "check": "no submission before build_team completes",
+      "result": "pass",
+      "detail": "calls=0 bootstrapped=False"
+    },
+    {
+      "check": "the graph is submitted exactly once after build_team",
       "result": "pass",
       "detail": "calls=1"
     },
@@ -15,7 +20,7 @@
     {
       "check": "a rejected graph raises",
       "result": "pass",
-      "detail": "native task graph was rejected: cycle"
+      "detail": "native task graph was rejected: cycle; team='team-1' roster={'team_leader': True, 'research': True, 'engineering': True} initialized=None"
     },
     {
       "check": "without a team rail nothing is submitted",
@@ -23,10 +28,20 @@
       "detail": "calls=0 bootstrapped=False"
     },
     {
-      "check": "the probe records the tools sent to the model",
+      "check": "forbidden tools are removed from the request",
       "result": "pass",
-      "detail": "seen=['submit_task_result', 'create_task']"
+      "detail": "kept=['submit_task_result', 'create_task'] removed=['read_file', 'bash', 'spawn_passive_human']"
+    },
+    {
+      "check": "the guard records the model-visible surface",
+      "result": "pass",
+      "detail": "tool_names=['submit_task_result', 'create_task']"
+    },
+    {
+      "check": "the guard backend is untouched",
+      "result": "pass",
+      "detail": "no graph call from the guard"
     }
   ],
-  "scope": "rail and probe unit checks only; no team, no runner, no model call"
+  "scope": "rail and guard unit checks only; no team, no runner, no model call"
 }

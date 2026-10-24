@@ -60,6 +60,7 @@ class RunBridge:
         self._lock = threading.Lock()
         self.bootstrapped = False
         self.tool_names: list[str] = []
+        self.tool_events: list[str] = []
         self.errors: list[str] = []
 
     # -- wiring -------------------------------------------------------------
@@ -97,13 +98,30 @@ class RunBridge:
             self.bootstrapped = True
             return True
 
+    def record_tool_event(self, name: str) -> None:
+        """Record one completed tool call, for run diagnostics."""
+        if not name:
+            return
+        with self._lock:
+            self.tool_events.append(str(name))
+            if len(self.tool_events) > 100:
+                del self.tool_events[:-100]
+
     def record_tool_names(self, names: Sequence[str]) -> None:
         """Record the tool names sent to the model on the latest request."""
         with self._lock:
             self.tool_names = [str(name) for name in names]
 
     # -- submission ---------------------------------------------------------
-    async def submit(
+    async def submit(self, **kwargs: Any) -> SubmitOutcome:
+        """Validate and store one result, recording every rejection for diagnostics."""
+        outcome = await self._submit(**kwargs)
+        if not outcome.ok:
+            with self._lock:
+                self.errors.append(outcome.error)
+        return outcome
+
+    async def _submit(
         self,
         *,
         producer: str,
@@ -202,6 +220,7 @@ class RunBridge:
                 "run_id": self.run_id,
                 "bootstrapped": self.bootstrapped,
                 "tool_names": list(self.tool_names),
+                "tool_events": list(self.tool_events),
                 "errors": list(self.errors),
                 "results": {
                     task_id: {

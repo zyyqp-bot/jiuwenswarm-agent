@@ -68,6 +68,15 @@ def main() -> int:
         f"rails={[getattr(r, 'type', None) for r in spec.agents['leader'].rails or []]}",
     )
     checks.add(
+        "both roles mount the request-surface guard",
+        all(
+            any(getattr(rail, "type", None) == "app.tool_surface_guard" for rail in spec.agents[role].rails or [])
+            for role in ("leader", "teammate")
+        ),
+        f"leader={[getattr(r, 'type', None) for r in spec.agents['leader'].rails or []]} "
+        f"teammate={[getattr(r, 'type', None) for r in spec.agents['teammate'].rails or []]}",
+    )
+    checks.add(
         "capability gates stay closed",
         spec.enable_hitt is False and spec.enable_bridge is False and spec.enable_swarmflow is False,
         f"hitt={spec.enable_hitt!r} bridge={spec.enable_bridge!r} swarmflow={spec.enable_swarmflow!r}",

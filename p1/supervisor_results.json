@@ -25,7 +25,7 @@
     {
       "check": "the supervisor compiles the hardened template",
       "result": "pass",
-      "detail": "leader_tools=['app.submit_task_result'] leader_rails=['app.run_bootstrap']"
+      "detail": "leader_tools=['app.submit_task_result'] leader_rails=['app.run_bootstrap', 'app.tool_surface_guard']"
     },
     {
       "check": "an invalid plan stops before the runner starts",

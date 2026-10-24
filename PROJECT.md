@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.23 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合断言收集均已执行（真实回合 18/18，`returned_normally`）；下一步按大赛设计要求实现在线工作台。
+版本：0.24 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁、真实回合断言收集与工作台运行时钉子均已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；下一步按大赛设计要求实现在线工作台。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -36,6 +36,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P0-D 有限返工 | 已执行：`app/rework.py`，最多一次定向返工、依赖失败不返工、返工开新 execution，18 项断言通过 |
 | P1 活工具集 | 已执行：`p1/live_tool_surface_check.py`，从真实构造的 team 读出 rail 自身的参数并物化 leader 工具集，对照实验证实缺口与修复，9 项断言通过 |
 | P1 真实回合 | 曾经跑通：真实端点 + Runner，Leader 完成一轮（`tool_count=29`、安全 rail 与 checkpoint 均生效）；当时观察到回合末进程未执行 atexit，推断为 `os._exit()`，该机制**尚未复现**（见 §13 更正） |
+| P1 工作台运行时钉子 | 已执行：应用提交 2 个已分配任务 → 原生调度器拉起成员 → 成员 `submit_task_result` → `team.completed`，7/7 通过；请求工具面无 shell/文件/spawn |
 | P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 未实现/未执行 |
@@ -567,6 +568,26 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 > 这条事实直接影响产品：**没有任务的 run 永远不会触发 `team.completed`**。工作台每次 run 必须建任务（应用侧建图正好保证这一点）；一句话问答若要结束，只能由应用在 idle 宽限期后主动 stop（harness 已如此处理）。
 >
 > 工程结论不变：**状态必须在流处理过程中落盘**——本次真实回合写出 39 次快照，父进程在子进程退出后仍得到完整报告。另记录两条观测事实：①流中的文本在 `chunk.payload` 内（`llm_output` / `answer`），不在 `content`/`text` 上；②一次真实回合为 136 chunks，其中 46 个 `llm_output`、84 个 `llm_reasoning`、1 个 `answer`，provider usage 为 input=14421 / output=131。
+
+**P1 第五部分（工作台运行时钉子）已执行，7/7 通过**：[p1/delegation_nail.py](p1/delegation_nail.py) 用真实模型验证了此前最大的未知项——**应用提交的任务图是否真的会被原生调度器派给成员、成员是否真的会执行并回传结构化结果**。
+
+一次 run 的实测事实：
+
+- 应用在校验后通过 `TaskGraphManager.add_graph` 提交两个已分配任务（`research`、`engineering`），原生 `scheduled` 调度器拉起两名成员；
+- 两名成员各自调用 `submit_task_result`，producer 与 assignee 完全一致，fact claim 引用的 `ev-1/ev-2` 都是该 run 交付的证据；
+- run 以原生 `team.completed` 结束（不再是空看板的 `idle_grace`），bridge 无任何身份拒绝；
+- 真实请求的工具面为 22 个：团队协作 + `submit_task_result` + skill/workspace，**不含 shell、文件或 spawn 工具**（此前为 29 个，含 `read_file`/`bash`/`powershell`）。
+
+这轮调试暴露了四个只有真实运行才会出现的框架行为，均已修复并有离线断言（[p1/run_rail_check.py](p1/run_rail_check.py) 8 项）：
+
+1. **`enable_sys_operation=False` 管不住团队工具面**：配置器对 leader/teammate 无条件注入 `SYS_OPERATION` rail（worktree shell guard）。修复：`app/tool_guard.py` 在 `before_model_call` 过滤真实请求的工具列表，并记录模型可见面——这是模型实际能看到什么的可执行边界。
+2. **回调上下文里的 agent 是内层 `ReActAgent`**，既没有 `configured_rails` 也没有 team backend；`TeamToolRail` 在外层 deep agent 上。修复：优先在可达 agent 上找 rail，否则从真实工具实例（`view_task`/`create_task`/`build_team`）取同一个 `task_manager`。
+3. **rail 在 `build_team` 之前就触发**：那时 backend 没有可用的 DB，`add_graph` 抛错且被 rail 链吞掉。修复：只在 `after_tool_call(build_team)` 做带重试的提交；静默钩子只试一次、不 sleep，避免阻塞 Leader 自己的回合。
+4. **成员行在 `build_team` 返回后才对读连接可见**：提交需要短暂重试（最多 10 s），静默钩子不得占用这段时间。
+
+另外把生产配置从 P0-B 测试夹具移到 [app/team_config.py](app/team_config.py)：生产代码不应 import `p0b/` 下的验证脚本；P0-B 夹具保持原样并继续通过 19/19。
+
+钉子刻意使用两个**相互独立**的任务：带依赖的任务会让第一个任务成为"关键任务"并强制经过原生 reviewer 投票，那属于另一条验证路径，不应混进"委派是否成立"的证明。
 
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 

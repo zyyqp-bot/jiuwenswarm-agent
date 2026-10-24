@@ -1,0 +1,72 @@
+{
+  "checks_passed": 7,
+  "checks_total": 7,
+  "checks": [
+    {
+      "check": "both assigned members produced a result",
+      "result": "pass",
+      "detail": "results=['engineering', 'research']"
+    },
+    {
+      "check": "each result was produced by its assignee",
+      "result": "pass",
+      "detail": "producers={'engineering': 'engineering', 'research': 'research'}"
+    },
+    {
+      "check": "a fact claim cites evidence this run delivered",
+      "result": "pass",
+      "detail": "facts=[{'text': '工程建议：以证据 ev-1、ev-2 为依据推进实施，先落实 ev-1 中可直接验证的改动项，再以 ev-2 作为回归/对齐基线，保证每步改动都有可复现的验证路径。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}, {'text': '开发前必须先核对源码版本：版本是全流程的基线锚点，未核对版本就无法确认自己在读、在改的是哪一份代码，后续设计、依赖选择与实现判断都可能建立在错误的基线上。', 'kind': 'fact', 'evidence_ids': ['ev-1', 'ev-2']}]"
+    },
+    {
+      "check": "the run ended through the native completion marker",
+      "result": "pass",
+      "detail": "markers=['team.runtime_ready', 'team.completed'] stop='team_completed'"
+    },
+    {
+      "check": "the request carries the submit tool",
+      "result": "pass",
+      "detail": "tools=['submit_task_result', 'org_create_organization', 'org_invite_team', 'org_dissolve_organization', 'org_list_available_teams', 'org_list_configured_teams', 'org_activate_and_invite_team', 'org_list_expert_groups', 'org_create_and_invite_expert_team', 'org_view_organization', 'skill_tool', 'build_team', 'shutdown_member', 'create_task', 'update_task', 'view_task', 'send_message', 'async_tasks_list', 'async_task_output', 'async_task_cancel', 'group_send_message', 'workspace_meta']"
+    },
+    {
+      "check": "the request carries no shell, file or spawn tool",
+      "result": "pass",
+      "detail": "forbidden=[]"
+    },
+    {
+      "check": "no submission was rejected for identity",
+      "result": "pass",
+      "detail": "identity_errors=[]"
+    }
+  ],
+  "scope": "one real run with two assigned tasks; costs money and is non-deterministic",
+  "plan": [
+    {
+      "task_id": "research",
+      "role": "teammate",
+      "instruction": "用给定证据回答：为什么开发前要先核对源码版本？可用证据 id 仅为 ev-1、ev-2。用 submit_task_result 提交，task_id=research，outcome=success；至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选；acceptance 提交 [{acceptance_id: research_accept, result: pass, verifier: program}]。",
+      "acceptance_ids": [
+        "research_accept"
+      ],
+      "assignee": "research"
+    },
+    {
+      "task_id": "engineering",
+      "role": "teammate",
+      "instruction": "基于给定证据给出一条工程建议。可用证据 id 仅为 ev-1、ev-2。用 submit_task_result 提交，task_id=engineering，outcome=success；至少提交一条 kind=fact 的 claim，evidence_ids 从 ev-1/ev-2 中选；acceptance 提交 [{acceptance_id: engineering_accept, result: pass, verifier: program}]。",
+      "acceptance_ids": [
+        "engineering_accept"
+      ],
+      "assignee": "engineering"
+    }
+  ],
+  "evidence_by_task": {
+    "research": [
+      "ev-1",
+      "ev-2"
+    ],
+    "engineering": [
+      "ev-1",
+      "ev-2"
+    ]
+  }
+}

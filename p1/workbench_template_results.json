@@ -1,6 +1,6 @@
 {
-  "checks_passed": 5,
-  "checks_total": 5,
+  "checks_passed": 6,
+  "checks_total": 6,
   "checks": [
     {
       "check": "leader disables sys_operation",
@@ -20,7 +20,12 @@
     {
       "check": "leader mounts the bootstrap rail",
       "result": "pass",
-      "detail": "rails=['app.run_bootstrap']"
+      "detail": "rails=['app.run_bootstrap', 'app.tool_surface_guard']"
+    },
+    {
+      "check": "both roles mount the request-surface guard",
+      "result": "pass",
+      "detail": "leader=['app.run_bootstrap', 'app.tool_surface_guard'] teammate=['app.tool_surface_guard']"
     },
     {
       "check": "capability gates stay closed",

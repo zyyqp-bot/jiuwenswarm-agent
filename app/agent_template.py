@@ -73,16 +73,18 @@ def build_workbench_config(
 
     submit_tool = {"type": "app.submit_task_result", "params": {"run_id": run_id}}
     bootstrap_rail = {"type": "app.run_bootstrap", "params": {"run_id": run_id}}
+    guard_rail = {"type": "app.tool_surface_guard", "params": {"run_id": run_id}}
 
     config["agents"]["agent_leader"] = {
         "workspace": {"stable_base": True},
         "enable_sys_operation": False,
         "tools": [copy.deepcopy(submit_tool)],
-        "rails": [copy.deepcopy(bootstrap_rail)],
+        "rails": [copy.deepcopy(bootstrap_rail), copy.deepcopy(guard_rail)],
     }
     config["agents"]["agent_teammate"] = {
         "workspace": {"stable_base": True},
         "enable_sys_operation": False,
         "tools": [copy.deepcopy(submit_tool)],
+        "rails": [copy.deepcopy(guard_rail)],
     }
     return config
