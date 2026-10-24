@@ -1,0 +1,102 @@
+{
+  "checks_passed": 8,
+  "checks_total": 8,
+  "checks": [
+    {
+      "check": "the team spec compiles with team_mode='predefined'",
+      "result": "pass",
+      "detail": "team_mode='predefined'"
+    },
+    {
+      "check": "the team builds",
+      "result": "pass",
+      "detail": "built in 0.1s"
+    },
+    {
+      "check": "the built leader holds no spawn tool",
+      "result": "pass",
+      "detail": "10 team tools; spawn=[]"
+    },
+    {
+      "check": "the log assertions fire on the framework's log line formats",
+      "result": "pass",
+      "detail": "7 derived checks; all fired"
+    },
+    {
+      "check": "the dry run stopped before any model call",
+      "result": "pass",
+      "detail": "spec, build and tool surface only; the endpoint is never contacted"
+    },
+    {
+      "check": "the round process ran and exited",
+      "result": "pass",
+      "detail": "returncode=0 after 4s"
+    },
+    {
+      "check": "the round process exited with status 0",
+      "result": "pass",
+      "detail": "returncode=0"
+    },
+    {
+      "check": "the dry run persisted its result",
+      "result": "pass",
+      "detail": "phase='dry_run'"
+    }
+  ],
+  "scope": "dry run: spec, build and tool surface; no model call, no network",
+  "query": "用一句话说明：为什么在开始实现前要先核对源码版本？",
+  "dry_run": true,
+  "report": "parent_final",
+  "termination": {
+    "returncode": 0,
+    "timed_out": false,
+    "atexit_ran": true,
+    "stream_ended": false,
+    "stream_entered": false,
+    "midstream_writes": 0,
+    "last_phase": "dry_run",
+    "classified": "dry_run_returned_normally",
+    "child_stdout": "p1\\.live_round\\child_stdout.log"
+  },
+  "events": 0,
+  "chunks_with_text": 0,
+  "answer_chars": 0,
+  "answer_preview": "",
+  "usage": {
+    "calls_with_usage": 0,
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "model_request_count": 0,
+  "model_requests": [],
+  "tool_calls": {
+    "tool_calls": [],
+    "spawn_calls": []
+  },
+  "team_tools": {
+    "count": 10,
+    "names": [
+      "async_task_cancel",
+      "async_task_output",
+      "async_tasks_list",
+      "build_team",
+      "create_task",
+      "group_send_message",
+      "send_message",
+      "shutdown_member",
+      "update_task",
+      "view_task"
+    ],
+    "spawn": []
+  },
+  "framework_error_count": 0,
+  "framework_errors": [],
+  "child_error": null,
+  "not_run": [
+    "scenario 3 (embedding outage -> keyword_only): no embedding provider configured",
+    "scenario 7 (long tool chain and compression recall): no framework context rail wired",
+    "scenario 10 (team memory single writer): team and member memory not wired",
+    "scenario 2 runtime part (roster held during execution): needs members to execute tasks",
+    "model credentials: not required; a dry run never contacts the endpoint"
+  ]
+}

@@ -17,6 +17,9 @@ project-data/
 # Framework log output from local probes/experiments
 logs/
 
+# Live-round runtime artifacts: child snapshots, atexit marker, captured stdout
+p1/.live_round/
+
 # Local model credentials for the live run. Never commit: this holds an API
 # key, and the live checks read it from the environment rather than from a
 # tracked file.

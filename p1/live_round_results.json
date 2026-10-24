@@ -1,13 +1,96 @@
 {
-  "checks_passed": 0,
-  "checks_total": 1,
+  "checks_passed": 5,
+  "checks_total": 6,
   "checks": [
     {
-      "check": "model credentials are available (from env or .env.local)",
+      "check": "the team spec compiles with team_mode='predefined'",
+      "result": "pass",
+      "detail": "team_mode='predefined'"
+    },
+    {
+      "check": "the team builds",
+      "result": "pass",
+      "detail": "built in 0.1s"
+    },
+    {
+      "check": "the built leader holds no spawn tool",
+      "result": "pass",
+      "detail": "10 team tools; spawn=[]"
+    },
+    {
+      "check": "the log assertions fire on the framework's log line formats",
+      "result": "pass",
+      "detail": "7 derived checks; all fired"
+    },
+    {
+      "check": "the round process ran and exited",
+      "result": "pass",
+      "detail": "returncode=1 after 18s"
+    },
+    {
+      "check": "the round could start (model credentials available)",
       "result": "fail",
-      "detail": "MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME"
+      "detail": "no MODEL_BASE_URL / MODEL_API_KEY / MODEL_NAME in the environment or .env.local"
     }
   ],
   "scope": "one real round against a real provider; costs money and is non-deterministic",
-  "query": "用一句话说明：为什么在开始实现前要先核对源码版本？"
+  "query": "用一句话说明：为什么在开始实现前要先核对源码版本？",
+  "dry_run": false,
+  "report": "parent_final",
+  "termination": {
+    "returncode": 1,
+    "timed_out": false,
+    "atexit_ran": true,
+    "stream_ended": false,
+    "stream_entered": false,
+    "midstream_writes": 0,
+    "last_phase": "no_credentials",
+    "classified": "nonzero_exit:1",
+    "child_stdout": "p1\\.live_round\\child_stdout.log"
+  },
+  "events": 0,
+  "chunks_with_text": 0,
+  "answer_chars": 0,
+  "answer_preview": "",
+  "usage": {
+    "calls_with_usage": 0,
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "model_request_count": 0,
+  "model_requests": [],
+  "tool_calls": {
+    "tool_calls": [],
+    "spawn_calls": []
+  },
+  "team_tools": {
+    "count": 10,
+    "names": [
+      "async_task_cancel",
+      "async_task_output",
+      "async_tasks_list",
+      "build_team",
+      "create_task",
+      "group_send_message",
+      "send_message",
+      "shutdown_member",
+      "update_task",
+      "view_task"
+    ],
+    "spawn": []
+  },
+  "framework_error_count": 0,
+  "framework_errors": [],
+  "child_error": null,
+  "not_run": [
+    "scenario 3 (embedding outage -> keyword_only): no embedding provider configured",
+    "scenario 7 (long tool chain and compression recall): no framework context rail wired",
+    "scenario 10 (team memory single writer): team and member memory not wired",
+    "scenario 2 runtime part (roster held during execution): needs members to execute tasks",
+    "the round never started: no model credentials, so no request, rail, checkpoint or idle record could exist",
+    "no tool call was observed in this round, so 'no spawn tool was invoked' has no evidence",
+    "the round process exit status: the child stopped before the round",
+    "a snapshot while the stream was running: the stream never started",
+    "the model request count: no request was attempted"
+  ]
 }
