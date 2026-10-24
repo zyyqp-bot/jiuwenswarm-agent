@@ -186,6 +186,10 @@ async def plan_goal(
         return PlanOutcome(fallback_plan(goal), "fallback")
     if not PlanValidator(members=list(ASSIGNABLE_MEMBERS)).validate(tasks).valid:
         return PlanOutcome(fallback_plan(goal), "fallback")
+    # Two tasks on one member run serially and leave the other idle; the plan
+    # must give each member exactly one task.
+    if sorted(task.assignee for task in tasks) != sorted(ASSIGNABLE_MEMBERS):
+        return PlanOutcome(fallback_plan(goal), "fallback")
     return PlanOutcome(tasks, "tiny")
 
 

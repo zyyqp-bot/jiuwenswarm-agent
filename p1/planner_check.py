@@ -134,6 +134,21 @@ async def _run(checks: Checks) -> None:
     cycle = await plan_goal(GOAL, model=object(), run=cycle_run)
     checks.add("a cycle falls back", cycle.source == "fallback", cycle.source)
 
+    async def one_member_run(goal, schema):
+        return {
+            "tasks": [
+                dict(VALID_PLAN["tasks"][0], task_id="a"),
+                dict(VALID_PLAN["tasks"][0], task_id="b"),
+            ]
+        }
+
+    one_member = await plan_goal(GOAL, model=object(), run=one_member_run)
+    checks.add(
+        "a plan that leaves one member idle falls back",
+        one_member.source == "fallback",
+        f"source={one_member.source}",
+    )
+
     async def crowded_run(goal, schema):
         return {
             "tasks": [
