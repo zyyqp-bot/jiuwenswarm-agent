@@ -1,0 +1,87 @@
+{
+  "checks_passed": 16,
+  "checks_total": 16,
+  "checks": [
+    {
+      "check": "the correct password is accepted",
+      "result": "pass",
+      "detail": "correct credentials"
+    },
+    {
+      "check": "a wrong password is rejected",
+      "result": "pass",
+      "detail": "wrong password"
+    },
+    {
+      "check": "an unknown user is rejected",
+      "result": "pass",
+      "detail": "unknown user"
+    },
+    {
+      "check": "a signed cookie round-trips the user and session",
+      "result": "pass",
+      "detail": "decoded=Session(user='judge', sid='sid-one')"
+    },
+    {
+      "check": "two logins get different session ids",
+      "result": "pass",
+      "detail": "two distinct sessions"
+    },
+    {
+      "check": "a tampered cookie is rejected",
+      "result": "pass",
+      "detail": "tampered=GRI8f1kA"
+    },
+    {
+      "check": "a garbage cookie is rejected",
+      "result": "pass",
+      "detail": "garbage"
+    },
+    {
+      "check": "a cookie is still valid at the age boundary",
+      "result": "pass",
+      "detail": "age == max_age"
+    },
+    {
+      "check": "an expired cookie is rejected",
+      "result": "pass",
+      "detail": "age > max_age"
+    },
+    {
+      "check": "production refuses a missing session secret",
+      "result": "pass",
+      "detail": "SESSION_SECRET must be at least 32 characters in production"
+    },
+    {
+      "check": "production refuses a short session secret",
+      "result": "pass",
+      "detail": "SESSION_SECRET must be at least 32 characters in production"
+    },
+    {
+      "check": "development generates an ephemeral secret per process",
+      "result": "pass",
+      "detail": "len=43 distinct=True"
+    },
+    {
+      "check": "the preseeded users are parsed",
+      "result": "pass",
+      "detail": "users={'judge': 'correct horse battery staple'}"
+    },
+    {
+      "check": "a malformed user entry is rejected",
+      "result": "pass",
+      "detail": "WORKBENCH_USERS entries must be 'user:password' separated by ';'"
+    },
+    {
+      "check": "the model credentials are exposed as the supervisor expects",
+      "result": "pass",
+      "detail": "credentials=['MODEL_BASE_URL', 'MODEL_API_KEY', 'MODEL_NAME']"
+    },
+    {
+      "check": "limits and deadlines have usable defaults",
+      "result": "pass",
+      "detail": "concurrency=2 daily=30 deadline=300"
+    }
+  ],
+  "scope": "settings and auth unit checks only; no server, no network, no model call"
+}
