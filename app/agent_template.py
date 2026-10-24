@@ -6,11 +6,9 @@ harness tool set. The first real round measured 29 tools in front of the
 leader. That is fine on a laptop and unacceptable behind a public login, where
 the model's input is whatever a judge (or a retrieved document) contains.
 
-This module is additive: it starts from the MVP fixture in
-``p0b/compile_spec_check.build_config`` and overrides the two agent templates.
-The P0-B fixtures are reused rather than copied so the roster and mode
-invariants stay in one place; the fixture import is lazy because that module
-lives under ``p0b/`` and is not on the application's default import path.
+This module is additive: it starts from the application's own MVP config in
+``app/team_config.py`` and overrides the two agent templates. The P0-B fixture
+still checks that the config chain compiles the same roster.
 
 What the template changes:
 
@@ -58,9 +56,9 @@ def build_workbench_config(
     The caller's mapping is not retained: credentials are read into the model
     entry and everything else is a fresh deepcopy.
     """
-    from compile_spec_check import TEAM, build_config
+    from app.team_config import TEAM, build_mvp_config
 
-    config = copy.deepcopy(build_config())
+    config = copy.deepcopy(build_mvp_config())
     team_config = config["modes"]["team"][TEAM]
     team_config["team_name"] = team_name
 

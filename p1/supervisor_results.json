@@ -1,0 +1,37 @@
+{
+  "checks_passed": 6,
+  "checks_total": 6,
+  "checks": [
+    {
+      "check": "the snapshot is written to disk",
+      "result": "pass",
+      "detail": "phase='returned'"
+    },
+    {
+      "check": "the run returns after the completion marker",
+      "result": "pass",
+      "detail": "returned"
+    },
+    {
+      "check": "the completion marker is recorded",
+      "result": "pass",
+      "detail": "markers=['team.completed']"
+    },
+    {
+      "check": "a fake runner leaves bootstrapping unproven",
+      "result": "pass",
+      "detail": "bootstrapped=False tools=[]"
+    },
+    {
+      "check": "the supervisor compiles the hardened template",
+      "result": "pass",
+      "detail": "leader_tools=['app.submit_task_result'] leader_rails=['app.run_bootstrap']"
+    },
+    {
+      "check": "an invalid plan stops before the runner starts",
+      "result": "pass",
+      "detail": "phase='invalid_plan' started=False"
+    }
+  ],
+  "scope": "supervisor orchestration with a fake runner; no team, no model call"
+}
