@@ -47,7 +47,9 @@ npm run dev   # /api 代理到 127.0.0.1:8000
 
 ## 导入语料
 
-公开链接不接受上传。资料先放进 `corpus/<workspace>/`（支持 `.txt`/`.md`/`.pdf`），再由运维执行：
+仓库已内置 6 份公开法规原文（生成式 AI 暂行办法、内容标识办法、算法推荐规定、深度合成规定、个人信息保护法、数据安全法），逐份来源与条数见 [corpus/SOURCES.md](corpus/SOURCES.md)。
+
+公开链接不接受上传。新增资料先放进 `corpus/<workspace>/`（支持 `.txt`/`.md`/`.pdf`），再由运维执行：
 
 ```bash
 PYTHONPATH=upstream/agent-core:upstream/jiuwenswarm \
