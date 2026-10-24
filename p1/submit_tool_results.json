@@ -1,0 +1,42 @@
+{
+  "checks_passed": 7,
+  "checks_total": 7,
+  "checks": [
+    {
+      "check": "the assignee's supported result is accepted",
+      "result": "pass",
+      "detail": "accepted"
+    },
+    {
+      "check": "claims become the artifact when no file artifact exists",
+      "result": "pass",
+      "detail": "artifact_refs=('claims:research:run-1:research:1',)"
+    },
+    {
+      "check": "native completion ran once",
+      "result": "pass",
+      "detail": "completed=['research']"
+    },
+    {
+      "check": "another member cannot submit the task",
+      "result": "pass",
+      "detail": "'team_leader' is not the assignee of 'research' (assigned to 'research_member')"
+    },
+    {
+      "check": "evidence outside the task's context is rejected",
+      "result": "pass",
+      "detail": "citation check failed: unknown_evidence"
+    },
+    {
+      "check": "the same execution cannot submit twice",
+      "result": "pass",
+      "detail": "first=True second=execution 'run-1:research:1' already submitted a result for 'research'"
+    },
+    {
+      "check": "an empty submission is rejected",
+      "result": "pass",
+      "detail": "empty result: no claims and no artifacts"
+    }
+  ],
+  "scope": "bridge unit checks only; no team, no runner, no model call"
+}

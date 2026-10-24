@@ -60,6 +60,12 @@ class PlanTask(BaseModel):
     task_id: str
     role: str
     instruction: str
+    assignee: str = ""
+    """The roster member this task is assigned to (native ``TaskGraphSpec.assignee``).
+
+    Added in the workbench plan; validation of the name against the roster is
+    a separate change so existing callers that omit it keep working.
+    """
     acceptance_ids: tuple[str, ...] = ()
     depends_on: tuple[str, ...] = ()
     requires_success: bool = True
