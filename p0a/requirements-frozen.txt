@@ -91,3 +91,13 @@ tzdata==2026.5
 urllib3==2.8.0
 websocket-client==1.9.2
 yarl==1.25.1
+
+# P1 additions: required from P0-B (runtime adapter) onward. The freeze above
+# was taken at P0-A, when only the spec compiler was imported.
+googleapis-common-protos==1.76.0
+opentelemetry-exporter-http-transport==0.66b1
+opentelemetry-exporter-otlp-common==0.66b1
+opentelemetry-exporter-otlp-proto-common==1.45.1
+opentelemetry-exporter-otlp-proto-grpc==1.45.1
+opentelemetry-exporter-otlp-proto-http==1.45.1
+opentelemetry-proto==1.45.1

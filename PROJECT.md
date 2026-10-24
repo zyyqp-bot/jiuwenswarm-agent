@@ -359,6 +359,37 @@ ModelPolicy.select(task, complexity, evidence_quality, budget) -> ModelProfile
 
 已执行：官方源码拉取、提交核对、相关类型/调用链/测试源码阅读；[source_probes.py](probes/source_probes.py) 7 项通过，详见 [results.json](probes/results.json)。脚本只提取源码函数并使用 stub，另做两项 AST/文本检查；没有导入完整 SDK、安装依赖、调用 API 或执行官方完整测试套件。文档校验确认14项需求、30个固定源码链接均对应本地文件，两个参考 checkout 提交与锁文件一致且无本地变更。
 
+**环境重建（2026-10-24 实测，从零到可跑）**：
+
+```powershell
+# 1) venv（本机 bundled Python 3.12.14）
+& 'C:\Users\19468\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m venv .venv
+.venv\Scripts\python.exe -m pip install -r p0a\requirements-frozen.txt
+
+# 2) 两个上游仓库，固定到 source-lock.json 的提交
+git clone https://github.com/openJiuwen-ai/agent-core.git upstream\agent-core
+git -C upstream\agent-core fetch --depth 1 origin 6df9699e650b3ad9b9835b46ae3c3b7572adb04b
+git -C upstream\agent-core checkout -f 6df9699e650b3ad9b9835b46ae3c3b7572adb04b
+
+git clone https://github.com/openJiuwen-ai/jiuwenswarm.git upstream\jiuwenswarm
+git -C upstream\jiuwenswarm fetch --depth 1 origin 3fea8d1623a13646e935df9e96100ab7ad470aa4
+$env:GIT_LFS_SKIP_SMUDGE = '1'   # 介绍视频的 LFS 对象在服务器上是 404
+git -C upstream\jiuwenswarm checkout -f 3fea8d1623a13646e935df9e96100ab7ad470aa4
+git -C upstream\jiuwenswarm clean -fdx
+
+# 3) 所有脚本都要求的上游导入路径
+$env:PYTHONPATH = "$PWD\upstream\agent-core;$PWD\upstream\jiuwenswarm"
+```
+
+三个环境陷阱：GitHub 连接会间歇失败，clone 失败直接重试；`--depth` 克隆后固定提交可能不在历史里，必须用 `fetch origin <sha> --depth 1`；切到旧提交前若工作区有更新分支的未跟踪文件，先在 `upstream/jiuwenswarm` 内 `git clean -fdx`（只影响参考检出）。`requirements-frozen.txt` 末尾另列 7 个 P1 新增包——缺了它们，`app/runtime_adapter.py` 会在 `from opentelemetry.exporter...` 处失败。
+
+P1 脚本：
+```powershell
+.venv\Scripts\python.exe p1\live_tool_surface_check.py    # 离线，9 项
+.venv\Scripts\python.exe p1\live_round_check.py --dry-run # 离线，8 项
+.venv\Scripts\python.exe p1\live_round_check.py           # 真实回合，需要 .env.local，计费
+```
+
 复现命令（本机 bundled Python）：
 
 ```powershell
