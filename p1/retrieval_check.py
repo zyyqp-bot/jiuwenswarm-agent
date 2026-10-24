@@ -182,6 +182,30 @@ async def _run(checks: Checks, data_dir: Path) -> None:
     finally:
         await index.close()
 
+    # -- the snapshot must not grow without bound ---------------------------
+    cap_bridge = RunBridge(run_id="run-cap", plan=PLAN)
+    for index in range(205):
+        evidence_id = f"e{index}"
+        cap_bridge.add_evidence(
+            "research",
+            [evidence_id],
+            [
+                {
+                    "evidence_id": evidence_id,
+                    "text": "x" * 400,
+                    "source_uri": "doc.txt",
+                    "locator": "chars:0-1",
+                }
+            ],
+        )
+    capped = cap_bridge.snapshot()
+    checks.add(
+        "the snapshot caps the number of passages it carries",
+        len(capped.get("evidence_details", {})) == 200
+        and capped.get("evidence_details_omitted") == 5,
+        f"details={len(capped.get('evidence_details', {}))} omitted={capped.get('evidence_details_omitted')}",
+    )
+
     # -- provider factory ----------------------------------------------------
     register_bridge("run-f", RunBridge(run_id="run-f", plan=PLAN))
     try:

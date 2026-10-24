@@ -35,6 +35,8 @@ from app.models import (
 from app.plan import PlanTask
 
 APP_VERIFIER = "app.structural"
+MAX_EVIDENCE_DETAILS = 200
+"""Passages carried in the snapshot; the rest are counted, not silently lost."""
 """Who signs the application's structural acceptance checks.
 
 The producer cannot sign its own acceptance: ``CompletionGate`` compares this
@@ -69,6 +71,7 @@ class RunBridge:
             task_id: set(ids) for task_id, ids in (evidence_by_task or {}).items()
         }
         self._evidence_details: dict[str, dict[str, str]] = {}
+        self._evidence_details_omitted = 0
         self._ledger = ExecutionLedger()
         self._citations = CitationValidator()
         self._completion = CompletionGate(self._ledger)
@@ -129,6 +132,14 @@ class RunBridge:
             for item in details or ():
                 evidence_id = str(item.get("evidence_id") or "")
                 if not evidence_id:
+                    continue
+                if (
+                    evidence_id not in self._evidence_details
+                    and len(self._evidence_details) >= MAX_EVIDENCE_DETAILS
+                ):
+                    # The snapshot is re-serialized on every poll; keep the
+                    # record bounded and say how many passages were dropped.
+                    self._evidence_details_omitted += 1
                     continue
                 self._evidence_details[evidence_id] = {
                     "evidence_id": evidence_id,
@@ -428,6 +439,7 @@ class RunBridge:
                     evidence_id: dict(item)
                     for evidence_id, item in sorted(self._evidence_details.items())
                 },
+                "evidence_details_omitted": self._evidence_details_omitted,
                 "tool_names": list(self.tool_names),
                 "tool_requests": [dict(request) for request in self.tool_requests],
                 "blocked_tools": list(self.blocked_tools),

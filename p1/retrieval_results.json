@@ -1,6 +1,6 @@
 {
-  "checks_passed": 16,
-  "checks_total": 16,
+  "checks_passed": 17,
+  "checks_total": 17,
   "checks": [
     {
       "check": "every supported document is imported",
@@ -71,6 +71,11 @@
       "check": "a refused call records no evidence",
       "result": "pass",
       "detail": "evidence={'research': ['a.txt:1c067a3e0e4f78d2:0:1c067a3e0e4f']}"
+    },
+    {
+      "check": "the snapshot caps the number of passages it carries",
+      "result": "pass",
+      "detail": "details=200 omitted=5"
     },
     {
       "check": "the provider binds the member identity",
