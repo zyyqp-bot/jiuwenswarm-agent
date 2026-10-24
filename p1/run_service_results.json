@@ -1,0 +1,72 @@
+{
+  "checks_passed": 13,
+  "checks_total": 13,
+  "checks": [
+    {
+      "check": "a completed supervisor snapshot becomes a returned record",
+      "result": "pass",
+      "detail": "phase='returned' complete=True"
+    },
+    {
+      "check": "the record carries the task results",
+      "result": "pass",
+      "detail": "results=['research']"
+    },
+    {
+      "check": "the run id is recorded",
+      "result": "pass",
+      "detail": "run-20261024T080958-700ae9"
+    },
+    {
+      "check": "the live event stream is ordered",
+      "result": "pass",
+      "detail": "seqs=[1, 2, 3]"
+    },
+    {
+      "check": "the last event is the terminal snapshot",
+      "result": "pass",
+      "detail": "last=returned"
+    },
+    {
+      "check": "a subscriber that joins after the fact still gets the final state",
+      "result": "pass",
+      "detail": "late subscriber"
+    },
+    {
+      "check": "another session cannot see or touch the run",
+      "result": "pass",
+      "detail": "hidden=['not-found', [], 'not-found', 'not-found']"
+    },
+    {
+      "check": "the owning session lists only its own runs",
+      "result": "pass",
+      "detail": "runs=['run-20261024T080958-700ae9', 'run-20261024T080959-df1039']"
+    },
+    {
+      "check": "a crashing supervisor becomes a failed run",
+      "result": "pass",
+      "detail": "phase='failed' error='supervisor exited with code 1'"
+    },
+    {
+      "check": "a long run stays running",
+      "result": "pass",
+      "detail": "phase='starting'"
+    },
+    {
+      "check": "the global concurrency cap refuses another run",
+      "result": "pass",
+      "detail": "concurrent run capacity reached (1/1)"
+    },
+    {
+      "check": "stop makes the record terminal without a false failure",
+      "result": "pass",
+      "detail": "phase='stopped' terminal=True"
+    },
+    {
+      "check": "a stopped run is not overwritten as failed",
+      "result": "pass",
+      "detail": "phase='stopped'"
+    }
+  ],
+  "scope": "run service orchestration with a fake supervisor; no team, no model call"
+}
