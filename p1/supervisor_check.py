@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import tempfile
 import time
@@ -175,6 +176,50 @@ async def _run(checks: Checks) -> None:
             and "members" in (snapshot["error"] or "")
             and fake.started is False,
             f"phase={snapshot['phase']!r} error={snapshot['error']!r}",
+        )
+
+    # --- credentials missing from the payload come from the environment -----
+    # Production passes model credentials through the child environment, not
+    # through the payload, so this is the shape the deployed run actually has.
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        fake = _FakeRunner()
+        payload = _payload(directory)
+        payload.pop("credentials")
+        captured = {}
+        original_compile = supervisor_module.compile_team_spec
+
+        def _spy(config):
+            captured["config"] = config
+            return original_compile(config)
+
+        env_keys = ("MODEL_BASE_URL", "MODEL_API_KEY", "MODEL_NAME")
+        saved = {key: os.environ.get(key) for key in env_keys}
+        os.environ["MODEL_BASE_URL"] = "http://127.0.0.1:9"
+        os.environ["MODEL_API_KEY"] = "env-api-key"
+        os.environ["MODEL_NAME"] = "env-model"
+        supervisor_module.compile_team_spec = _spy
+        try:
+            snapshot = await run_payload(payload, runner_factory=lambda: fake)
+        finally:
+            supervisor_module.compile_team_spec = original_compile
+            for key, value in saved.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        model = (
+            ((captured.get("config") or {}).get("models") or {}).get("defaults") or [{}]
+        )[0].get("model_client_config") or {}
+        checks.add(
+            "credentials missing from the payload fall back to the environment",
+            snapshot["phase"] == "returned"
+            and snapshot["error"] is None
+            and model.get("api_key") == "env-api-key"
+            and model.get("model_name") == "env-model",
+            f"phase={snapshot['phase']!r} error={snapshot['error']!r} "
+            f"model_name={model.get('model_name')!r}",
         )
 
     # --- a fatal bridge error reaches the run state -------------------------

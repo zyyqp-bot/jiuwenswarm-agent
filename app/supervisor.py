@@ -88,12 +88,15 @@ async def run_payload(
     # the run, and it must fail rather than silently run a different graph.
     parse_error = ""
     plan_source = "payload"
+    # Production passes model credentials through the child environment rather
+    # than the payload; an explicit payload mapping still wins. Resolved before
+    # the try so every later step, including config build, sees them.
+    credentials = payload.get("credentials") or {
+        "MODEL_BASE_URL": os.environ.get("MODEL_BASE_URL", ""),
+        "MODEL_API_KEY": os.environ.get("MODEL_API_KEY", ""),
+        "MODEL_NAME": os.environ.get("MODEL_NAME", ""),
+    }
     try:
-        credentials = payload.get("credentials") or {
-            "MODEL_BASE_URL": os.environ.get("MODEL_BASE_URL", ""),
-            "MODEL_API_KEY": os.environ.get("MODEL_API_KEY", ""),
-            "MODEL_NAME": os.environ.get("MODEL_NAME", ""),
-        }
         model = model_from_credentials(credentials) if credentials.get("MODEL_API_KEY") else None
         outcome = await resolve_plan(payload.get("plan"), goal, model=model)
         plan = outcome.tasks
@@ -169,7 +172,7 @@ async def run_payload(
             }
         )
     config = build_workbench_config(
-        payload["credentials"],
+        credentials,
         team_name=_team_name(run_id),
         run_id=run_id,
         extra_tools=extra_tools,

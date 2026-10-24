@@ -1,6 +1,6 @@
 {
-  "checks_passed": 10,
-  "checks_total": 10,
+  "checks_passed": 11,
+  "checks_total": 11,
   "checks": [
     {
       "check": "the snapshot is written to disk",
@@ -36,6 +36,11 @@
       "check": "a payload roster that differs from the fixed team is rejected",
       "result": "pass",
       "detail": "phase='invalid_plan' error=\"members must be exactly ['engineering', 'research'] (the native scheduler rejects any other assignee, including the leader); got ['engineering', 'research', 'team_leader']\""
+    },
+    {
+      "check": "credentials missing from the payload fall back to the environment",
+      "result": "pass",
+      "detail": "phase='returned' error=None model_name='env-model'"
     },
     {
       "check": "a fatal bridge error fails the run",

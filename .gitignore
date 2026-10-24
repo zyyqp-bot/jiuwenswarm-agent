@@ -24,6 +24,7 @@ p1/.live_round/
 # key, and the live checks read it from the environment rather than from a
 # tracked file.
 .env.local
+deploy/.env.production.local
 
 # Web dependencies and build output (the container rebuilds both)
 web/node_modules/
