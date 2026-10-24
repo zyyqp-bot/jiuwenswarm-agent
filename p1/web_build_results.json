@@ -15,12 +15,12 @@
     {
       "check": "the web unit tests pass",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 test\n> node --test test/snapshot.test.js\n\n✔ a complete snapshot marks the run terminal and carries the report trigger (0.646ms)\n✔ an intermediate snapshot keeps a live run live (0.1179ms)\n✔ terminal is sticky across a late non-complete frame (0.1114ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 97.1765"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 test\n> node --test test/snapshot.test.js\n\n✔ a complete snapshot marks the run terminal and carries the report trigger (0.5926ms)\n✔ an intermediate snapshot keeps a live run live (0.108ms)\n✔ terminal is sticky across a late non-complete frame (0.1017ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 96.0241"
     },
     {
       "check": "npm run build succeeds",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 34 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-B8CYuuEL.css  \u001b[39m\u001b[1m\u001b[2m  6.34 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.88 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-CEFjMopF.js   \u001b[39m\u001b[1m\u001b[2m234.40 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 73.80 kB\u001b[22m\n\u001b[32m✓ built in 625ms\u001b[39m"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 34 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-B8CYuuEL.css  \u001b[39m\u001b[1m\u001b[2m  6.34 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  1.88 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-CEFjMopF.js   \u001b[39m\u001b[1m\u001b[2m234.40 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 73.80 kB\u001b[22m\n\u001b[32m✓ built in 643ms\u001b[39m"
     },
     {
       "check": "dist/index.html exists",
