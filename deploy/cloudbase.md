@@ -33,9 +33,9 @@ JIUWENSWARM_ARCHIVE=<jiuwenswarm 同提交 tar.gz 的可达地址>
 
 1. 云托管 → 新建服务 → 代码仓库（GitHub），仓库 `zyyqp-bot/jiuwenswarm-agent`，分支 `main`。
 2. Dockerfile 路径填仓库根目录的 `Dockerfile`（多阶段：Node 构建 SPA，Python 运行 API）。
-3. 端口填 8000；实例规格 1 核 2 GB；实例数固定 1，关闭自动扩缩容。
+3. 端口填 8000；实例规格建议 **2 核 4 GB**（每个运行会拉起一个 Python 子进程并加载完整框架；1 核 2 GB 时把 `WORKBENCH_MAX_CONCURRENT_RUNS` 设为 1）；实例数固定 1，关闭自动扩缩容。
 4. 挂载持久化存储到 `/data`（首次部署后不要换路径，否则已有运行和语料会“消失”）。
-5. 环境变量按 [deploy/.env.example](.env.example) 逐项填写。密钥只在控制台保存，不写进仓库。
+5. 环境变量按 [deploy/.env.example](.env.example) 逐项填写。密钥只在控制台保存，不写进仓库。`SESSION_SECRET` 用 `python -c "import secrets; print(secrets.token_urlsafe(48))"` 生成；账号密码不要保留模板里的 `replace-me`，生产会拒绝启动。
 6. 部署完成后访问默认域名，应看到登录页；`/api/health` 应返回 `{"status":"ok","writable":true}`。
 
 ## 4. 导入语料（一次性，运维执行）
@@ -74,7 +74,9 @@ python scripts/smoke_check.py --base-url https://<默认域名> \
 
 | 现象 | 检查 |
 |---|---|
-| 容器反复重启 | 日志里找 `SESSION_SECRET must be at least 32` 或 `WORKBENCH_USERS entries must be` |
+| 容器反复重启 | 日志里找 `SESSION_SECRET must be at least 32`、`placeholder`、`MODEL_BASE_URL` 或 `WORKBENCH_USERS` |
+| 启动即报 `another workbench instance` | 实例数不是 1，或上次进程刚被杀（锁 45 秒后自动过期）；确认只有一个实例 |
+| 启动报 `PermissionError` / 写 `/data` 失败 | 卷的属主不是容器用户（uid 10001）；在 CloudBase 调整卷权限或换一个可写目录 |
 | 登录 401 | 控制台环境变量是否有多余空格；改完要重新部署 |
 | 运行一直 `starting` | 看子进程日志：`upstream` 下载是否成功、`PYTHONPATH` 是否两个目录都在 |
 | SSE 只收到一次 | 网关是否缓冲响应；确认走的是默认域名而非静态托管 |
