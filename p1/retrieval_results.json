@@ -1,11 +1,16 @@
 {
-  "checks_passed": 15,
-  "checks_total": 15,
+  "checks_passed": 16,
+  "checks_total": 16,
   "checks": [
     {
       "check": "every supported document is imported",
       "result": "pass",
       "detail": "imported={'documents': 2, 'chunks': 2, 'failures': []}"
+    },
+    {
+      "check": "hidden files are ignored by the import",
+      "result": "pass",
+      "detail": "failures=[]"
     },
     {
       "check": "a Chinese trigram query finds the passage",

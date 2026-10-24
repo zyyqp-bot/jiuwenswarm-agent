@@ -617,6 +617,10 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 证据抽屉的数据来自运行快照的 `evidence_details`（检索工具把正文、来源、修订和 locator 与 evidence id 一起记录），因此已结束的运行不需要重新打开语料库。
 
+**容器镜像（Plan 2 Task 13）**：根目录 `Dockerfile` 为两阶段构建——`node:24-alpine` 构建 SPA，`python:3.12-slim` 安装 `p0a/requirements-frozen.txt`、按 `source-lock.json` 的两个提交从 GitHub 下载 `upstream` 源码（该目录被 gitignore，Git 构建无法 COPY），以非 root 用户 `workbench` 运行 `uvicorn app.main:app --workers 1`，`HEALTHCHECK` 访问 `/api/health`。`app/main.py` 是唯一的“从环境变量装配”入口；`app.api.create_app` 仍可注入，离线检查不需要生产密钥。`p1/deploy_check.py` 18 项静态断言覆盖阶段、提交固定、非 root、健康检查、端口、`PYTHONPATH`、`.dockerignore`、环境变量模板与部署文档。
+
+**未执行**：本机没有 Docker CLI，未实际 `docker build`；镜像构建与云托管运行需在有 Docker 的机器或 CloudBase 上完成。`scripts/smoke_check.py` 已写好，但同样需要在部署后对真实 URL 执行。
+
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
 下一次更新先阅读本文。P0-A、P0-B、P0-C 已落地，P0-D 已完成 Aggregator 与事件投影；剩余：

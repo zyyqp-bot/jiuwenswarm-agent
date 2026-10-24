@@ -1,0 +1,23 @@
+# The image fetches upstream at its pinned commit; never ship the local trees.
+upstream
+
+# Python and Node build output is rebuilt inside the image.
+.venv
+venv
+__pycache__
+*.py[cod]
+node_modules
+web/node_modules
+web/dist
+
+# Local state and secrets.
+data
+logs
+p1/.live_round
+.env.local
+.git
+
+# Test evidence and scratch stay out of the build context.
+.superpowers
+events
+.DS_Store

@@ -63,6 +63,9 @@ async def _run(checks: Checks, data_dir: Path) -> None:
     (source / "b.txt").write_text(
         "个人信息处理者应当制定内部管理制度。", encoding="utf-8"
     )
+    # The image ships an empty corpus directory kept by .gitkeep. A hidden
+    # placeholder is not a document and must not appear as an import failure.
+    (source / ".gitkeep").write_text("", encoding="utf-8")
 
     imported = await import_corpus(
         data_dir=data_dir, corpus="demo", scope="public", source_dir=source
@@ -71,6 +74,11 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         "every supported document is imported",
         imported["documents"] == 2 and imported["chunks"] >= 2 and not imported["failures"],
         f"imported={imported}",
+    )
+    checks.add(
+        "hidden files are ignored by the import",
+        not any(".gitkeep" in failure for failure in imported["failures"]),
+        f"failures={imported['failures']}",
     )
 
     db_path = data_dir / "corpus.db"

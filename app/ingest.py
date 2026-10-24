@@ -62,6 +62,10 @@ async def import_corpus(
         for path in sorted(Path(source_dir).rglob("*")):
             if not path.is_file():
                 continue
+            if path.name.startswith("."):
+                # .gitkeep and editor droppings keep a directory in Git; they
+                # are not documents and must not be reported as failures.
+                continue
             try:
                 text = load_document(path)
             except UnsupportedDocument as exc:

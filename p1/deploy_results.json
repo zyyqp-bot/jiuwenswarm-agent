@@ -1,0 +1,97 @@
+{
+  "checks_passed": 18,
+  "checks_total": 18,
+  "checks": [
+    {
+      "check": "Dockerfile exists at the repository root",
+      "result": "pass",
+      "detail": "D:\\Development\\JiuwenSwarm-review\\Dockerfile"
+    },
+    {
+      "check": "the image is a multi-stage build",
+      "result": "pass",
+      "detail": "stages=[('node:24-alpine', 'build'), ('python:3.12-slim', 'runtime')]"
+    },
+    {
+      "check": "the SPA is copied from the node build stage",
+      "result": "pass",
+      "detail": "expected COPY --from=<node stage> /web/dist ..."
+    },
+    {
+      "check": "the image fetches agent_core at its pinned commit",
+      "result": "pass",
+      "detail": "commit=6df9699e650b3ad9b9835b46ae3c3b7572adb04b"
+    },
+    {
+      "check": "the image fetches jiuwenswarm at its pinned commit",
+      "result": "pass",
+      "detail": "commit=3fea8d1623a13646e935df9e96100ab7ad470aa4"
+    },
+    {
+      "check": "the container runs as a non-root user",
+      "result": "pass",
+      "detail": "USER=['workbench']"
+    },
+    {
+      "check": "the image health-checks the API",
+      "result": "pass",
+      "detail": "expected HEALTHCHECK ... /api/health"
+    },
+    {
+      "check": "the image exposes port 8000",
+      "result": "pass",
+      "detail": "EXPOSE=['EXPOSE 8000']"
+    },
+    {
+      "check": "PYTHONPATH names both upstream directories",
+      "result": "pass",
+      "detail": "    PYTHONPATH=/app/upstream/agent-core:/app/upstream/jiuwenswarm"
+    },
+    {
+      "check": "the build context excludes the git-ignored upstream trees",
+      "result": "pass",
+      "detail": "# The image fetches upstream at its pinned commit; never ship the local trees.\nupstream\n\n# Python and Node build output is rebuilt inside the image.\n.venv\nvenv\n__pycache__\n*.py[cod]\nnode_modules\nweb/n"
+    },
+    {
+      "check": "deploy/.env.example exists",
+      "result": "pass",
+      "detail": "bytes=882"
+    },
+    {
+      "check": "the env example lists every required setting",
+      "result": "pass",
+      "detail": "all present"
+    },
+    {
+      "check": "the env example carries no real-looking secret",
+      "result": "pass",
+      "detail": "clean"
+    },
+    {
+      "check": "the deploy guide states the single-instance and volume rules",
+      "result": "pass",
+      "detail": "bytes=2069"
+    },
+    {
+      "check": "the deploy guide rules out public uploads",
+      "result": "pass",
+      "detail": "bytes=2069"
+    },
+    {
+      "check": "the image carries the corpus seed directory",
+      "result": "pass",
+      "detail": "copy=True"
+    },
+    {
+      "check": "app/main.py exposes a module-level ASGI app",
+      "result": "pass",
+      "detail": "\"\"\"ASGI entrypoint: ``uvicorn app.main:app``.\n\nThis module is the only place that builds the application from the proces"
+    },
+    {
+      "check": "the smoke check exercises health, login, a run and the stream",
+      "result": "pass",
+      "detail": "bytes=5973"
+    }
+  ],
+  "scope": "image, env template and deploy guide"
+}
