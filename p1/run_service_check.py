@@ -186,12 +186,18 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         broken_events = [
             event async for event in service.events(crashed.run_id, session_id="sid-1")
         ]
+        crash_report = data_dir / "runs" / crashed.run_id / "report.md"
         checks.add(
             "a failed run still streams a terminal frame",
             bool(broken_events)
             and broken_events[-1]["snapshot"].get("complete") is True
             and broken_events[-1]["snapshot"].get("phase") == "failed",
             f"last={broken_events[-1]['snapshot'] if broken_events else None}",
+        )
+        checks.add(
+            "the report exists before the terminal frame",
+            crash_report.is_file(),
+            f"report={'present' if crash_report.is_file() else 'missing'}",
         )
 
         # -- a complete snapshot that is not a native completion ------------

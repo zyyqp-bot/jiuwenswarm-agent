@@ -196,8 +196,10 @@ class RunService:
         if final is not None:
             self._adopt_snapshot(record, final)
         self._settle_stopped(record)
-        self._finalize_snapshot(record)
+        # Write the report before publishing the terminal snapshot: a client
+        # that reacts to the frame immediately fetches /report.md.
         self._write_report(record)
+        self._finalize_snapshot(record)
         record.terminal = True
         return record
 
@@ -295,8 +297,8 @@ class RunService:
                         record.error = record.error or (
                             f"supervisor exited with code {process.returncode}"
                         )
-                    self._finalize_snapshot(record)
                     self._write_report(record)
+                    self._finalize_snapshot(record)
                     record.terminal = True
                     return
 
@@ -305,8 +307,8 @@ class RunService:
                     await process.wait()
                     record.phase = "failed"
                     record.error = "run deadline exceeded"
-                    self._finalize_snapshot(record)
                     self._write_report(record)
+                    self._finalize_snapshot(record)
                     record.terminal = True
                     return
 
@@ -316,8 +318,8 @@ class RunService:
         except Exception as exc:  # noqa: BLE001 - the record must still terminate
             record.phase = "failed"
             record.error = f"monitor failed: {type(exc).__name__}: {exc}"
-            self._finalize_snapshot(record)
             self._write_report(record)
+            self._finalize_snapshot(record)
             record.terminal = True
         finally:
             self._processes.pop(record.run_id, None)
@@ -358,8 +360,10 @@ class RunService:
                 "run ended without native completion "
                 f"(stop_reason={document.get('stream_stop_reason')}, exit={returncode})"
             )
-        self._finalize_snapshot(record)
+        # Write the report before publishing the terminal snapshot: a client
+        # that reacts to the frame immediately fetches /report.md.
         self._write_report(record)
+        self._finalize_snapshot(record)
         record.terminal = True
 
     def _adopt_snapshot(self, record: RunRecord, document: dict[str, Any]) -> None:
