@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.27 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台的 14 个任务已全部落地，并通过整支独立审查；审查的 Critical/Important 修复完成后，离线套件 36 个脚本、597 项断言全绿。容器镜像已定义但本机无 Docker，未执行真实构建；云托管部署与真实模型运行待执行。
+版本：0.28 · 更新日期：2026-10-24（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7，审查修复后复跑 7/7）；Plan 2 在线工作台的 14 个任务已落地并通过整支独立审查，Critical/Important 修复后离线套件 36 个脚本、597 项断言全绿；**产品级真实运行 10/10**（真实模型规划 2 个任务、两名成员检索 6 份法规语料并逐条引用、`team.completed`、结构化验收 complete）。容器镜像已定义但本机无 Docker，未执行真实构建；云托管部署待执行。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -39,7 +39,8 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P1 工作台运行时钉子 | 已执行：应用提交 2 个已分配任务 → 原生调度器拉起成员 → 成员 `submit_task_result` → `team.completed`，7/7 通过；请求工具面无 shell/文件/spawn |
 | P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
 | Plan 2 在线工作台（离线） | 已实现：登录会话、按运行子进程 + 原子快照、SSE、任务板投影、计划器与确定性回退、证据详情快照、单容器镜像定义、SPA 三个面板；36 个离线脚本 597 项断言全绿；整支审查的 Critical/Important 已修复 |
-| Plan 2 云托管部署与真实运行 | **未执行**：本机无 Docker；CloudBase 体验环境仅验证过占位镜像，真实镜像需重新构建部署；真实模型运行需部署后 `scripts/smoke_check.py` |
+| Plan 2 真实模型运行（本地） | 已执行：`p1/live_product_check.py` 10/10——无预置计划，TinyAgent 真实规划 2 任务（research/engineering 各一），成员检索 6 份法规、11 条 fact 全部引用本任务检索到的证据，`team.completed`，结构化验收 complete，报告 37.9 KB；70 次模型请求无一越出工具白名单；`p1/delegation_nail.py` 复跑 7/7 |
+| Plan 2 云托管部署 | **未执行**：本机无 Docker；CloudBase 体验环境仅验证过占位镜像，真实镜像需重新构建部署；部署后由 `scripts/smoke_check.py` 验证 |
 | 垂直语料内容 | 已放入 6 份公开法规原文（暂行办法 24 条、标识办法 14 条、算法推荐 35 条、深度合成 25 条、个人信息保护法 74 条、数据安全法 55 条），来源与条数见 `corpus/SOURCES.md`；离线导入 6 文档 92 块、0 失败 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 应用代码已实现；真实 RAG 检索链路离线可跑，真实模型回合见 P1 记录；恢复测试未执行 |
@@ -647,12 +648,14 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 过程中发现并修复的真实缺陷：supervisor 以文件方式启动时，`sys.path[0]` 是 `app/`，子进程环境原先只加了两个 upstream 目录，导致 `import app.*` 失败——`_child_env` 现在把仓库根放在 `PYTHONPATH` 首位，并由 `p1/run_service_check.py` 断言。另将“事件流至少两帧”改为“有序且不重复”，因为快照契约是最新状态，负载下合并中间态不是缺陷。
 
+**产品级真实运行（2026-10-24）**：`p1/live_product_check.py` 不传计划，由真实模型规划。首次运行 TinyAgent 给出 4 个任务，两名成员串行执行，300 秒 deadline 切掉了第 4 个，报告 partial——这是真实的容量信号。把计划器收紧为“恰好 2 个任务（research/engineering 各一）、每个 3-6 条 claim”后复跑：规划 2 任务，成员各自检索（合计 62 条证据正文），11 条 fact 全部引用本任务检索到的 id，运行以 `team.completed` 结束，结构化验收 complete，报告 37.9 KB；70 次模型请求全部落在白名单内。真实钉子 `p1/delegation_nail.py` 在审查修复后复跑 7/7。
+
 **整支审查与修复（2026-10-24）**：独立只读审查对 Plan 2 提出 2 项 Critical、12 项 Important、4 项 Minor。已修复且各有 RED→GREEN 断言：
 
 - **终态流**：failed / stopped / deadline / monitor 异常现在都会发布 `complete=true` 的终态快照并推进 `seq`；SPA 以 `complete` 置 `terminal` 并关闭 EventSource，报告面板随即出现。
 - **完成判定**：`complete` 快照只有 `stop_reason=team_completed` 且退出码 0 才算 `returned`；deadline/idle 一律 `failed` 并写入原因。
 - **Stop 竞态**：停止前重读子进程快照；已完成的运行保持 `returned`，结果不丢。
-- **公开工具面**：门禁从denylist 改为白名单（`submit_task_result`、`retrieve`、`view_task`、`async_tasks_list`、`async_task_output`）；未知/未来工具在请求与执行两层都被拒绝。
+- **公开工具面**：门禁从 denylist 改为白名单（`submit_task_result`、`retrieve`、`build_team`、`view_task`、`async_tasks_list`、`async_task_output`）；未知/未来工具在请求与执行两层都被拒绝。`build_team` 必须在白名单内：原生任务板只有在它提交后才可见，bootstrap rail 正是在该调用返回后提交应用图；名册由 Spec 固定，它不能生成未授权成员。真实钉子曾因误删该项失败（空任务板→idle），修复后复跑 7/7。
 - **结构化验收**：报告不再“有结果即 PASS”，改为“任务成功 + 有 claim + fact 必须引用 + 引用必须在本任务检索集内”；不满足则 `fail`，聚合成非 complete。
 - **生产配置**：拒绝模板密钥与占位密码，要求至少一个账号和三个 `MODEL_*`；数据目录单实例心跳锁；lifespan 关闭 supervisor 并释放锁。
 - **泄漏与增长**：模型密钥不再写入 `payload.json`（改走子进程环境）；快照移除 `results_path` 且 API 再过滤；运行列表不返回 snapshot；`evidence_details` 上限 200 条并记录省略数。
@@ -674,7 +677,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 - token/调用成本记账：运行快照不含 usage 汇总；
 - 第二个工作区：注册表结构支持，但只预置 `ai-governance`；
 - 语料内容：已放入 6 份公开法规原文（`corpus/SOURCES.md` 记录来源与条数），离线导入 6 文档 92 块、0 失败；网络安全法因 2026-01-01 修正文本只有 OFD/PDF 版本，暂未纳入，避免引用过期条文；TC260 安全基本要求待补。
-- 真实回合：Plan 2 重构后尚未用真实模型重跑钉子；工具白名单、计划器、终态分类与 reviewer 流程都需要一次真实运行确认，`p1/live_*` 不在离线套件内。
+- 真实回合：Plan 2 重构后已复跑 `p1/delegation_nail.py`（7/7）与 `p1/live_product_check.py`（10/10），覆盖计划器、检索、引用、工具白名单与 native completion；**reviewer 流程**（有依赖的关键任务）仍未在真实调度器中验证，这是保持回退计划并行的原因；RunService 的 deadline/stop 终态分类只有离线断言。`p1/live_*` 不在离线套件内，按需付费执行。
 
 **明确未执行**：场景 3（embedding 故障 → `keyword_only`，缺 embedding provider）、7（长工具链与压缩召回，缺框架上下文 rail）、10（记忆单 writer，团队/个人记忆未接入），以及场景 2 的运行时部分（执行中维持名册需要真实 Runner）。脚本把它们列为 `not_run` 而非跳过——"没跑"与"跑过了"必须能区分。
 
@@ -721,6 +724,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-24 | 0.28 | R04、R08、R11、参赛在线链接 | 产品级真实运行：TinyAgent 规划 2 任务、成员检索并引用 6 份法规、结构化验收 complete；计划器限制为“每人一个任务、3-6 条 claim”并拒绝单成员计划；白名单补回 `build_team`（原生任务板依赖它） | `p1/live_product_check.py` 10/10；`p1/delegation_nail.py` 7/7；离线套件 597 项断言仍全绿；部署未执行 |
 | 2026-10-24 | 0.27 | R04、R08、R11、参赛在线链接 | 整支审查后的 Critical/Important 修复：终态快照与 SPA terminal、完成判定、Stop 竞态、工具白名单、结构化验收、生产占位配置拒绝、单实例锁与 lifespan、密钥不落盘、路径过滤、列表瘦身、证据上限、请求边界、WAL、目标界定、语料入库 | 36 个离线脚本 597 项断言 0 失败；依赖图/reviewer、重启恢复、报告双文件原子性作为已记录取舍保留；真实回合与部署仍未执行 |
 | 2026-10-24 | 0.26 | R04、R08、R11、参赛在线链接 | Plan 2 全部 14 个任务：会话与 Cookie、运行服务与快照、API/SSE、报告、任务板、复核裁决、依赖断言、准入限制、语料与检索、计划器、SPA 三面板、任务图与证据详情、单容器镜像与部署文档、离线端到端链路；README 补齐本地运行/导入语料/构建/部署/验证 | 35 个离线脚本 564 项断言 0 失败；e2e 15/15（`live_run: not_run`）；`_child_env` 缺仓库根的真实缺陷已修并加断言；Docker 构建与云端运行未执行 |
 | 2026-10-24 | 0.25 | R04、R08、R11 | 整支审查后的修复：成员自有 task manager 完成并检查 `TaskOpResult`；`member_complete_task`/`create_task`/`update_task` 执行级拒绝；请求过滤之外的 `before_tool_call` 执行边界；`AbortError` + fatal 提升；固定可指派名册；reporter join；请求历史累积；应用侧结构化验收 | 离线 26 脚本 0 失败；真实钉子 7/7；两处 Plan 2 缺口已登记 |
