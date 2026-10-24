@@ -50,6 +50,8 @@ class PlanIssueCode(str, Enum):
     UNKNOWN_ROLE = "unknown_role"
     MISSING_ACCEPTANCE = "missing_acceptance"
     MISSING_REVIEWER = "missing_reviewer"
+    MISSING_ASSIGNEE = "missing_assignee"
+    UNKNOWN_ASSIGNEE = "unknown_assignee"
 
 
 class PlanTask(BaseModel):
@@ -146,8 +148,14 @@ class PlanValidator:
     templates are keyed by role, not by member name.
     """
 
-    def __init__(self, *, roles: Iterable[str] = DEFAULT_ROLES) -> None:
+    def __init__(
+        self,
+        *,
+        roles: Iterable[str] = DEFAULT_ROLES,
+        members: Iterable[str] | None = None,
+    ) -> None:
         self._roles = {role for role in roles}
+        self._members = None if members is None else {member for member in members}
 
     def validate(self, plan: Sequence[PlanTask]) -> PlanValidationReport:
         """Return a report describing every problem found, not just the first."""
@@ -239,5 +247,24 @@ class PlanValidator:
                         detail="a key task (depended on by another task) must declare a reviewer",
                     )
                 )
+            # Assignment is checked only when the caller names the roster:
+            # P0-B callers validate structure, not execution.
+            if self._members is not None:
+                if not task.assignee.strip():
+                    issues.append(
+                        PlanIssue(
+                            code=PlanIssueCode.MISSING_ASSIGNEE,
+                            task_id=task.task_id,
+                            detail="task names no assignee",
+                        )
+                    )
+                elif task.assignee not in self._members:
+                    issues.append(
+                        PlanIssue(
+                            code=PlanIssueCode.UNKNOWN_ASSIGNEE,
+                            task_id=task.task_id,
+                            detail=f"assignee {task.assignee!r} is not in the roster",
+                        )
+                    )
 
         return PlanValidationReport(valid=not issues, issues=tuple(issues))

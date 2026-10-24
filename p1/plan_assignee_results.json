@@ -1,0 +1,27 @@
+{
+  "checks_passed": 4,
+  "checks_total": 4,
+  "checks": [
+    {
+      "check": "a blank assignee is rejected when members are known",
+      "result": "pass",
+      "detail": "codes=['missing_assignee']"
+    },
+    {
+      "check": "an assignee outside the roster is rejected",
+      "result": "pass",
+      "detail": "codes=['unknown_assignee']"
+    },
+    {
+      "check": "a roster member is accepted",
+      "result": "pass",
+      "detail": "issues=[]"
+    },
+    {
+      "check": "legacy callers without a member list are unaffected",
+      "result": "pass",
+      "detail": "issues=[]"
+    }
+  ],
+  "scope": "plan validation only; no team, no runner, no model call"
+}
