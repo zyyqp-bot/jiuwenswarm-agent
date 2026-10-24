@@ -1,0 +1,42 @@
+{
+  "checks_passed": 7,
+  "checks_total": 7,
+  "checks": [
+    {
+      "check": "the graph keeps the plan's order and size",
+      "result": "pass",
+      "detail": "ids=['research', 'engineering']"
+    },
+    {
+      "check": "instructions become task content",
+      "result": "pass",
+      "detail": "collect evidence"
+    },
+    {
+      "check": "the dependency edge is preserved",
+      "result": "pass",
+      "detail": "depends_on=('research',)"
+    },
+    {
+      "check": "assignees are preserved",
+      "result": "pass",
+      "detail": "assignees=['research_member', 'engineering_member']"
+    },
+    {
+      "check": "reviewer names become native reviewer entries",
+      "result": "pass",
+      "detail": "reviewer=({'reviewer_id': 'team_leader', 'type': 'verifier'},)"
+    },
+    {
+      "check": "submit_graph calls the native manager exactly once",
+      "result": "pass",
+      "detail": "ok=True calls=1"
+    },
+    {
+      "check": "a native failure is returned unchanged",
+      "result": "pass",
+      "detail": "ok=False reason='cycle'"
+    }
+  ],
+  "scope": "plan-to-graph conversion only; a fake manager records the call"
+}
