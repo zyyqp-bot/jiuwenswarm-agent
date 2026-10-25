@@ -13,9 +13,11 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from PIL import Image
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
+SCREENS = ROOT / "docs" / "submission" / "screenshots"
 OUTPUT = ROOT / "docs" / "submission" / "【教育-重庆邮电大学-赵乙亦-证据工作台】.pptx"
 
 INK = RGBColor(0x14, 0x18, 0x1F)
@@ -79,6 +81,18 @@ def _table(slide, rows, top=1.9, left=0.85, width=11.6, height=4.4, size=14):
             run = paragraph.add_run()
             run.text = str(value)
             _style(run, size, INK if row_index else MUTED, bold=(row_index == 0))
+
+
+
+def _fit_picture(slide, path: Path, left: float, top: float, max_w: float, max_h: float) -> None:
+    """Place an image centred inside a box, preserving its aspect ratio."""
+    with Image.open(path) as image:
+        width, height = image.size
+    scale = min(max_w / width, max_h / height)
+    draw_w, draw_h = width * scale, height * scale
+    x = left + (max_w - draw_w) / 2
+    y = top + (max_h - draw_h) / 2
+    slide.shapes.add_picture(str(path), Inches(x), Inches(y), Inches(draw_w), Inches(draw_h))
 
 
 def _placeholder(slide, text: str) -> None:
@@ -208,7 +222,7 @@ def main() -> int:
     # 8 task graph
     slide = deck.slides.add_slide(blank)
     _title(slide, "问题理解与逻辑论证", "一次真实运行的任务图")
-    _placeholder(slide, "截图：任务图（两个节点、状态变化）")
+    _fit_picture(slide, SCREENS / "task-graph-crop.png", 0.8, 1.6, 11.7, 5.3)
     slides.append(slide)
 
     # 9 citation funnel
@@ -317,7 +331,8 @@ def main() -> int:
     # 17 UI
     slide = deck.slides.add_slide(blank)
     _title(slide, "应用结果呈现", "工作台界面")
-    _placeholder(slide, "截图：登录页 / 工作区与目标输入 / 任务图 + 证据抽屉 / 报告与冲突面板")
+    _fit_picture(slide, SCREENS / "login.png", 0.8, 1.7, 4.6, 4.6)
+    _fit_picture(slide, SCREENS / "new-task.png", 5.8, 1.7, 6.4, 4.6)
     slides.append(slide)
 
     # 18 prompt 1
@@ -328,7 +343,11 @@ def main() -> int:
     frame.paragraphs[0].runs[0].text = (
         "提示词：学校拟引入一款 AI 作业批改工具，请依据教育政策与 AI 教育指南，评估其合规要求并给出依据条文。"
     )
-    _placeholder(slide, "截图：报告“结论”与“证据”小节")
+    note = _textbox(slide, 0.85, 4.4, 11.6, 1.2)
+    _style(note.paragraphs[0].add_run(), 15, MUTED)
+    note.paragraphs[0].runs[0].text = (
+        "运行后，报告在“结论”下逐条列出 [fact] 与依据；点结论可只看它引用的原文（见上一页）。"
+    )
     slides.append(slide)
 
     # 19 prompts 2-3 + link
@@ -343,7 +362,7 @@ def main() -> int:
         top=1.6,
         size=17,
     )
-    _placeholder(slide, "截图：AI 治理报告 + 冲突候选面板")
+    _fit_picture(slide, SCREENS / "report-conflicts.png", 0.8, 3.0, 11.7, 3.1)
     link = _textbox(slide, 0.85, 6.35, 11.6, 0.5)
     _style(link.paragraphs[0].add_run(), 13, ACCENT)
     link.paragraphs[0].runs[0].text = (
