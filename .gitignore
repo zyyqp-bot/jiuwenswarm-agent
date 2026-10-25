@@ -38,3 +38,7 @@ events/
 Thumbs.db
 .vscode/
 .idea/
+
+# PPT build tooling and render previews
+scripts/ppt/node_modules/
+.deck_preview/

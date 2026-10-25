@@ -19,6 +19,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 __all__ = ["main", "run_checks"]
 
@@ -79,6 +80,7 @@ def run_checks(
     goal: str,
     wait_seconds: float,
     workspace: str = "ai-governance",
+    save_report: str | None = None,
 ) -> bool:
     base = base_url.rstrip("/")
     jar = http.cookiejar.CookieJar()
@@ -172,6 +174,9 @@ def run_checks(
         print(f"report returned {status}")
         return False
     print(f"   report_bytes={len(raw)}")
+    if save_report:
+        Path(save_report).write_bytes(raw)
+        print(f"   report_saved={save_report}")
     return True
 
 
@@ -198,6 +203,11 @@ def main(argv: list[str]) -> int:
         default="ai-governance",
         help="workspace to run in (ai-governance or education-policy)",
     )
+    parser.add_argument(
+        "--save-report",
+        default=None,
+        help="write the fetched report.md to this path for inspection",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -208,6 +218,7 @@ def main(argv: list[str]) -> int:
             goal=args.goal,
             wait_seconds=args.wait,
             workspace=args.workspace,
+            save_report=args.save_report,
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         print(f"transport error: {type(exc).__name__}: {exc}")
