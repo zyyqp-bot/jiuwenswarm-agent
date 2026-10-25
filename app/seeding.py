@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from app.ingest import import_corpus
+from app.knowledge import corpus_db_path
 from app.workspaces import Workspace
 
 __all__ = ["ensure_corpus"]
@@ -33,13 +34,15 @@ async def ensure_corpus(
     """
     data_dir = Path(data_dir)
     seed_root = Path(seed_root)
-    if (data_dir / "corpus.db").exists():
-        return []
 
     summaries: list[dict[str, Any]] = []
     for workspace in workspaces:
         source = seed_root / workspace.corpus
         if not source.is_dir():
+            continue
+        if corpus_db_path(data_dir, workspace.corpus).exists():
+            # One corpus per file: adding a new workspace seeds only its own
+            # database and leaves the existing one untouched.
             continue
         documents = [
             path

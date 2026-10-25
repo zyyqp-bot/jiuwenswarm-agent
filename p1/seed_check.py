@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from app.knowledge import corpus_db_path  # noqa: E402
 from app.seeding import ensure_corpus  # noqa: E402
 from app.workspaces import Workspace  # noqa: E402
 from checks.harness import Checks  # noqa: E402
@@ -46,8 +47,8 @@ async def _run(checks: Checks, root: Path) -> None:
     )
     checks.add(
         "the corpus database now exists",
-        (data_dir / "corpus.db").is_file(),
-        str(data_dir / "corpus.db"),
+        corpus_db_path(data_dir, WORKSPACE.corpus).is_file(),
+        str(corpus_db_path(data_dir, WORKSPACE.corpus)),
     )
 
     second = await ensure_corpus(data_dir, seed_root, [WORKSPACE])

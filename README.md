@@ -49,7 +49,7 @@ npm run dev   # /api 代理到 127.0.0.1:8000
 
 仓库已内置 6 份公开法规原文（生成式 AI 暂行办法、内容标识办法、算法推荐规定、深度合成规定、个人信息保护法、数据安全法），逐份来源与条数见 [corpus/SOURCES.md](corpus/SOURCES.md)。
 
-容器首次启动且 `/data/corpus.db` 不存在时，会在开始接收请求前自动导入镜像内的 `corpus/`（`WORKBENCH_SEED_CORPUS=0` 可关闭）。本地开发或新增资料时手动执行：
+容器首次启动时，每个工作区的语料在各自的 `/data/corpora/<corpus>.db` 不存在时自动导入镜像内的 `corpus/`（`WORKBENCH_SEED_CORPUS=0` 可关闭）。两个预置工作区分别是 `ai-governance` 与 `education-policy`。本地开发或新增资料时手动执行：
 
 公开链接不接受上传。新增资料先放进 `corpus/<workspace>/`（支持 `.txt`/`.md`/`.pdf`），再由运维执行：
 

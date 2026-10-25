@@ -27,7 +27,13 @@ WORKSPACES: dict[str, Workspace] = {
         description="AI 治理与数据合规：公开政策法规的研读、引用与冲突报告",
         corpus="ai-governance",
         access_scope="public",
-    )
+    ),
+    "education-policy": Workspace(
+        name="education-policy",
+        description="教育政策研读：教育法律、未成年人保护与招生政策的引用与冲突报告",
+        corpus="education-policy",
+        access_scope="public",
+    ),
 }
 
 

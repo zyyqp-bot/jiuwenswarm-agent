@@ -1,0 +1,52 @@
+{
+  "checks_passed": 9,
+  "checks_total": 9,
+  "checks": [
+    {
+      "check": "same skeleton with different values across sources is a candidate",
+      "result": "pass",
+      "detail": "candidates=[('算法服务提供者应当在#内办理备案', ('10个工作日', '30个工作日'))]"
+    },
+    {
+      "check": "the candidate keeps the passage and locator for both sides",
+      "result": "pass",
+      "detail": "sides=[('section:24', '算法推荐服务提供者应当在'), ('section:19', '合成服务提供者应当在三十')]"
+    },
+    {
+      "check": "the same value written two ways is not a conflict",
+      "result": "pass",
+      "detail": "candidates=[]"
+    },
+    {
+      "check": "two claims from the same source are not a candidate",
+      "result": "pass",
+      "detail": "candidates=[]"
+    },
+    {
+      "check": "inference and assumption claims are not compared",
+      "result": "pass",
+      "detail": "candidates=[]"
+    },
+    {
+      "check": "an evidence id without a recorded source is skipped",
+      "result": "pass",
+      "detail": "candidates=[]"
+    },
+    {
+      "check": "article numbers are not treated as conflicting values",
+      "result": "pass",
+      "detail": "candidates=[]"
+    },
+    {
+      "check": "the report lists both sides with their sources",
+      "result": "pass",
+      "detail": "rendered='# 证据工作台报告 · run-1\\n\\n## 结论\\n\\n结论\\n\\n## 冲突候选\\n\\n检测规则：同一句式、不同来源、不同数值。以下仅并列呈现，不作裁决。\\n\\n### 算法服务提供者应当在#内办理备案\\n\\n- 数值：10个工作日 / 30个工作日\\n- [research] 算法服务提供者应当在十个工作日内办理备案。\\n  - 来源：algo.md · section:24 · `ev-a`\\n  - 原文：算法推荐服务提供者应当在十个工作日内办理备案。\\n- [engineering] 算法服务提供者应当在三十个工作日内办理备案。\\n  - 来源：synthetic.md · section:19 · `ev-b`\\n  - 原文：合成服务提供者应当在三十个工作日内办理备案。\\n\\n## 验收\\n\\n- （无验收条件）\\n\\n## 限制\\n\\n- 无\\n\\n## 证据\\n\\n- （无）\\n'"
+    },
+    {
+      "check": "an empty result states that nothing was found, with the rule",
+      "result": "pass",
+      "detail": "rendered='# 证据工作台报告 · run-1\\n\\n## 结论\\n\\n结论\\n\\n## 冲突候选\\n\\n- 未发现候选冲突（规则：同一句式、不同来源、不同数值）。\\n\\n## 验收\\n\\n- （无验收条件）\\n\\n## 限制\\n\\n- 无\\n\\n## 证据\\n\\n- （无）\\n'"
+    }
+  ],
+  "scope": "deterministic candidate-conflict detection and report rendering"
+}

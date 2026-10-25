@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "p1"))
 
 from app.ingest import import_corpus  # noqa: E402
+from app.knowledge import corpus_db_path  # noqa: E402
 from app.models import Claim, ClaimKind, TaskOutcome, TaskResult  # noqa: E402
 from app.plan import PlanTask  # noqa: E402
 from app.report import build_report, report_markdown  # noqa: E402
@@ -60,7 +61,7 @@ async def _run(checks: Checks, credentials: dict[str, str]) -> None:
         "session_id": f"session-{run_id}",
         "credentials": credentials,
         "corpus": {
-            "db_path": str(data_dir / "corpus.db"),
+            "db_path": str(corpus_db_path(data_dir, "ai-governance")),
             "corpus": "ai-governance",
             "access_scope": "public",
         },

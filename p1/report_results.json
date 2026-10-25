@@ -55,12 +55,12 @@
     {
       "check": "the Markdown has the required sections",
       "result": "pass",
-      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 验收\n\n- a1: pass（app.structural）\n- a2: pass（app.structural）\n\n## 限"
+      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 冲突候选\n\n- 未发现候选冲突（规则：同一句式、不同来源、不同数值）。\n\n## 验收\n\n- a1: pass（app.stru"
     },
     {
       "check": "the Markdown keeps the claim text, kind and evidence id",
       "result": "pass",
-      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 验收\n\n- a1: pass（app.structural）\n- a2: pass（app.structural）\n\n## 限制\n\n- 无\n\n## 证据\n\n- `ev-1`\n- `ev-2`\n- `ev-3`\n\n## 分任务明细\n\n### research（success，research）\n- [fact] 政策要求进行安"
+      "detail": "# 证据工作台报告 · run-1\n\n## 结论\n\n## research (success)\n- [fact] 政策要求进行安全评估\n- [inference] 因此需要建立台账\n## engineering (success)\n- [fact] 上线前完成评估\n\n## 冲突候选\n\n- 未发现候选冲突（规则：同一句式、不同来源、不同数值）。\n\n## 验收\n\n- a1: pass（app.structural）\n- a2: pass（app.structural）\n\n## 限制\n\n- 无\n\n## 证据\n\n- `ev-1`\n- `ev-2`\n- `ev-3`\n\n## 分任务明细\n\n### res"
     },
     {
       "check": "report.json and report.md are written atomically",

@@ -40,12 +40,12 @@
     {
       "check": "a correct login sets a hardened cookie",
       "result": "pass",
-      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJjdTNzR1h5MHdSVUliNUdoRk5YZE9BIiwiaWF0IjoxNzkyOTA0NTAwfQ.qjdlHlEqVu8UDFDbaP5JJ2I9By8; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJrSlpLSlpyVklEM0toQkpTbGYtbmZBIiwiaWF0IjoxNzkyOTA2NzA4fQ.IRs03PxGnTTuxKno1HakRVO0wlo; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
     },
     {
       "check": "the preseeded workspace is listed",
       "result": "pass",
-      "detail": "{\"workspaces\":[{\"name\":\"ai-governance\",\"description\":\"AI 治理与数据合规：公开政策法规的研读、引用与冲突报告\",\"corpus\":\"ai-governance\"}]}"
+      "detail": "{\"workspaces\":[{\"name\":\"ai-governance\",\"description\":\"AI 治理与数据合规：公开政策法规的研读、引用与冲突报告\",\"corpus\":\"ai-governance\"},{\"name\":\"e"
     },
     {
       "check": "an oversized goal is rejected",
@@ -60,12 +60,12 @@
     {
       "check": "the run detail never leaks a pid, credentials or the data directory",
       "result": "pass",
-      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792904500.2233188,\"terminal\":true,\"snapshot"
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792906708.1802528,\"terminal\":true,\"conflict"
     },
     {
       "check": "the run list omits the snapshot",
       "result": "pass",
-      "detail": "keys=['created_at', 'error', 'goal', 'phase', 'run_id', 'seq', 'stop_reason', 'terminal', 'workspace']"
+      "detail": "keys=['conflicts', 'created_at', 'error', 'goal', 'phase', 'run_id', 'seq', 'stop_reason', 'terminal', 'workspace']"
     },
     {
       "check": "the event stream starts with a snapshot frame",

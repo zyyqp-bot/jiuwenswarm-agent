@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.knowledge import corpus_db_path
 from app.models import Claim, ClaimKind, TaskOutcome, TaskResult
 from app.plan import PlanTask
 from app.report import build_report, write_report
@@ -63,6 +64,7 @@ class RunRecord:
     stop_requested: bool = False
     plan: list[dict] = field(default_factory=list)
     report_error: str | None = None
+    conflicts: list[dict] = field(default_factory=list)
 
 
 class RunService:
@@ -126,13 +128,14 @@ class RunService:
             if evidence_by_task is not None:
                 payload["evidence_by_task"] = evidence_by_task
             workspace_config = get_workspace(workspace)
-            corpus_db = self._settings.data_dir / "corpus.db"
-            if workspace_config is not None and corpus_db.is_file():
-                payload["corpus"] = {
-                    "db_path": str(corpus_db),
-                    "corpus": workspace_config.corpus,
-                    "access_scope": workspace_config.access_scope,
-                }
+            if workspace_config is not None:
+                corpus_db = corpus_db_path(self._settings.data_dir, workspace_config.corpus)
+                if corpus_db.is_file():
+                    payload["corpus"] = {
+                        "db_path": str(corpus_db),
+                        "corpus": workspace_config.corpus,
+                        "access_scope": workspace_config.access_scope,
+                    }
             _write_json(payload_path, payload)
 
             record = RunRecord(
@@ -426,7 +429,9 @@ class RunService:
                 results=results,
                 plan=plan,
                 evidence_by_task=record.snapshot.get("evidence") or {},
+                evidence_details=record.snapshot.get("evidence_details") or {},
             )
+            record.conflicts = [dict(candidate) for candidate in final.conflicts]
             write_report(run_dir, final, task_results=results)
         except Exception as exc:  # noqa: BLE001 - the run's state is authoritative
             record.report_error = f"{type(exc).__name__}: {exc}"

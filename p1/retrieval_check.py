@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from app.hooks import register_bridge, unregister_bridge  # noqa: E402
 from app.ingest import UnsupportedDocument, import_corpus, load_document  # noqa: E402
-from app.knowledge import KnowledgeIndex  # noqa: E402
+from app.knowledge import KnowledgeIndex, corpus_db_path  # noqa: E402
 from app.plan import PlanTask  # noqa: E402
 from app.retrieval_tool import RetrievalTool, make_retrieval_tool  # noqa: E402
 from app.run_bridge import RunBridge  # noqa: E402
@@ -81,7 +81,7 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         f"failures={imported['failures']}",
     )
 
-    db_path = data_dir / "corpus.db"
+    db_path = corpus_db_path(data_dir, "demo")
     hits = await _search(db_path, "安全评估", ["public"])
     checks.add(
         "a Chinese trigram query finds the passage",

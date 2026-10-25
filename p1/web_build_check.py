@@ -168,8 +168,8 @@ def main() -> int:
         f"missing={missing}" if missing else "all exported",
     )
 
-    # The three panes are the product. A bundle without them is a login form.
-    for marker in ("task-graph", "evidence-drawer", "report-pane"):
+    # The panes are the product. A bundle without them is a login form.
+    for marker in ("task-graph", "evidence-drawer", "conflicts-pane", "report-pane"):
         checks.add(
             f"the bundle contains the {marker} pane",
             marker in bundle,
@@ -186,6 +186,20 @@ def main() -> int:
         "Report.jsx fetches the run report",
         "reportMarkdown" in report_text or "/report.md" in report_text,
         report_text[:120] or "missing web/src/Report.jsx",
+    )
+
+    conflicts_source = WEB / "src" / "Conflicts.jsx"
+    conflicts_text = (
+        conflicts_source.read_text(encoding="utf-8", errors="replace")
+        if conflicts_source.is_file()
+        else ""
+    )
+    checks.add(
+        "Conflicts.jsx states the rule and shows both sides",
+        "同一句式" in conflicts_text
+        and "claim_text" in conflicts_text
+        and "source_uri" in conflicts_text,
+        conflicts_text[:120] or "missing web/src/Conflicts.jsx",
     )
 
     return checks.report(RESULTS_PATH, scope="SPA build and API wiring")

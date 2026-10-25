@@ -25,12 +25,12 @@
     {
       "check": "the workspace registry reaches the client",
       "result": "pass",
-      "detail": "workspaces=['ai-governance']"
+      "detail": "workspaces=['ai-governance', 'education-policy']"
     },
     {
       "check": "a run starts without a plan in the request",
       "result": "pass",
-      "detail": "status=200 run_id=run-20261025T050140-cd3eaf"
+      "detail": "status=200 run_id=run-20261025T053921-505040"
     },
     {
       "check": "the stream delivers a snapshot frame",
@@ -65,7 +65,7 @@
     {
       "check": "the report renders",
       "result": "pass",
-      "detail": "status=200 bytes=514"
+      "detail": "status=200 bytes=558"
     },
     {
       "check": "the report cites the evidence the tool returned",

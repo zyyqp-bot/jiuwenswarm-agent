@@ -24,6 +24,7 @@ It holds no framework objects, starts no runtime and calls no model.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
@@ -89,6 +90,8 @@ class FinalResult(BaseModel):
     artifact_refs: tuple[str, ...] = ()
     limitations: tuple[str, ...] = ()
     usage: Usage | None = None
+    conflicts: tuple[dict[str, Any], ...] = ()
+    """Candidate conflicts across sources: shown, never resolved."""
 
 
 def _unique(values: Iterable[str]) -> tuple[str, ...]:

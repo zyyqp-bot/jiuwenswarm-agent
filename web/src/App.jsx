@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api.js";
+import Conflicts from "./Conflicts.jsx";
 import EvidenceDrawer from "./EvidenceDrawer.jsx";
 import Report from "./Report.jsx";
 import TaskGraph from "./TaskGraph.jsx";
@@ -171,6 +172,7 @@ function RunDetail({ detail }) {
         />
       </div>
 
+      <Conflicts conflicts={detail.conflicts || []} />
       <Report runId={detail.run_id} terminal={Boolean(detail.terminal)} />
     </section>
   );
@@ -238,6 +240,14 @@ function Workbench({ session, onLoggedOut }) {
           unsubscribe.current?.();
           unsubscribe.current = null;
           refreshRuns().catch(() => {});
+          // Conflicts are computed when the report is written, after the
+          // terminal frame, so the record has to be re-read once.
+          api
+            .getRun(selectedId)
+            .then((record) => {
+              if (alive) setDetail(record);
+            })
+            .catch(() => {});
         }
       },
       (failure) => {

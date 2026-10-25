@@ -234,6 +234,7 @@ def _record_json(record: RunRecord, *, include_snapshot: bool = True) -> dict[st
         "seq": record.seq,
         "created_at": record.created_at,
         "terminal": record.terminal,
+        "conflicts": list(record.conflicts),
     }
     if include_snapshot:
         # Defense in depth: the supervisor no longer writes these, but a

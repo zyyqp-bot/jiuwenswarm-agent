@@ -1,0 +1,42 @@
+{
+  "checks_passed": 7,
+  "checks_total": 7,
+  "checks": [
+    {
+      "check": "each workspace is seeded into its own database",
+      "result": "pass",
+      "detail": "summaries=2"
+    },
+    {
+      "check": "a workspace cannot retrieve the other workspace's chunks",
+      "result": "pass",
+      "detail": "alpha_for_beta=[] beta_for_alpha=[]"
+    },
+    {
+      "check": "the same workspace can retrieve its own chunks",
+      "result": "pass",
+      "detail": "hits=['doc.md:2ce2cfe19504629a:0:baa03be731ba', 'doc.md:2ce2cfe19504629a:1:632022bda728']"
+    },
+    {
+      "check": "a second boot does not re-index existing corpora",
+      "result": "pass",
+      "detail": "second=[]"
+    },
+    {
+      "check": "adding a workspace seeds only the new corpus",
+      "result": "pass",
+      "detail": "added=1"
+    },
+    {
+      "check": "the registry exposes two distinct workspaces",
+      "result": "pass",
+      "detail": "workspaces=['ai-governance', 'education-policy']"
+    },
+    {
+      "check": "both corpora ship real documents",
+      "result": "pass",
+      "detail": "ai=6 education=9"
+    }
+  ],
+  "scope": "per-corpus isolation and workspace registry"
+}

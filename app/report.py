@@ -15,10 +15,12 @@ import json
 import os
 import threading
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from app.aggregator import Aggregator, FinalResult
+from app.conflicts import ConflictCandidate, detect_conflicts
 from app.models import (
     AcceptanceCheck,
     AcceptanceResult,
@@ -41,6 +43,7 @@ def build_report(
     unavailable: Iterable[str] = (),
     usage: Any = None,
     evidence_by_task: Mapping[str, Iterable[str]] | None = None,
+    evidence_details: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> FinalResult:
     """Merge accepted results into the run's final result.
 
@@ -69,7 +72,7 @@ def build_report(
                 verifier=APP_VERIFIER,
                 evidence_refs=cited,
             )
-    return Aggregator().merge(
+    merged = Aggregator().merge(
         run_id=run_id,
         results=results,
         required_acceptance_ids=required,
@@ -77,6 +80,10 @@ def build_report(
         unverified_claim_texts=unverified,
         unavailable_evidence_ids=unavailable,
         usage=usage,
+    )
+    conflicts = detect_conflicts(results, evidence_details or {})
+    return merged.model_copy(
+        update={"conflicts": tuple(asdict(candidate) for candidate in conflicts)}
     )
 
 
@@ -97,14 +104,44 @@ def _structural_verdict(
     return True, cited
 
 
+def _field(item: Any, name: str) -> Any:
+    """Read a conflict field from either its dataclass or its JSON form."""
+    if isinstance(item, Mapping):
+        return item.get(name)
+    return getattr(item, name, None)
+
+
 def report_markdown(
     final: FinalResult,
     *,
     task_results: Sequence[TaskResult] = (),
+    conflicts: Sequence[ConflictCandidate | Mapping[str, Any]] | None = None,
 ) -> str:
     """Render the deliverable as deterministic Markdown."""
+    items = final.conflicts if conflicts is None else conflicts
     lines: list[str] = [f"# 证据工作台报告 · {final.run_id}", "", "## 结论", ""]
     lines.append(final.answer.strip() or "（无结论）")
+
+    lines.extend(["", "## 冲突候选", ""])
+    if items:
+        lines.append("检测规则：同一句式、不同来源、不同数值。以下仅并列呈现，不作裁决。")
+        for candidate in items:
+            pattern = _field(candidate, "pattern") or "（句式）"
+            values = _field(candidate, "values") or ()
+            lines.extend(["", f"### {pattern}", "", f"- 数值：{' / '.join(values)}"])
+            for side in _field(candidate, "sides") or ():
+                source = _field(side, "source_uri") or ""
+                locator = _field(side, "locator") or ""
+                evidence_id = _field(side, "evidence_id") or ""
+                claim_text = _field(side, "claim_text") or ""
+                passage = _field(side, "passage") or ""
+                lines.append(f"- [{_field(side, 'task_id')}] {claim_text}")
+                where = source + (f" · {locator}" if locator else "")
+                lines.append(f"  - 来源：{where} · `{evidence_id}`")
+                if passage:
+                    lines.append(f"  - 原文：{passage}")
+    else:
+        lines.append("- 未发现候选冲突（规则：同一句式、不同来源、不同数值）。")
 
     lines.extend(["", "## 验收", ""])
     if final.acceptance_checks:

@@ -49,6 +49,7 @@ __all__ = [
     "METHOD_TRIGRAM_BM25",
     "MIN_TRIGRAM_CHARS",
     "KnowledgeIndex",
+    "corpus_db_path",
 ]
 
 CHUNK_CHARS = 400
@@ -131,6 +132,19 @@ def _phrases(terms: Iterable[str]) -> str:
     return " AND ".join('"' + term.replace('"', '""') + '"' for term in terms)
 
 
+def corpus_db_path(data_dir: str | Path, corpus: str) -> Path:
+    """Each corpus owns one database.
+
+    Sharing a file across corpora breaks the module's own contract ("one index
+    serves one corpus"): the retrieval queries carry no corpus predicate, so a
+    second workspace would see the first one's chunks. Giving each corpus its
+    own file makes the authorisation decision the choice of file, exactly as
+    PROJECT.md section 7.2 requires.
+    """
+    safe = "".join(char if char.isalnum() or char in "-_" else "_" for char in corpus)
+    return Path(data_dir) / "corpora" / f"{safe}.db"
+
+
 class KnowledgeIndex:
     """One corpus at one access scope, backed by its own SQLite database."""
 
@@ -142,7 +156,9 @@ class KnowledgeIndex:
     @classmethod
     async def open(cls, db_path: str | Path, *, corpus: str, access_scope: str) -> "KnowledgeIndex":
         """Open (creating if needed) the index for one corpus and scope."""
-        connection = await aiosqlite.connect(str(db_path))
+        path = Path(db_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        connection = await aiosqlite.connect(str(path))
         try:
             connection.row_factory = aiosqlite.Row
             # Concurrent runs share one corpus file; WAL lets readers proceed

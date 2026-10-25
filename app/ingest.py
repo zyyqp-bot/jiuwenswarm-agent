@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from app.knowledge import KnowledgeIndex
+from app.knowledge import KnowledgeIndex, corpus_db_path
 
 __all__ = ["UnsupportedDocument", "load_document", "import_corpus"]
 
@@ -54,7 +54,7 @@ async def import_corpus(
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     index = await KnowledgeIndex.open(
-        data_dir / "corpus.db", corpus=corpus, access_scope=scope
+        corpus_db_path(data_dir, corpus), corpus=corpus, access_scope=scope
     )
     documents = 0
     failures: list[str] = []

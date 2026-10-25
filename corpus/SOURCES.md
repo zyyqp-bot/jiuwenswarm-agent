@@ -11,6 +11,20 @@
 | 中华人民共和国个人信息保护法.md | 74 | 第十三届全国人大常委会第三十次会议，2021-08-20 | 2021-11-01 | <http://www.npc.gov.cn/npc/c2/c30834/202108/t20210820_313088.html> |
 | 中华人民共和国数据安全法.md | 55 | 第十三届全国人大常委会第二十九次会议，2021-06-10 | 2021-09-01 | <http://www.npc.gov.cn/npc/c2/c30834/202106/t20210610_311888.html> |
 
+`education-policy/` 是第二个最小工作区的语料：教育领域的公开法律与政策文件，抓取日期 2026-10-25。用途是验证“换语料 + 换提示词即可运行”和两个工作区互不泄漏检索结果，不追求完整的教育法体系。抓取脚本见 [scripts/fetch_education_corpus.py](../scripts/fetch_education_corpus.py)。
+
+| 文件 | 来源 |
+|---|---|
+| 中华人民共和国教育法.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202205/t20220527_1070804.html> |
+| 中华人民共和国学位法.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202405/t20240513_1122444.html> |
+| 中华人民共和国学前教育法.md | <http://www.moe.gov.cn/jyb_sjzl/sjzl_zcfg/zcfg_jyfl/202411/t20241108_1161363.html> |
+| 中华人民共和国义务教育法.md | <http://www.moe.gov.cn/jyb_sjzl/sjzl_zcfg/zcfg_jyfl/202110/t20211029_575949.html> |
+| 湖南省职业教育条例.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202412/t20241209_33521114.html> |
+| 未成年人网络保护条例.md | <https://www.gov.cn/zhengce/zhengceku/202310/content_6911289.htm> |
+| 湖南省实施未成年人保护法办法.md | <http://www.hunan.gov.cn/hnszf/szf/hnzb_18/c102939/202411/02222gqgsdsddtcfvurptpusubvvggrfbfffbrhukgepdkfqnfkqserucnbsqdb/202406/t20240614_33327758.html> |
+| 湖南省预防中小学生溺水若干规定.md | <http://www.hunan.gov.cn/hnszf/szf/hnzb_18/c102939/202411/02222gqgsdsddtcfvurptpusubvvggrfbfffbrhukgepdkfqnfkqserucnbsqdb/202406/t20240614_33327763.html> |
+| 2026年湖南省普通高校招生工作通知.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202606/t20260601_1179223.html> |
+
 ## 待补
 
 - 《中华人民共和国网络安全法》：2025-10-28 修正、2026-01-01 施行；国家法律法规数据库只提供 OFD/PDF 合并文本，尚未取得可核对的纯文本，暂不纳入，避免引用过期条文。
