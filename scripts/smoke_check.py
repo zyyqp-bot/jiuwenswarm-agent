@@ -52,6 +52,25 @@ def _stage(name: str) -> None:
     print(f"[stage] {name}")
 
 
+def _diagnose(record: dict) -> None:
+    """Print the team state that explains a failed run (no secrets)."""
+    snapshot = record.get("snapshot") or {}
+    for key in ("team_markers", "bootstrapped", "tool_names", "fatal_errors"):
+        print(f"   {key}={snapshot.get(key)!r}")
+    plan = snapshot.get("plan") or record.get("plan") or []
+    print(f"   plan={[(task.get('task_id'), task.get('assignee')) for task in plan]!r}")
+    results = snapshot.get("results") or record.get("results") or {}
+    print(
+        "   results="
+        + repr(
+            {
+                key: (value.get("outcome"), len(value.get("claims") or []))
+                for key, value in results.items()
+            }
+        )
+    )
+
+
 def run_checks(*, base_url: str, user: str, password: str, goal: str, wait_seconds: float) -> bool:
     base = base_url.rstrip("/")
     jar = http.cookiejar.CookieJar()
@@ -136,6 +155,7 @@ def run_checks(*, base_url: str, user: str, password: str, goal: str, wait_secon
     if record.get("phase") != "returned" or record.get("error"):
         # A terminal failed or stopped run is not a successful smoke check.
         print(f"run did not succeed: {record.get('error') or record.get('stop_reason')}")
+        _diagnose(record)
         return False
 
     _stage("report")

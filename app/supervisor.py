@@ -211,7 +211,11 @@ async def run_payload(
                     ):
                         await queue.put(chunk)
                 except BaseException as exc:  # noqa: BLE001 - reported on the main path
-                    producer_error.append(exc)
+                    # Cancellation here is this supervisor's own decision at the
+                    # idle/deadline break; stop_reason already records it. Only a
+                    # genuine producer failure belongs in the run error.
+                    if not isinstance(exc, asyncio.CancelledError):
+                        producer_error.append(exc)
                 finally:
                     await queue.put(None)
 
@@ -322,6 +326,18 @@ def record_crash(payload: dict[str, Any], exc: BaseException) -> dict[str, Any]:
     return snapshot
 
 
+def _exit_process(code: int) -> None:
+    """Leave without waiting on framework threads during interpreter shutdown.
+
+    The native runner can leave non-daemon threads behind. A normal return lets
+    Python join them, so the process outlives its own final snapshot and the API
+    terminates it — turning a completed team into ``exit=-15``.
+    """
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)
+
+
 def main(argv: list[str]) -> int:
     """CLI: ``python app/supervisor.py --payload <path>``."""
     if "--payload" not in argv:
@@ -342,7 +358,8 @@ def main(argv: list[str]) -> int:
         and not snapshot["error"]
         and snapshot.get("stream_stop_reason") == "team_completed"
     )
-    return 0 if ok else 1
+    _exit_process(0 if ok else 1)
+    raise AssertionError("unreachable: _exit_process does not return")
 
 
 if __name__ == "__main__":

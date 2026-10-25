@@ -64,6 +64,17 @@ class _FakeRunner:
         return _iterate()
 
 
+class _IdleRunner(_FakeRunner):
+    """Report an idle board, then stay silent past the grace period."""
+
+    def run_agent_team_streaming(self, *, agent_team, inputs, session):
+        async def _iterate():
+            yield _Chunk("message", {"event_type": "team.idle"})
+            await asyncio.sleep(10)
+
+        return _iterate()
+
+
 class _SlowRunner(_FakeRunner):
     """Yield late enough for the reporter thread to have a write in flight."""
 
@@ -244,6 +255,23 @@ async def _run(checks: Checks) -> None:
             f"error={snapshot['error']!r} phase={snapshot['phase']!r}",
         )
 
+    # --- our own cancellation is not a run error ---------------------------
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        original_grace = supervisor_module.IDLE_GRACE_SECONDS
+        supervisor_module.IDLE_GRACE_SECONDS = 0.05
+        try:
+            snapshot = await run_payload(_payload(directory), runner_factory=_IdleRunner)
+        finally:
+            supervisor_module.IDLE_GRACE_SECONDS = original_grace
+        checks.add(
+            "cancelling the producer at idle is not recorded as an error",
+            snapshot["phase"] == "returned"
+            and snapshot["stream_stop_reason"] == "idle_grace"
+            and snapshot["error"] is None,
+            f"stop_reason={snapshot['stream_stop_reason']!r} error={snapshot['error']!r}",
+        )
+
     # --- the reporter cannot overwrite the final snapshot -------------------
     with tempfile.TemporaryDirectory() as raw:
         directory = Path(raw)
@@ -292,10 +320,59 @@ def _crash_check(checks: Checks) -> None:
         )
 
 
+def _exit_check(checks: Checks) -> None:
+    """The child must not linger in interpreter shutdown after its snapshot.
+
+    A real run leaves framework threads alive; waiting for them made the API
+    terminate the child two seconds after a complete snapshot (exit=-15) and
+    classify a finished team as failed.
+    """
+    with tempfile.TemporaryDirectory() as raw:
+        directory = Path(raw)
+        payload = {
+            "run_id": "run-exit",
+            "goal": "answer",
+            "plan": [
+                {
+                    "task_id": "research",
+                    "role": "teammate",
+                    "instruction": "collect evidence",
+                    "acceptance_ids": ["a1"],
+                    "assignee": "ghost",
+                }
+            ],
+            "members": ["research", "engineering"],
+            "snapshot_path": str(directory / "snapshot.json"),
+        }
+        payload_path = directory / "payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+        calls: list[int] = []
+        original = supervisor_module._exit_process
+
+        def _fake_exit(code: int) -> None:
+            calls.append(code)
+            raise SystemExit(code)
+
+        supervisor_module._exit_process = _fake_exit
+        try:
+            try:
+                supervisor_module.main(["--payload", str(payload_path)])
+            except SystemExit:
+                pass
+        finally:
+            supervisor_module._exit_process = original
+        checks.add(
+            "the supervisor hard-exits after writing its snapshot",
+            calls == [1] and (directory / "snapshot.json").is_file(),
+            f"exit_codes={calls} snapshot={(directory / 'snapshot.json').is_file()}",
+        )
+
+
 def main() -> int:
     checks = Checks()
     asyncio.run(_run(checks))
     _crash_check(checks)
+    _exit_check(checks)
     return checks.report(
         RESULTS_PATH,
         scope="supervisor orchestration with a fake runner; no team, no model call",
