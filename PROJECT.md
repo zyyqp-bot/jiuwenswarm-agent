@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.29 · 更新日期：2026-10-25（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 41 KB；部署 004）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
+版本：0.29 · 更新日期：2026-10-25（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接上两个预置工作区各完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 59 KB / 68 KB；部署 005）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -40,7 +40,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
 | Plan 2 在线工作台（离线） | 已实现：登录会话、按运行子进程 + 原子快照、SSE、任务板投影、计划器与确定性回退、证据详情快照、单容器镜像定义、SPA 三个面板；37 个离线脚本 604 项断言全绿；整支审查的 Critical/Important 已修复 |
 | Plan 2 真实模型运行（本地） | 已执行：`p1/live_product_check.py` 10/10——无预置计划，TinyAgent 真实规划 2 任务（research/engineering 各一），成员检索 6 份法规、11 条 fact 全部引用本任务检索到的证据，`team.completed`，结构化验收 complete，报告 37.9 KB；70 次模型请求无一越出工具白名单；`p1/delegation_nail.py` 复跑 7/7 |
-| Plan 2 云托管部署 | **已执行**：CloudBase Run 服务 `workbench`（上海，端口 8000，PUBLIC，单实例），部署 004 后 `scripts/smoke_check.py` 通过——健康检查、登录、真实回合、SSE、终态 `returned`/`team_completed`、报告 41 KB。**未挂持久卷**：当前凭证无 CFS 权限，且默认 VPC 无出网路由，挂卷会危及模型调用；`/data` 为实例临时层，重启后运行历史与索引重建 |
+| Plan 2 云托管部署 | **已执行**：CloudBase Run 服务 `workbench`（上海，端口 8000，PUBLIC，单实例）。部署 004 完成首次真实回合；部署 005（D9–D11 批次）后两个工作区各自通过 smoke——`ai-governance` 报告 59 KB、`education-policy` 报告 68 KB，均 `returned`/`team_completed`。**未挂持久卷**：当前凭证无 CFS 权限，且默认 VPC 无出网路由，挂卷会危及模型调用；`/data` 为实例临时层，重启后运行历史与索引重建 |
 | 垂直语料内容 | 已放入 6 份公开法规原文（暂行办法 24 条、标识办法 14 条、算法推荐 35 条、深度合成 25 条、个人信息保护法 74 条、数据安全法 55 条），来源与条数见 `corpus/SOURCES.md`；离线导入 6 文档 92 块、0 失败 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 应用代码已实现；真实 RAG 检索链路离线可跑，真实模型回合见 P1 记录；恢复测试未执行 |
@@ -732,7 +732,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
-| 2026-10-25 | 0.29 | R07、R08、R15 | D9–D11 第一批：冲突候选检测（同句式/不同来源/不同数值，仅并列不裁决）+ 报告小节 + SPA 面板；第二个工作区 `education-policy`（9 份公开教育政策）；**修复跨语料检索泄漏**——原先所有工作区共用一个 `corpus.db` 且查询没有 corpus 谓词，现改为每语料一个 `data/corpora/<corpus>.db`；CloudBase 部署 004 后 smoke 通过 | `p1/conflicts_check.py` 9/9、`p1/workspace_check.py` 7/7、retrieval 17/17、seed 4/4、report 14/14、api 21/21、run_service 22/22、e2e 15/15、web_build 17/17；教育语料离线导入 9 文档 / 173 块；现有语料没有真实冲突对，面板空状态是诚实的 |
+| 2026-10-25 | 0.29 | R07、R08、R15 | D9–D11 第一批：冲突候选检测（同句式/不同来源/不同数值，仅并列不裁决）+ 报告小节 + SPA 面板；第二个工作区 `education-policy`（9 份公开教育政策）；**修复跨语料检索泄漏**——原先所有工作区共用一个 `corpus.db` 且查询没有 corpus 谓词，现改为每语料一个 `data/corpora/<corpus>.db`；CloudBase 部署 005 验证 | `p1/conflicts_check.py` 9/9、`p1/workspace_check.py` 7/7、全量 39 脚本 630 断言 0 失败、web_build 17/17；教育语料离线导入 9 文档 / 173 块；部署 005 后两个工作区 smoke 均通过（报告 59 KB / 68 KB）；现有语料没有真实冲突对，面板空状态是诚实的 |
 | 2026-10-24 | 0.28 | R04、R08、R11、参赛在线链接 | 产品级真实运行：TinyAgent 规划 2 任务、成员检索并引用 6 份法规、结构化验收 complete；计划器限制为“每人一个任务、3-6 条 claim”并拒绝单成员计划；白名单补回 `build_team`（原生任务板依赖它） | `p1/live_product_check.py` 10/10；`p1/delegation_nail.py` 7/7；离线套件 597 项断言仍全绿；部署未执行 |
 | 2026-10-24 | 0.27 | R04、R08、R11、参赛在线链接 | 整支审查后的 Critical/Important 修复：终态快照与 SPA terminal、完成判定、Stop 竞态、工具白名单、结构化验收、生产占位配置拒绝、单实例锁与 lifespan、密钥不落盘、路径过滤、列表瘦身、证据上限、请求边界、WAL、目标界定、语料入库 | 37 个离线脚本 604 项断言 0 失败；依赖图/reviewer、重启恢复、报告双文件原子性作为已记录取舍保留；真实回合与部署仍未执行 |
 | 2026-10-24 | 0.26 | R04、R08、R11、参赛在线链接 | Plan 2 全部 14 个任务：会话与 Cookie、运行服务与快照、API/SSE、报告、任务板、复核裁决、依赖断言、准入限制、语料与检索、计划器、SPA 三面板、任务图与证据详情、单容器镜像与部署文档、离线端到端链路；README 补齐本地运行/导入语料/构建/部署/验证 | 35 个离线脚本 564 项断言 0 失败；e2e 15/15（`live_run: not_run`）；`_child_env` 缺仓库根的真实缺陷已修并加断言；Docker 构建与云端运行未执行 |
