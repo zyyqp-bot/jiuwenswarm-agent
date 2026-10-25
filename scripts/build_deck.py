@@ -226,7 +226,7 @@ def main() -> int:
             ["运行", "终态", "关键结果"],
             ["本地产品级验证", "team.completed", "11 条 fact 全部引用本任务证据"],
             ["公网 · AI 治理", "team_completed", "报告 59 KB"],
-            ["公网 · 教育政策", "team_completed", "报告 68 KB"],
+            ["公网 · 教育政策", "team_completed", "报告 57 KB"],
             ["离线检查", "39 脚本 / 630 断言", "0 失败"],
         ],
     )
