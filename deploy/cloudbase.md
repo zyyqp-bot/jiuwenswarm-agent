@@ -81,3 +81,9 @@ python scripts/smoke_check.py --base-url https://<默认域名> \
 | 运行一直 `starting` | 看子进程日志：`upstream` 下载是否成功、`PYTHONPATH` 是否两个目录都在 |
 | SSE 只收到一次 | 网关是否缓冲响应；确认走的是默认域名而非静态托管 |
 | 报告 404 | 运行尚未终止，或 `/data` 卷未挂载导致写到了容器临时层 |
+
+## 8. 默认域名的访问提示中间页
+
+CloudBase 会对 `*.run.tcloudbase.com` 等默认域名的浏览器导航请求展示“页面访问提示”，访客点“确定访问”后写入 `cloudbase_confirm_domain_access` Cookie 并进入应用；API 请求不受影响。
+
+平台文档写明，移除中间页的唯一合规途径是绑定**已完成 ICP 备案**的自定义域名。比赛期间若没有备案域名，保留该提示，并在提交说明中告诉评委先点一次“确定访问”。
