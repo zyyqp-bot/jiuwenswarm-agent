@@ -24,7 +24,7 @@ class Workspace:
 WORKSPACES: dict[str, Workspace] = {
     "education-policy": Workspace(
         name="education-policy",
-        description="教育政策与 AI 教育指南：学校引入 AI 教学工具的合规评估与引用报告",
+        description="教育政策：AI 教学工具合规评估与引用报告",
         corpus="education-policy",
         access_scope="public",
     ),

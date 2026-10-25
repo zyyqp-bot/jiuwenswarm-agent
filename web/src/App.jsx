@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api.js";
 import Conflicts from "./Conflicts.jsx";
 import EvidenceDrawer from "./EvidenceDrawer.jsx";
+import { useLiquidGlass } from "./glass.js";
 import Report from "./Report.jsx";
 import TaskGraph from "./TaskGraph.jsx";
 import { mergeSnapshot } from "./snapshot.js";
@@ -31,6 +32,7 @@ function Login({ onLoggedIn }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const cardRef = useLiquidGlass(22);
 
   async function submit(event) {
     event.preventDefault();
@@ -48,7 +50,7 @@ function Login({ onLoggedIn }) {
 
   return (
     <main className="login-page">
-      <form className="login-card" onSubmit={submit}>
+      <form ref={cardRef} className="login-card glass-surface" onSubmit={submit}>
         <p className="eyebrow">JiuwenSwarm · 证据工作台</p>
         <h1>带引用的资料研读</h1>
         <p className="muted">
@@ -116,7 +118,26 @@ function RunDetail({ detail }) {
   }, [detail?.run_id]);
 
   if (!detail) {
-    return <p className="muted">选择一次运行，查看任务与证据。</p>;
+    return (
+      <div className="empty-state">
+        <p className="eyebrow">GET STARTED</p>
+        <h2>三步完成一次可审计研读</h2>
+        <ol className="start-steps">
+          <li>
+            <strong>选择工作区</strong>
+            <span>教育政策或 AI 治理，两个独立语料库</span>
+          </li>
+          <li>
+            <strong>写下目标</strong>
+            <span>自然语言即可，例如评估 AI 作业批改工具是否合规</span>
+          </li>
+          <li>
+            <strong>查看报告</strong>
+            <span>结论带引用，冲突并列，验收逐项列出</span>
+          </li>
+        </ol>
+      </div>
+    );
   }
   const snapshot = detail.snapshot || {};
   const tasks = snapshot.tasks || [];
@@ -179,6 +200,7 @@ function RunDetail({ detail }) {
 }
 
 function Workbench({ session, onLoggedOut }) {
+  const topbarRef = useLiquidGlass(18);
   const [workspaceList, setWorkspaceList] = useState([]);
   const [workspace, setWorkspace] = useState("ai-governance");
   const [goal, setGoal] = useState("");
@@ -299,7 +321,7 @@ function Workbench({ session, onLoggedOut }) {
 
   return (
     <div className="workbench">
-      <header className="topbar">
+      <header ref={topbarRef} className="topbar glass-surface">
         <div>
           <p className="eyebrow">JiuwenSwarm · 证据工作台</p>
           <h1>资料研读与带引用报告</h1>
@@ -313,7 +335,7 @@ function Workbench({ session, onLoggedOut }) {
       </header>
 
       <main className="layout">
-        <section className="panel controls">
+        <section className="panel controls glass-surface">
           <h2>新建任务</h2>
           <form onSubmit={start}>
             <label>
@@ -345,7 +367,7 @@ function Workbench({ session, onLoggedOut }) {
           <RunList runs={runs} selected={selectedId} onSelect={setSelectedId} />
         </section>
 
-        <section className="panel detail">
+        <section className="panel detail glass-surface">
           <RunDetail detail={detail} />
           {detail && !detail.terminal ? (
             <button type="button" className="ghost danger" onClick={stop}>

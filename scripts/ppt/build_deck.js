@@ -8,12 +8,14 @@ const pptxgen = require("pptxgenjs");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const SHOTS = path.join(ROOT, "docs", "submission", "screenshots");
-const OUT = path.join(
-  ROOT,
-  "docs",
-  "submission",
-  "【教育-重庆邮电大学-赵乙亦-证据工作台】.pptx"
-);
+const OUT =
+  process.env.DECK_OUT ||
+  path.join(
+    ROOT,
+    "docs",
+    "submission",
+    "【教育-重庆邮电大学-赵乙亦-证据工作台】.pptx"
+  );
 
 const C = {
   forest: "163A2C",

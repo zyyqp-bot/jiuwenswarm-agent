@@ -42,3 +42,8 @@ Thumbs.db
 # PPT build tooling and render previews
 scripts/ppt/node_modules/
 .deck_preview/
+scripts/ui/node_modules/
+.local_data/
+.local_server.log
+.ui_preview/
+docs/submission/~$*

@@ -553,3 +553,430 @@ a.ghost.small {
   opacity: 0.55;
   word-break: break-all;
 }
+
+/* ======================================================================
+   Liquid glass theme (2026-10)
+   Dark forest atmosphere + translucent panels. The SVG displacement is
+   applied by glass.js; the blur here is the fallback and the base layer.
+   ====================================================================== */
+
+:root {
+  --ink: #eef3ec;
+  --muted: #a7b6ab;
+  --line: rgba(255, 255, 255, 0.14);
+  --surface: rgba(18, 38, 30, 0.55);
+  --canvas: rgba(8, 18, 14, 0.45);
+  --accent: #e3a94f;
+  --accent-soft: rgba(227, 169, 79, 0.16);
+  --danger: #f0938a;
+  --ok: #82d3a9;
+  --warn: #eac47e;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 700px at 12% -8%, rgba(46, 110, 73, 0.55) 0%, transparent 62%),
+    radial-gradient(900px 620px at 102% 6%, rgba(150, 102, 38, 0.42) 0%, transparent 58%),
+    radial-gradient(900px 900px at 55% 112%, rgba(23, 74, 55, 0.55) 0%, transparent 62%),
+    #081712;
+  background-attachment: fixed;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+.workbench,
+.login-page {
+  position: relative;
+  z-index: 1;
+}
+
+h1,
+h2,
+strong {
+  color: var(--ink);
+}
+
+.muted,
+.run-time,
+.facts dt,
+.column-label,
+.graph-node span,
+.graph-node small,
+.evidence-meta,
+.evidence-id,
+.account {
+  color: var(--muted);
+}
+
+.eyebrow {
+  color: var(--accent);
+}
+
+/* -- glass surfaces ---------------------------------------------------- */
+
+.glass-surface,
+.topbar,
+.panel,
+.login-card {
+  position: relative;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 55%, rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 60px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4) brightness(1.05);
+  backdrop-filter: blur(18px) saturate(1.4) brightness(1.05);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+}
+
+.login-card {
+  border-radius: 20px;
+}
+
+.login-page {
+  background:
+    radial-gradient(420px 320px at 50% 42%, rgba(227, 169, 79, 0.16) 0%, transparent 70%);
+}
+
+/* -- controls ---------------------------------------------------------- */
+
+label {
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  color: var(--ink);
+  background: rgba(4, 11, 8, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(227, 169, 79, 0.75);
+  box-shadow: 0 0 0 3px rgba(227, 169, 79, 0.18);
+  background: rgba(6, 15, 11, 0.66);
+}
+
+select option {
+  background: #10251d;
+  color: var(--ink);
+}
+
+button {
+  background: linear-gradient(180deg, #f0b961, #d9963a);
+  color: #1b1307;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(227, 169, 79, 0.22);
+}
+
+button.ghost {
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+button.ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+button.ghost.danger {
+  color: var(--danger);
+  border-color: rgba(240, 147, 138, 0.45);
+}
+
+/* -- lists and states -------------------------------------------------- */
+
+.run-item,
+.claim,
+.graph-node {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.run-item:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.run-item.selected,
+.claim.active {
+  background: var(--accent-soft);
+  border-color: rgba(227, 169, 79, 0.55);
+}
+
+.graph-node.selected {
+  outline: 2px solid var(--accent);
+}
+
+.facts div,
+.conflict-item,
+.report-body {
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.phase-returned {
+  background: rgba(130, 211, 169, 0.16);
+  color: var(--ok);
+  border-color: rgba(130, 211, 169, 0.35);
+}
+
+.phase-failed,
+.phase-invalid_plan {
+  background: rgba(240, 147, 138, 0.16);
+  color: var(--danger);
+  border-color: rgba(240, 147, 138, 0.35);
+}
+
+.phase-streaming,
+.phase-starting {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(227, 169, 79, 0.4);
+}
+
+.phase-stopped {
+  background: rgba(234, 196, 126, 0.14);
+  color: var(--warn);
+  border-color: rgba(234, 196, 126, 0.35);
+}
+
+/* -- inner panes: tinted, not glass-on-glass --------------------------- */
+
+.pane,
+.evidence-drawer,
+.report-pane,
+.conflicts-pane {
+  background: rgba(6, 16, 12, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.evidence-item {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.evidence-source {
+  color: var(--ink);
+}
+
+.evidence-text {
+  color: #dfe8e1;
+}
+
+.claim-kind {
+  color: var(--accent);
+}
+
+.conflict-item {
+  border-left: 3px solid var(--accent);
+}
+
+.conflict-item blockquote {
+  border-left-color: rgba(255, 255, 255, 0.2);
+  color: var(--muted);
+}
+
+.report-body {
+  color: #dfe8e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.report-body::selection,
+.evidence-text::selection {
+  background: rgba(227, 169, 79, 0.35);
+}
+
+/* -- scrollbars and motion -------------------------------------------- */
+
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel,
+.login-card {
+  animation: rise-in 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.panel.detail {
+  animation-delay: 0.08s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .login-card {
+    animation: none;
+  }
+}
+
+/* -- atmosphere behind the glass --------------------------------------- */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    conic-gradient(from 212deg at 28% 18%, transparent 0deg 120deg,
+      rgba(227, 169, 79, 0.12) 148deg, transparent 176deg),
+    radial-gradient(48% 38% at 72% 24%, rgba(157, 191, 165, 0.18), transparent 72%),
+    radial-gradient(40% 30% at 44% 62%, rgba(227, 169, 79, 0.09), transparent 70%);
+  filter: blur(46px);
+}
+
+/* -- empty state -------------------------------------------------------- */
+
+.empty-state {
+  padding: 2.4rem 1.6rem;
+}
+
+.empty-state h2 {
+  font-size: 1.35rem;
+  margin: 0.2rem 0 1.4rem;
+}
+
+.start-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  counter-reset: step;
+  max-width: 34rem;
+}
+
+.start-steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2.1rem 1fr;
+  gap: 0.2rem 0.9rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.start-steps li::before {
+  content: counter(step, decimal-leading-zero);
+  grid-row: span 2;
+  align-self: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(227, 169, 79, 0.16);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.start-steps strong {
+  font-size: 0.95rem;
+}
+
+.start-steps span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* A high-contrast band behind the login card so the refraction reads. */
+.login-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-page::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 640px;
+  height: 150px;
+  transform: translate(-50%, -50%) rotate(-16deg);
+  background: linear-gradient(
+    90deg,
+    rgba(227, 169, 79, 0.5),
+    rgba(157, 191, 165, 0.22) 45%,
+    rgba(227, 169, 79, 0.42)
+  );
+  filter: blur(22px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-card {
+  z-index: 1;
+}
