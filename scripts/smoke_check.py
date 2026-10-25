@@ -71,7 +71,15 @@ def _diagnose(record: dict) -> None:
     )
 
 
-def run_checks(*, base_url: str, user: str, password: str, goal: str, wait_seconds: float) -> bool:
+def run_checks(
+    *,
+    base_url: str,
+    user: str,
+    password: str,
+    goal: str,
+    wait_seconds: float,
+    workspace: str = "ai-governance",
+) -> bool:
     base = base_url.rstrip("/")
     jar = http.cookiejar.CookieJar()
     opener = _opener(jar)
@@ -101,7 +109,7 @@ def run_checks(*, base_url: str, user: str, password: str, goal: str, wait_secon
         opener,
         "POST",
         f"{base}/api/runs",
-        body={"workspace": "ai-governance", "goal": goal},
+        body={"workspace": workspace, "goal": goal},
     )
     if status != 200:
         print(f"start returned {status}")
@@ -185,6 +193,11 @@ def main(argv: list[str]) -> int:
         default=240.0,
         help="seconds to wait for the first frame and for termination",
     )
+    parser.add_argument(
+        "--workspace",
+        default="ai-governance",
+        help="workspace to run in (ai-governance or education-policy)",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -194,6 +207,7 @@ def main(argv: list[str]) -> int:
             password=args.password,
             goal=args.goal,
             wait_seconds=args.wait,
+            workspace=args.workspace,
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         print(f"transport error: {type(exc).__name__}: {exc}")
