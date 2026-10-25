@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.36 · 更新日期：2026-10-25（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接上两个预置工作区各完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 59 KB / 68 KB；部署 005）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
+版本：0.37 · 更新日期：2026-10-25（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接上两个预置工作区各完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 59 KB / 68 KB；部署 005）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -734,6 +734,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-25 | 0.37 | R15 | 部署 009：落地页→登录→GPT 式提问→Agent 过程卡片；黑色主题；**公网默认域名出现 CloudBase 合规中间页**，点“确定访问”写入 Cookie 后进入，API 不受影响；平台文档确认唯一移除方式是绑定已 ICP 备案的自定义域名，决定保留并在提交说明中告知评委 | 部署 009 smoke `returned`/`team_completed`，报告 66.4 KB；Playwright 验证中间页→Cookie→应用；材料已补充访问提示说明 |
 | 2026-10-25 | 0.36 | R15 | 前端交互重构：落地页（黑底、Evidence Workbench、点击进入）→ 登录 → GPT 式提问页 → Agent 过程卡片（状态点、四步进度、任务图/证据折叠、报告与冲突渐进出现）；主按钮改为黑色液态玻璃；停止运行显示“未生成报告”而非空报告；历史抽屉与新建任务；PPT 截图全部换为黑色主题真实运行 | `p1/web_build_check.py` 17/17；停止/历史/新建用 Playwright 实测（已停止）；PPT `validate.py` 通过（19 页 873 KB）；部署 009 待验 |
 | 2026-10-25 | 0.35 | R15 | 前端改为液态玻璃主题：登录卡/顶栏用 SVG 位移 + RGB 色差（`web/src/glass.js`，逐元素滤镜 + resize 重建映射），大面积板保留 blur 回退以避免接缝；深绿氛围、琥珀强调、空状态三步引导；用真实运行重拍深色截图并更新 19 页 PPT；部署 008 | `p1/web_build_check.py` 17/17；PPT `validate.py` 通过（19 页 1.27 MB）；部署 008 smoke `returned`/`team_completed`，报告 45.8 KB |
 | 2026-10-25 | 0.34 | R15 | 用官方 pptx skill 的 pptxgenjs 工作流重做答辩 PPT：深绿/米白/琥珀配色、数字徽章母题、原生柱状图、4 张真实截图、逐页演讲备注；19 页、约 940 KB；`validate.py` 全部通过，PowerPoint COM 导出 19 张预览逐页检查 | 旧 python-pptx 生成器移除，生成器改为 `scripts/ppt/build_deck.js`；预览脚本 `scripts/ppt/export_slides.ps1`；截图仍有换行与证据排序可再优化 |
