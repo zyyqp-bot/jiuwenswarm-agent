@@ -326,7 +326,7 @@ def main() -> int:
     frame = _textbox(slide, 0.85, 1.7, 11.6, 1.0)
     _style(frame.paragraphs[0].add_run(), 16, INK)
     frame.paragraphs[0].runs[0].text = (
-        "提示词：中小学使用生成式人工智能辅助教学时，学校和教师需要注意哪些要求？请给出依据条文。"
+        "提示词：学校拟引入一款 AI 作业批改工具，请依据教育政策与 AI 教育指南，评估其合规要求并给出依据条文。"
     )
     _placeholder(slide, "截图：报告“结论”与“证据”小节")
     slides.append(slide)
