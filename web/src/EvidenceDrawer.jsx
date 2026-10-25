@@ -72,18 +72,27 @@ export default function EvidenceDrawer({
             const item = details?.[id];
             return (
               <li key={id} className="evidence-item">
-                <code>{id}</code>
                 {item ? (
                   <>
-                    <p className="evidence-text">{item.text}</p>
-                    <p className="evidence-meta">
+                    {/* The source leads: a judge should read "which document,
+                        which section", not a percent-encoded chunk id. */}
+                    <p className="evidence-source">
                       {item.source_uri}
                       {item.locator ? ` · ${item.locator}` : ""}
-                      {item.source_revision ? ` · ${item.source_revision}` : ""}
+                    </p>
+                    <p className="evidence-text">{item.text}</p>
+                    <p className="evidence-meta">
+                      {item.source_revision ? `修订 ${item.source_revision}` : ""}
+                      <code className="evidence-id" title={id}>
+                        {id}
+                      </code>
                     </p>
                   </>
                 ) : (
-                  <p className="evidence-meta">该证据的正文不在本次快照中。</p>
+                  <>
+                    <code className="evidence-id">{id}</code>
+                    <p className="evidence-meta">该证据的正文不在本次快照中。</p>
+                  </>
                 )}
               </li>
             );

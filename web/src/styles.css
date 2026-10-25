@@ -538,3 +538,18 @@ a.ghost.small {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+.evidence-source {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.evidence-id {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+  opacity: 0.55;
+  word-break: break-all;
+}
