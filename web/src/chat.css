@@ -1,0 +1,671 @@
+/* Landing + chat layout. Kept separate from the base theme so the two
+   surfaces (marketing entry vs. workbench) can evolve independently. */
+
+.landing {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  background: #050d0a;
+}
+
+.landing::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    conic-gradient(from 200deg at 62% 58%, transparent 0 42%,
+      rgba(227, 169, 79, 0.2) 48%, rgba(157, 191, 165, 0.12) 54%, transparent 62%),
+    radial-gradient(50% 45% at 30% 25%, rgba(46, 110, 73, 0.5), transparent 70%),
+    radial-gradient(45% 40% at 78% 20%, rgba(120, 92, 38, 0.32), transparent 70%);
+  filter: blur(40px);
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+.landing-beam {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 130vw;
+  height: 34vh;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(227, 169, 79, 0.14) 35%,
+    rgba(157, 191, 165, 0.1) 55%,
+    transparent
+  );
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) rotate(-2deg);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) rotate(3deg);
+  }
+}
+
+.landing-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  animation: rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.landing-eyebrow {
+  margin: 0 0 1.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.34em;
+  color: rgba(227, 169, 79, 0.85);
+}
+
+.landing-wordmark {
+  margin: 0;
+  font-size: clamp(3.6rem, 9vw, 7.5rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  color: #f4f7f1;
+  text-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.landing-wordmark span {
+  background: linear-gradient(120deg, #cfe3d2 10%, #e3a94f 60%, #cfe3d2 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-tagline {
+  margin: 1.5rem 0 3.2rem;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  color: rgba(233, 240, 233, 0.62);
+}
+
+.enter-button {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: #eef3ec;
+  font-size: 0.95rem;
+  letter-spacing: 0.24em;
+  padding: 0.6rem 0.4rem;
+  border-bottom: 1px solid rgba(227, 169, 79, 0.55);
+  border-radius: 0;
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.landing-foot {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: rgba(233, 240, 233, 0.4);
+}
+
+.back-link {
+  position: absolute;
+  top: 1.4rem;
+  left: 1.6rem;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0.3rem 0;
+}
+
+.chat-workbench {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2rem 1.6rem 180px;
+  scroll-behavior: smooth;
+}
+
+.chat-start .chat-scroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 2rem;
+}
+
+.chat-hero {
+  width: min(760px, 100%);
+  margin: 0 auto 1.6rem;
+  text-align: center;
+}
+
+.chat-hero h1 {
+  margin: 0.2rem 0 0.9rem;
+  font-size: clamp(2rem, 4.4vw, 3.1rem);
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.chat-hero p.muted {
+  margin: 0 auto;
+  max-width: 34rem;
+  font-size: 0.95rem;
+}
+
+.thread {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.user-message {
+  align-self: flex-end;
+  max-width: min(640px, 86%);
+  padding: 0.9rem 1.1rem;
+  border-radius: 18px 18px 4px 18px;
+  background: linear-gradient(160deg, rgba(227, 169, 79, 0.2), rgba(227, 169, 79, 0.08));
+  border: 1px solid rgba(227, 169, 79, 0.28);
+}
+
+.user-message p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.message-meta {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.chat-error {
+  width: min(900px, 100%);
+  margin: 1rem auto 0;
+}
+
+.composer {
+  width: min(760px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.composer.docked {
+  position: absolute;
+  left: 50%;
+  bottom: 1.2rem;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.chat-active .chat-scroll::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 160px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(6, 15, 11, 0.85));
+}
+
+.composer-box {
+  padding: 0.9rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.composer-box textarea {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  resize: none;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.composer-box textarea:focus {
+  box-shadow: none;
+  background: transparent;
+}
+
+.composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.composer-bar select {
+  max-width: 60%;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  font-size: 0.78rem;
+  padding: 0.4rem 0.55rem;
+}
+
+.composer-bar button {
+  padding: 0.5rem 1.05rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+}
+
+.composer-hint {
+  margin: 0.7rem 0 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: rgba(233, 240, 233, 0.38);
+}
+
+.agent-card {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  padding: 1.1rem 1.2rem;
+  background: rgba(9, 22, 17, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: rise-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.agent-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.agent-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.status-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status-dot.phase-streaming,
+.status-dot.phase-starting {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(227, 169, 79, 0.16);
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+.status-dot.phase-returned {
+  background: var(--ok);
+}
+
+.status-dot.phase-failed,
+.status-dot.phase-invalid_plan {
+  background: var(--danger);
+}
+
+.agent-steps {
+  list-style: none;
+  display: flex;
+  gap: 1.1rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.agent-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.step-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.agent-steps li.done {
+  color: var(--ink);
+}
+
+.agent-steps li.done .step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.agent-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 0.7rem 0;
+}
+
+.agent-section summary {
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.agent-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-section summary::before {
+  content: "+";
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.agent-section[open] summary::before {
+  content: "-";
+}
+
+.agent-section .count {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.agent-section .task-graph {
+  margin-top: 0.8rem;
+}
+
+.agent-section .evidence-drawer {
+  margin-top: 0.8rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  max-height: 360px;
+}
+
+.agent-card .conflicts-pane,
+.agent-card .report-pane {
+  margin-top: 0.9rem;
+}
+
+.agent-waiting {
+  margin: 0.8rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.history-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(3, 9, 7, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.history-drawer {
+  width: min(400px, 92vw);
+  height: 100%;
+  padding: 1.2rem;
+  border-radius: 18px 0 0 18px;
+  overflow-y: auto;
+  animation: slide-in 0.3s ease both;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.history-drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.history-drawer h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.new-run {
+  width: 100%;
+  margin-bottom: 0.9rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .chat-scroll {
+    padding: 1.2rem 1rem 200px;
+  }
+  .composer-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .composer-bar select {
+    max-width: 100%;
+  }
+  .thread {
+    gap: 0.8rem;
+  }
+  .agent-steps {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+}
+
+/* Black theme: the product is monochrome; amber is the only accent. */
+:root {
+  --ink: #f4f4f1;
+  --muted: #9c9c97;
+  --line: rgba(255, 255, 255, 0.12);
+  --surface: rgba(255, 255, 255, 0.06);
+  --canvas: rgba(255, 255, 255, 0.04);
+  --accent: #e3a94f;
+  --accent-soft: rgba(227, 169, 79, 0.16);
+  --danger: #f0938a;
+  --ok: #8fd6ae;
+  --warn: #eac47e;
+}
+
+body {
+  background:
+    radial-gradient(900px 600px at 78% 8%, rgba(255, 255, 255, 0.06), transparent 60%),
+    radial-gradient(700px 500px at 18% 92%, rgba(227, 169, 79, 0.08), transparent 62%),
+    #000000;
+}
+
+body::before {
+  background:
+    conic-gradient(from 210deg at 32% 22%, transparent 0deg 110deg,
+      rgba(255, 255, 255, 0.05) 140deg, transparent 170deg),
+    radial-gradient(50% 40% at 70% 26%, rgba(255, 255, 255, 0.05), transparent 72%);
+}
+
+body::after {
+  opacity: 0.04;
+}
+
+.topbar,
+.panel,
+.login-card,
+.glass-surface {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025) 55%, rgba(255, 255, 255, 0.05));
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.landing {
+  background: #000000;
+}
+
+.landing::before {
+  background:
+    conic-gradient(from 200deg at 64% 56%, transparent 0 44%,
+      rgba(255, 255, 255, 0.08) 49%, rgba(227, 169, 79, 0.10) 55%, transparent 63%),
+    radial-gradient(55% 45% at 28% 22%, rgba(255, 255, 255, 0.07), transparent 70%),
+    radial-gradient(45% 40% at 80% 18%, rgba(227, 169, 79, 0.10), transparent 70%);
+  filter: blur(46px);
+}
+
+.landing-beam {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08) 35%,
+    rgba(227, 169, 79, 0.08) 55%,
+    transparent
+  );
+}
+
+.landing-wordmark {
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: clamp(3.2rem, 8.6vw, 7rem);
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  color: #f2f2ef;
+}
+
+.landing-wordmark span {
+  font-weight: 700;
+  background: linear-gradient(120deg, #ffffff 5%, #e3a94f 55%, #ffffff 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-eyebrow {
+  color: rgba(227, 169, 79, 0.8);
+}
+
+.landing-tagline {
+  color: rgba(244, 244, 241, 0.55);
+}
+
+.chat-workbench,
+.chat {
+  background: transparent;
+}
+
+/* Login: pure black, with only a neutral band for the glass to refract. */
+.login-page {
+  background: #000000;
+}
+
+.login-page::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.10) 42%,
+    rgba(255, 255, 255, 0.04) 58%,
+    transparent
+  );
+  opacity: 0.5;
+}
+
+/* The docked composer sits over the report; keep it readable while glassy. */
+.composer-box.glass-surface {
+  background: rgba(8, 10, 9, 0.84);
+  -webkit-backdrop-filter: blur(22px) saturate(1.1);
+  backdrop-filter: blur(22px) saturate(1.1);
+}
+
+/* Primary buttons: black liquid glass instead of the amber fill. */
+button {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04) 58%, rgba(255, 255, 255, 0.09));
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 34px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+button:hover:not(:disabled) {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 58%, rgba(255, 255, 255, 0.12));
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(227, 169, 79, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+button.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.history-drawer.glass-surface {
+  background: rgba(8, 10, 9, 0.92);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  backdrop-filter: blur(24px) saturate(1.1);
+}

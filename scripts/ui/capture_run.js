@@ -30,23 +30,30 @@ function judgePassword() {
   });
 
   await page.goto(BASE, { waitUntil: "networkidle" });
+  await page.click(".enter-button");
+  await page.waitForTimeout(500);
   await page.fill('input[autocomplete="username"]', "judge1");
   await page.fill('input[type="password"]', judgePassword());
   await page.click('button[type="submit"]');
-  await page.waitForSelector(".panel.controls");
+  await page.waitForSelector(".composer");
 
   await page.selectOption("select", "education-policy");
   await page.fill("textarea", GOAL);
-  await page.locator(".panel.controls").screenshot({ path: path.join(OUT, "new-task.png") });
+  await page.locator(".composer").screenshot({ path: path.join(OUT, "new-task.png") });
 
   await page.click('button[type="submit"]');
   await page.waitForSelector(".task-graph", { timeout: 120000 });
   await page.waitForTimeout(25000);
-  await page.locator(".panes").screenshot({ path: path.join(OUT, "task-graph.png") });
+  await page.locator(".agent-card").screenshot({ path: path.join(OUT, "task-graph.png") });
 
   // Terminal: the report pane appears only after the run finishes.
   await page.waitForSelector(".report-pane pre", { timeout: 420000 });
   await page.waitForTimeout(1500);
+  // The docked composer overlaps the report; hide it for the evidence shot.
+  await page.evaluate(() => {
+    const composer = document.querySelector(".composer");
+    if (composer) composer.style.display = "none";
+  });
   const report = page.locator(".conflicts-pane");
   await report.screenshot({ path: path.join(OUT, "report-conflicts.png") });
   const reportBody = page.locator(".report-pane");

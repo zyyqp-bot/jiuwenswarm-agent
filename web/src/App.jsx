@@ -27,7 +27,33 @@ function formatTime(epochSeconds) {
   });
 }
 
-function Login({ onLoggedIn }) {
+function Landing({ onEnter }) {
+  return (
+    <main className="landing" onClick={onEnter}>
+      <div className="landing-beam" aria-hidden="true" />
+      <div className="landing-inner">
+        <p className="landing-eyebrow">JIUWENSWARM · MULTI-AGENT RESEARCH</p>
+        <h1 className="landing-wordmark">
+          Evidence<span>{" "}Workbench</span>
+        </h1>
+        <p className="landing-tagline">可审计的多 Agent 资料研读与交付</p>
+        <button
+          type="button"
+          className="enter-button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEnter();
+          }}
+        >
+          点击进入
+        </button>
+      </div>
+      <p className="landing-foot">结论级引用 · 冲突保留 · 失败可见</p>
+    </main>
+  );
+}
+
+function Login({ onLoggedIn, onBack }) {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -50,13 +76,13 @@ function Login({ onLoggedIn }) {
 
   return (
     <main className="login-page">
+      <button type="button" className="back-link" onClick={onBack}>
+        ← 返回
+      </button>
       <form ref={cardRef} className="login-card glass-surface" onSubmit={submit}>
-        <p className="eyebrow">JiuwenSwarm · 证据工作台</p>
-        <h1>带引用的资料研读</h1>
-        <p className="muted">
-          输入评委账号后开始一次任务：两名成员分工检索与成稿，每条结论都回到
-          公开政策原文。
-        </p>
+        <p className="eyebrow">JiuwenSwarm · Evidence Workbench</p>
+        <h1>登录后开始研读</h1>
+        <p className="muted">两名成员分工检索与成稿，每条结论都回到公开政策原文。</p>
         <label>
           账号
           <input
@@ -87,7 +113,7 @@ function Login({ onLoggedIn }) {
 
 function RunList({ runs, selected, onSelect }) {
   if (runs.length === 0) {
-    return <p className="muted">还没有任务。填写目标后开始第一次运行。</p>;
+    return <p className="muted">还没有任务。写下一个目标开始第一次运行。</p>;
   }
   return (
     <ul className="run-list">
@@ -108,37 +134,58 @@ function RunList({ runs, selected, onSelect }) {
   );
 }
 
-function RunDetail({ detail }) {
+function Composer({
+  workspace,
+  workspaceList,
+  onWorkspace,
+  goal,
+  onGoal,
+  onStart,
+  busy,
+  docked,
+}) {
+  function keyDown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      onStart(event);
+    }
+  }
+
+  return (
+    <form className={docked ? "composer docked" : "composer"} onSubmit={onStart}>
+      <div className="composer-box glass-surface">
+        <textarea
+          value={goal}
+          onChange={(event) => onGoal(event.target.value)}
+          onKeyDown={keyDown}
+          rows={docked ? 2 : 3}
+          placeholder="描述你想研读的问题，例如：学校引入 AI 作业批改工具前，需要完成哪些合规动作？"
+          required
+        />
+        <div className="composer-bar">
+          <select value={workspace} onChange={(event) => onWorkspace(event.target.value)}>
+            {workspaceList.map((item) => (
+              <option key={item.name} value={item.name}>
+                {item.description}
+              </option>
+            ))}
+          </select>
+          <button type="submit" disabled={busy || !goal.trim()}>
+            {busy ? "提交中…" : "开始研读 ↑"}
+          </button>
+        </div>
+      </div>
+      {!docked ? (
+        <p className="composer-hint">Enter 发送 · Shift + Enter 换行 · 公网只读预置语料</p>
+      ) : null}
+    </form>
+  );
+}
+
+function AgentRun({ detail, onStop }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [claimEvidenceIds, setClaimEvidenceIds] = useState(null);
 
-  useEffect(() => {
-    setSelectedTask(null);
-    setClaimEvidenceIds(null);
-  }, [detail?.run_id]);
-
-  if (!detail) {
-    return (
-      <div className="empty-state">
-        <p className="eyebrow">GET STARTED</p>
-        <h2>三步完成一次可审计研读</h2>
-        <ol className="start-steps">
-          <li>
-            <strong>选择工作区</strong>
-            <span>教育政策或 AI 治理，两个独立语料库</span>
-          </li>
-          <li>
-            <strong>写下目标</strong>
-            <span>自然语言即可，例如评估 AI 作业批改工具是否合规</span>
-          </li>
-          <li>
-            <strong>查看报告</strong>
-            <span>结论带引用，冲突并列，验收逐项列出</span>
-          </li>
-        </ol>
-      </div>
-    );
-  }
   const snapshot = detail.snapshot || {};
   const tasks = snapshot.tasks || [];
   const evidence = snapshot.evidence || {};
@@ -146,6 +193,13 @@ function RunDetail({ detail }) {
     (total, ids) => total + (ids?.length || 0),
     0,
   );
+  const terminal = Boolean(detail.terminal);
+  const steps = [
+    { label: "规划", done: Boolean(snapshot.planner) || tasks.length > 0 },
+    { label: "分派", done: tasks.length > 0 },
+    { label: "检索", done: evidenceCount > 0 },
+    { label: "汇总", done: terminal && detail.phase === "returned" },
+  ];
 
   function selectTask(taskId) {
     setSelectedTask(taskId);
@@ -153,36 +207,48 @@ function RunDetail({ detail }) {
   }
 
   return (
-    <section className="run-detail">
-      <header>
-        <h2>{detail.goal}</h2>
-        <span className={`badge phase-${detail.phase}`}>{phaseLabel(detail.phase)}</span>
+    <section className="agent-card">
+      <header className="agent-head">
+        <span className={`status-dot phase-${detail.phase}`} />
+        <div className="agent-title">
+          <strong>Agent 团队</strong>
+          <span className={`badge phase-${detail.phase}`}>{phaseLabel(detail.phase)}</span>
+        </div>
+        {!terminal ? (
+          <button type="button" className="ghost small" onClick={onStop}>
+            停止
+          </button>
+        ) : null}
       </header>
-      <dl className="facts">
-        <div>
-          <dt>计划来源</dt>
-          <dd>{snapshot.planner || "等待规划"}</dd>
-        </div>
-        <div>
-          <dt>任务</dt>
-          <dd>{tasks.length}</dd>
-        </div>
-        <div>
-          <dt>证据</dt>
-          <dd>{evidenceCount}</dd>
-        </div>
-        <div>
-          <dt>停止原因</dt>
-          <dd>{detail.stop_reason || "—"}</dd>
-        </div>
-      </dl>
+
+      <ol className="agent-steps">
+        {steps.map((step) => (
+          <li key={step.label} className={step.done ? "done" : ""}>
+            <span className="step-dot" />
+            {step.label}
+          </li>
+        ))}
+      </ol>
+
       {detail.error ? <p className="error">{detail.error}</p> : null}
 
-      <div className="panes">
-        <section className="pane graph-pane">
-          <h2>任务图</h2>
-          <TaskGraph tasks={tasks} selectedTask={selectedTask} onSelect={selectTask} />
-        </section>
+      <details className="agent-section" open>
+        <summary>
+          任务图 <span className="count">{tasks.length}</span>
+        </summary>
+        <TaskGraph tasks={tasks} selectedTask={selectedTask} onSelect={selectTask} />
+      </details>
+
+      <details
+        className="agent-section"
+        open={evidenceCount > 0 && evidenceCount <= 12}
+        onToggle={(event) => {
+          if (!event.target.open) setClaimEvidenceIds(null);
+        }}
+      >
+        <summary>
+          证据 <span className="count">{evidenceCount}</span>
+        </summary>
         <EvidenceDrawer
           evidence={evidence}
           details={snapshot.evidence_details}
@@ -191,10 +257,22 @@ function RunDetail({ detail }) {
           claimEvidenceIds={claimEvidenceIds}
           onSelectClaim={setClaimEvidenceIds}
         />
-      </div>
+      </details>
 
-      <Conflicts conflicts={detail.conflicts || []} />
-      <Report runId={detail.run_id} terminal={Boolean(detail.terminal)} />
+      {terminal && detail.phase === "returned" ? (
+        <>
+          <Conflicts conflicts={detail.conflicts || []} />
+          <Report runId={detail.run_id} terminal={terminal} />
+        </>
+      ) : terminal ? (
+        <p className="agent-waiting">
+          {detail.phase === "stopped"
+            ? "运行已停止，未生成报告。"
+            : "运行未正常完成，报告未生成；原因见上方状态。"}
+        </p>
+      ) : (
+        <p className="agent-waiting">成员正在检索与成稿，报告会在完成后出现。</p>
+      )}
     </section>
   );
 }
@@ -202,14 +280,16 @@ function RunDetail({ detail }) {
 function Workbench({ session, onLoggedOut }) {
   const topbarRef = useLiquidGlass(18);
   const [workspaceList, setWorkspaceList] = useState([]);
-  const [workspace, setWorkspace] = useState("ai-governance");
+  const [workspace, setWorkspace] = useState("education-policy");
   const [goal, setGoal] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [runs, setRuns] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const unsubscribe = useRef(null);
+  const threadEnd = useRef(null);
 
   const refreshRuns = useCallback(async () => {
     const payload = await api.listRuns();
@@ -284,13 +364,19 @@ function Workbench({ session, onLoggedOut }) {
     };
   }, [selectedId, refreshRuns]);
 
+  useEffect(() => {
+    if (detail) threadEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [detail?.seq, detail]);
+
   async function start(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
+    if (!goal.trim()) return;
     setBusy(true);
     setError("");
     try {
       const created = await api.startRun(workspace, goal);
       setGoal("");
+      setHistoryOpen(false);
       await refreshRuns();
       setSelectedId(created.run_id);
     } catch (failure) {
@@ -319,69 +405,111 @@ function Workbench({ session, onLoggedOut }) {
     }
   }
 
+  function newTask() {
+    setSelectedId(null);
+    setDetail(null);
+    setGoal("");
+    setHistoryOpen(false);
+  }
+
+  const active = Boolean(detail);
+
   return (
-    <div className="workbench">
+    <div className="chat-workbench">
       <header ref={topbarRef} className="topbar glass-surface">
-        <div>
-          <p className="eyebrow">JiuwenSwarm · 证据工作台</p>
-          <h1>资料研读与带引用报告</h1>
-        </div>
+        <button type="button" className="brand" onClick={newTask}>
+          Evidence Workbench
+        </button>
         <div className="account">
+          <button type="button" className="ghost small" onClick={() => setHistoryOpen(true)}>
+            历史 {runs.length ? `(${runs.length})` : ""}
+          </button>
           <span>{session.user}</span>
-          <button type="button" className="ghost" onClick={logout}>
+          <button type="button" className="ghost small" onClick={logout}>
             退出
           </button>
         </div>
       </header>
 
-      <main className="layout">
-        <section className="panel controls glass-surface">
-          <h2>新建任务</h2>
-          <form onSubmit={start}>
-            <label>
-              工作区
-              <select value={workspace} onChange={(event) => setWorkspace(event.target.value)}>
-                {workspaceList.map((item) => (
-                  <option key={item.name} value={item.name}>
-                    {item.description}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              目标
-              <textarea
-                value={goal}
-                onChange={(event) => setGoal(event.target.value)}
-                rows={5}
-                placeholder="例如：面向公众的生成式 AI 客服上线前，需要完成哪些合规动作？"
-                required
+      <main className={active ? "chat chat-active" : "chat chat-start"}>
+        <div className="chat-scroll">
+          {!active ? (
+            <>
+              <section className="chat-hero">
+                <p className="eyebrow">MULTI-AGENT RESEARCH</p>
+                <h1>今天想研读什么？</h1>
+                <p className="muted">
+                  给出一个目标，Leader 规划、两名成员取证与成稿，结论逐条回到原文。
+                </p>
+              </section>
+              <Composer
+                workspace={workspace}
+                workspaceList={workspaceList}
+                onWorkspace={setWorkspace}
+                goal={goal}
+                onGoal={setGoal}
+                onStart={start}
+                busy={busy}
+                docked={false}
               />
-            </label>
-            <button type="submit" disabled={busy || !goal.trim()}>
-              {busy ? "提交中…" : "开始研读"}
-            </button>
-          </form>
-          {error ? <p className="error">{error}</p> : null}
-          <h2>本次会话</h2>
-          <RunList runs={runs} selected={selectedId} onSelect={setSelectedId} />
-        </section>
+            </>
+          ) : (
+            <div className="thread">
+              <article className="user-message">
+                <p>{detail.goal}</p>
+                <span className="message-meta">{formatTime(detail.created_at)}</span>
+              </article>
+              <AgentRun detail={detail} onStop={stop} />
+              <div ref={threadEnd} />
+            </div>
+          )}
+          {error ? <p className="error chat-error">{error}</p> : null}
+        </div>
 
-        <section className="panel detail glass-surface">
-          <RunDetail detail={detail} />
-          {detail && !detail.terminal ? (
-            <button type="button" className="ghost danger" onClick={stop}>
-              停止本次运行
-            </button>
-          ) : null}
-        </section>
+        {active ? (
+          <Composer
+            workspace={workspace}
+            workspaceList={workspaceList}
+            onWorkspace={setWorkspace}
+            goal={goal}
+            onGoal={setGoal}
+            onStart={start}
+            busy={busy}
+            docked
+          />
+        ) : null}
       </main>
+
+      {historyOpen ? (
+        <div className="history-layer" onClick={() => setHistoryOpen(false)}>
+          <aside className="history-drawer glass-surface" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <h2>本次会话</h2>
+              <button type="button" className="ghost small" onClick={() => setHistoryOpen(false)}>
+                关闭
+              </button>
+            </header>
+            <button type="button" className="new-run" onClick={newTask}>
+              ＋ 新建任务
+            </button>
+            <RunList
+              runs={runs}
+              selected={selectedId}
+              onSelect={(runId) => {
+                setSelectedId(runId);
+                setHistoryOpen(false);
+              }}
+            />
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export default function App() {
   const [session, setSession] = useState(undefined);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -398,6 +526,9 @@ export default function App() {
     };
   }, []);
 
+  if (!entered) {
+    return <Landing onEnter={() => setEntered(true)} />;
+  }
   if (session === undefined) {
     return (
       <main className="login-page">
@@ -406,7 +537,15 @@ export default function App() {
     );
   }
   if (session === null) {
-    return <Login onLoggedIn={setSession} />;
+    return <Login onLoggedIn={setSession} onBack={() => setEntered(false)} />;
   }
-  return <Workbench session={session} onLoggedOut={() => setSession(null)} />;
+  return (
+    <Workbench
+      session={session}
+      onLoggedOut={() => {
+        setSession(null);
+        setEntered(false);
+      }}
+    />
+  );
 }

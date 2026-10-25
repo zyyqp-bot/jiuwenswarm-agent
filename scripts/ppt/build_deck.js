@@ -433,18 +433,18 @@ function slideArrow(s, x, y) {
   const s = pptx.addSlide();
   s.background = { color: C.white };
   titleBlock(s, "05 · 问题理解与逻辑论证", "任务板是框架自己的，不是文本里的“假装分工”");
-  card(s, 0.7, 1.65, 4.55, 5.05, C.cream);
-  picture(s, "task-graph-crop.png", 0.85, 1.8, 4.25, 4.75);
+  card(s, 0.75, 1.55, 11.85, 3.6, C.cream);
+  picture(s, "task-graph-crop.png", 0.95, 1.68, 11.45, 3.35);
   const pts = [
     ["原生调度", "scheduled 调度器按 assignee 拉起成员"],
     ["结构化回传", "成员通过受校验的 submit 工具提交 claims / evidence"],
     ["可审计", "每个 result 绑定 execution，过期执行不能覆盖"],
   ];
   pts.forEach(([head, body], i) => {
-    const y = 1.9 + i * 1.55;
-    badge(s, i + 1, 5.55, y);
-    text(s, head, { x: 6.1, y, w: 6.3, h: 0.35, fontSize: 17, bold: true });
-    text(s, body, { x: 6.1, y: y + 0.4, w: 6.2, h: 0.9, fontSize: 12, color: C.muted, lineSpacingMultiple: 1.3 });
+    const x = 0.85 + i * 3.95;
+    badge(s, i + 1, x, 5.45);
+    text(s, head, { x: x + 0.55, y: 5.43, w: 3.1, h: 0.35, fontSize: 16, bold: true });
+    text(s, body, { x: x + 0.55, y: 5.82, w: 3.2, h: 1.0, fontSize: 11, color: C.muted, lineSpacingMultiple: 1.3 });
   });
   footer(s, 7);
   s.addNotes("指着截图讲：两个任务、两名成员、状态在动。强调不是 Leader 在文字里分工。");
@@ -703,7 +703,7 @@ function slideArrow(s, x, y) {
   s.background = { color: C.white };
   titleBlock(s, "08 · 应用结果呈现", "工作台：登录、选工作区、给目标");
   picture(s, "login.png", 0.8, 1.7, 4.2, 4.5);
-  picture(s, "new-task.png", 5.4, 1.7, 5.4, 4.5);
+  picture(s, "chat-start.png", 5.3, 1.7, 5.5, 4.5);
   card(s, 11.0, 1.8, 1.6, 4.2, C.cream);
   text(s, "默认工作区\n已切到教育", { x: 11.15, y: 2.0, w: 1.35, h: 1.0, fontSize: 11, bold: true, color: C.green, lineSpacingMultiple: 1.3 });
   text(s, "目标只用自然语言，不预置任务拆法。", { x: 11.15, y: 3.2, w: 1.35, h: 2.2, fontSize: 10, color: C.muted, lineSpacingMultiple: 1.35 });

@@ -38,13 +38,17 @@ function judgePassword() {
   });
 
   await page.goto(BASE, { waitUntil: "networkidle" });
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: path.join(OUT, "landing.png") });
+  await page.click(".enter-button");
+  await page.waitForTimeout(600);
   await page.screenshot({ path: path.join(OUT, "login.png") });
 
   await page.fill('input[autocomplete="username"]', "judge1");
   await page.fill('input[type="password"]', judgePassword());
   await page.click('button[type="submit"]');
-  await page.waitForTimeout(1800);
+  await page.waitForSelector(".composer");
+  await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(OUT, "workbench.png") });
   await page.screenshot({ path: path.join(OUT, "workbench-full.png"), fullPage: true });
 
