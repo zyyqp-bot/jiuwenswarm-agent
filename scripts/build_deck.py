@@ -16,7 +16,7 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "docs" / "submission" / "证据工作台-答辩PPT-草稿.pptx"
+OUTPUT = ROOT / "docs" / "submission" / "【教育-重庆邮电大学-赵乙亦-证据工作台】.pptx"
 
 INK = RGBColor(0x14, 0x18, 0x1F)
 MUTED = RGBColor(0x5B, 0x64, 0x73)
