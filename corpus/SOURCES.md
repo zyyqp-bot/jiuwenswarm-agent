@@ -11,7 +11,7 @@
 | 中华人民共和国个人信息保护法.md | 74 | 第十三届全国人大常委会第三十次会议，2021-08-20 | 2021-11-01 | <http://www.npc.gov.cn/npc/c2/c30834/202108/t20210820_313088.html> |
 | 中华人民共和国数据安全法.md | 55 | 第十三届全国人大常委会第二十九次会议，2021-06-10 | 2021-09-01 | <http://www.npc.gov.cn/npc/c2/c30834/202106/t20210610_311888.html> |
 
-`education-policy/` 是第二个最小工作区的语料：教育领域的公开法律与政策文件，抓取日期 2026-10-25。用途是验证“换语料 + 换提示词即可运行”和两个工作区互不泄漏检索结果，不追求完整的教育法体系。抓取脚本见 [scripts/fetch_education_corpus.py](../scripts/fetch_education_corpus.py)。
+`education-policy/` 是教育场景工作区的语料：19 份公开法律与政策文件（教育法、学位法、教师数字素养、AI 教育指南、教育评价改革、招生与教辅等），抓取日期 2026-10-25。用途是验证“换语料 + 换提示词即可运行”和两个工作区互不泄漏检索结果，不追求完整的教育法体系。抓取脚本见 [scripts/fetch_education_corpus.py](../scripts/fetch_education_corpus.py)。
 
 | 文件 | 来源 |
 |---|---|
@@ -24,6 +24,16 @@
 | 湖南省实施未成年人保护法办法.md | <http://www.hunan.gov.cn/hnszf/szf/hnzb_18/c102939/202411/02222gqgsdsddtcfvurptpusubvvggrfbfffbrhukgepdkfqnfkqserucnbsqdb/202406/t20240614_33327758.html> |
 | 湖南省预防中小学生溺水若干规定.md | <http://www.hunan.gov.cn/hnszf/szf/hnzb_18/c102939/202411/02222gqgsdsddtcfvurptpusubvvggrfbfffbrhukgepdkfqnfkqserucnbsqdb/202406/t20240614_33327763.html> |
 | 2026年湖南省普通高校招生工作通知.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202606/t20260601_1179223.html> |
+| 教师数字素养（JY-T 0646-2022）.md | <https://itc.gzucm.edu.cn/info/1301/1647.htm> |
+| 中小学人工智能通识教育指南（2025年版）.md | <https://www.eol.cn/zhengce/wenjian/202505/t20250512_2667827.shtml> |
+| 中小学生成式人工智能使用指南（2025年版）.md | <https://news.qq.com/rain/a/20250512A03EQA00> |
+| 中小学教育惩戒规则（试行）.md | <https://www.gov.cn/zhengce/2020-12/29/content_5713399.htm> |
+| 教育信息化2.0行动计划.md | <http://www.moe.gov.cn/srcsite/A16/s3342/201804/t20180425_334188.html> |
+| 湖南省深化新时代教育评价改革实施方案.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202601/t20260120_33905704.html> |
+| 2026年湖南省中小学教辅材料评议公告.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202604/t20260408_1175938.html> |
+| 2026年湖南省普通高中学业水平合格性考试通知.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202603/t20260311_1174547.html> |
+| 2026年湖南省重点高校招生专项计划通知.md | <https://jyt.hunan.gov.cn/jyt/sjyt/xxgk/zcfg/flfg/202605/t20260513_1178344.html> |
+| 教育部办公厅关于加强中小学人工智能教育的通知.md | <https://aiedchair.bnu.edu.cn/%e6%95%99%e8%82%b2%e9%83%a8%e5%8a%9e%e5%85%ac%e5%8e%85%e5%85%b3%e4%ba%8e%e5%8a%a0%e5%bc%ba%e4%b8%ad%e5%b0%8f%e5%ad%a6%e4%ba%ba%e5%b7%a5%e6%99%ba%e8%83%bd%e6%95%99%e8%82%b2%e7%9a%84%e9%80%9a%e7%9f%a5/> |
 
 ## 待补
 

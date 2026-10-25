@@ -35,7 +35,7 @@
     {
       "check": "both corpora ship real documents",
       "result": "pass",
-      "detail": "ai=6 education=9"
+      "detail": "ai=6 education=19"
     }
   ],
   "scope": "per-corpus isolation and workspace registry"

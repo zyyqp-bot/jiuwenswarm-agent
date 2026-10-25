@@ -140,8 +140,8 @@ def main() -> int:
         [
             ["工作区", "文件数", "切片数", "主要来源"],
             ["AI 治理", "6", "92", "网信办、全国人大官网"],
-            ["教育政策", "9", "173", "教育部、湖南省教育厅、中国政府网"],
-            ["合计", "15", "265", "逐份记录抓取日期与原文 URL"],
+            ["教育政策", "19", "288", "教育部、湖南省教育厅、中国政府网"],
+            ["合计", "25", "380", "逐份记录抓取日期与原文 URL"],
         ],
     )
     slides.append(slide)
@@ -163,7 +163,7 @@ def main() -> int:
 
     # 5 knowledge base
     slide = deck.slides.add_slide(blank)
-    _title(slide, "知识库内容", "265 个切片，可定位到章节")
+    _title(slide, "知识库内容", "380 个切片，可定位到章节")
     _bullets(
         slide,
         [
@@ -214,7 +214,7 @@ def main() -> int:
     # 9 citation funnel
     slide = deck.slides.add_slide(blank)
     _title(slide, "引用与验收漏斗", "从检索块到可支撑的引用")
-    _placeholder(slide, "图：检索块 265 → 单任务保留证据 → fact claims → 通过校验的引用")
+    _placeholder(slide, "图：检索块 380 → 单任务保留证据 → fact claims → 通过校验的引用")
     slides.append(slide)
 
     # 10 real numbers
