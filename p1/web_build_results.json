@@ -10,17 +10,17 @@
     {
       "check": "npm install succeeds",
       "result": "pass",
-      "detail": "added 65 packages, and audited 66 packages in 7s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
+      "detail": "added 65 packages, and audited 66 packages in 3s\n\n9 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities"
     },
     {
       "check": "the web unit tests pass",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 test\n> node --test test/snapshot.test.js\n\n✔ a complete snapshot marks the run terminal and carries the report trigger (0.5882ms)\n✔ an intermediate snapshot keeps a live run live (0.1025ms)\n✔ terminal is sticky across a late non-complete frame (0.1ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 97.6276"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 test\n> node --test test/snapshot.test.js\n\n✔ a complete snapshot marks the run terminal and carries the report trigger (0.6543ms)\n✔ an intermediate snapshot keeps a live run live (0.1174ms)\n✔ terminal is sticky across a late non-complete frame (0.1092ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 95.2184"
     },
     {
       "check": "npm run build succeeds",
       "result": "pass",
-      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 37 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-DENJY8ru.css  \u001b[39m\u001b[1m\u001b[2m 20.06 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  5.41 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-idtf4L-b.js   \u001b[39m\u001b[1m\u001b[2m242.35 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 76.50 kB\u001b[22m\n\u001b[32m✓ built in 649ms\u001b[39m"
+      "detail": "> jiuwenswarm-workbench-web@0.1.0 build\n> vite build\n\n\u001b[36mvite v7.3.7 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 37 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.46 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.32 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-CVqdnfJO.css  \u001b[39m\u001b[1m\u001b[2m 23.92 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  6.13 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-PMRdMPDa.js   \u001b[39m\u001b[1m\u001b[2m243.06 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip: 76.69 kB\u001b[22m\n\u001b[32m✓ built in 724ms\u001b[39m"
     },
     {
       "check": "dist/index.html exists",
@@ -35,17 +35,17 @@
     {
       "check": "index.html references a hashed JS asset",
       "result": "pass",
-      "detail": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"color-scheme\" content=\"light\" />\n    <title>JiuwenSwarm 证据工作台</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-idtf4L"
+      "detail": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"color-scheme\" content=\"light\" />\n    <title>JiuwenSwarm 证据工作台</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-PMRdMP"
     },
     {
       "check": "the bundle calls /api/runs",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "the bundle calls /api/login",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "the bundle keeps no credential in localStorage",
@@ -60,22 +60,22 @@
     {
       "check": "the bundle contains the task-graph pane",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "the bundle contains the evidence-drawer pane",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "the bundle contains the conflicts-pane pane",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "the bundle contains the report-pane pane",
       "result": "pass",
-      "detail": "bundle_bytes=241412"
+      "detail": "bundle_bytes=242077"
     },
     {
       "check": "Report.jsx fetches the run report",

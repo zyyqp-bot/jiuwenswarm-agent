@@ -70,12 +70,12 @@
     {
       "check": "the deploy guide states the single-instance and volume rules",
       "result": "pass",
-      "detail": "bytes=3304"
+      "detail": "bytes=3542"
     },
     {
       "check": "the deploy guide rules out public uploads",
       "result": "pass",
-      "detail": "bytes=3304"
+      "detail": "bytes=3542"
     },
     {
       "check": "the image carries the corpus seed directory",
@@ -100,7 +100,7 @@
     {
       "check": "the smoke check exercises health, login, a run and the stream",
       "result": "pass",
-      "detail": "bytes=6896"
+      "detail": "bytes=7516"
     }
   ],
   "scope": "image, env template and deploy guide"

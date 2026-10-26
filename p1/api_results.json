@@ -40,12 +40,12 @@
     {
       "check": "a correct login sets a hardened cookie",
       "result": "pass",
-      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJzVnpMTHNkR2tlZGNVdEg0azI3V29RIiwiaWF0IjoxNzkyOTEzNjMwfQ.DjBlJoqTsyJ6Q4d0kEbSUNVBuqU; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiIyUDUweVMzZExlWHNlQmlUcl9iWDhRIiwiaWF0IjoxNzkyOTgxMjUwfQ.PRUwb67zlAbF38OXD5I8JRtltGk; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
     },
     {
       "check": "the preseeded workspace is listed",
       "result": "pass",
-      "detail": "{\"workspaces\":[{\"name\":\"education-policy\",\"description\":\"教育政策与 AI 教育指南：学校引入 AI 教学工具的合规评估与引用报告\",\"corpus\":\"education-polic"
+      "detail": "{\"workspaces\":[{\"name\":\"education-policy\",\"description\":\"教育政策：AI 教学工具合规评估与引用报告\",\"corpus\":\"education-policy\"},{\"name\":\"ai"
     },
     {
       "check": "an oversized goal is rejected",
@@ -60,7 +60,7 @@
     {
       "check": "the run detail never leaks a pid, credentials or the data directory",
       "result": "pass",
-      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792913630.4748583,\"terminal\":true,\"conflict"
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792981250.0850801,\"terminal\":true,\"conflict"
     },
     {
       "check": "the run list omits the snapshot",
