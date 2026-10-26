@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.auth import COOKIE_NAME, Session, SessionCodec, credentials_ok
+from app.goal_guard import validate_goal
 from app.limits import LimitExceeded, Limits
 from app.run_service import AtCapacity, RunNotFound, RunRecord, RunService
 from app.settings import Settings
@@ -125,6 +126,11 @@ def create_app(
     async def start_run(body: RunBody, session: Session = Depends(require_session)) -> dict[str, str]:
         if get_workspace(body.workspace) is None:
             raise HTTPException(status_code=400, detail="unknown workspace")
+        accepted, reason = validate_goal(body.goal, body.workspace)
+        if not accepted:
+            # Reject before admission and before a model call: a blank or
+            # off-topic goal must not consume a run slot or produce a report.
+            raise HTTPException(status_code=400, detail=reason)
         try:
             limits.check_start(**service.admission_counts(session.sid))
         except LimitExceeded as exc:

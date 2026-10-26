@@ -197,6 +197,21 @@ async def _run(checks: Checks, data_dir: Path) -> None:
             f"status={oversized.status_code}",
         )
 
+        blank = await alice.post("/api/runs", json={"goal": "你好", "workspace": "ai-governance"})
+        checks.add(
+            "a too-short goal is rejected before a run starts",
+            blank.status_code == 400 and "4" in blank.text,
+            f"status={blank.status_code} body={blank.text[:80]}",
+        )
+        off_topic = await alice.post(
+            "/api/runs", json={"goal": "今天天气怎么样", "workspace": "ai-governance"}
+        )
+        checks.add(
+            "an off-topic goal is rejected before a run starts",
+            off_topic.status_code == 400,
+            f"status={off_topic.status_code} body={off_topic.text[:80]}",
+        )
+
         started = await alice.post("/api/runs", json={"goal": "check compliance", "workspace": "ai-governance"})
         run_id = started.json().get("run_id", "") if started.status_code == 200 else ""
         checks.add("starting a run returns its id", started.status_code == 200 and run_id.startswith("run-"), started.text[:120])
@@ -258,13 +273,13 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         transport=httpx.ASGITransport(app=capacity_app), base_url="http://test"
     ) as carol:
         await _login(carol)
-        full = await carol.post("/api/runs", json={"goal": "x", "workspace": "ai-governance"})
+        full = await carol.post("/api/runs", json={"goal": "check compliance", "workspace": "ai-governance"})
         checks.add(
             "capacity is reported as 503",
             full.status_code == 503,
             full.text[:120],
         )
-        unknown = await carol.post("/api/runs", json={"goal": "x", "workspace": "nope"})
+        unknown = await carol.post("/api/runs", json={"goal": "check compliance", "workspace": "nope"})
         checks.add(
             "an unknown workspace is a 400",
             unknown.status_code == 400,
@@ -284,7 +299,7 @@ async def _run(checks: Checks, data_dir: Path) -> None:
         transport=httpx.ASGITransport(app=session_app), base_url="http://test"
     ) as dave:
         await _login(dave)
-        refused = await dave.post("/api/runs", json={"goal": "x", "workspace": "ai-governance"})
+        refused = await dave.post("/api/runs", json={"goal": "check compliance", "workspace": "ai-governance"})
         checks.add(
             "a full session is a 429",
             refused.status_code == 429 and refused.json().get("detail") == "session_capacity",

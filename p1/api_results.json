@@ -1,6 +1,6 @@
 {
-  "checks_passed": 21,
-  "checks_total": 21,
+  "checks_passed": 23,
+  "checks_total": 23,
   "checks": [
     {
       "check": "the SPA is served at the root",
@@ -40,7 +40,7 @@
     {
       "check": "a correct login sets a hardened cookie",
       "result": "pass",
-      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiIyUDUweVMzZExlWHNlQmlUcl9iWDhRIiwiaWF0IjoxNzkyOTgxMjUwfQ.PRUwb67zlAbF38OXD5I8JRtltGk; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
+      "detail": "wb_session=eyJ1c2VyIjoianVkZ2UiLCJzaWQiOiJMdXNiWmxOMV9MLU16YjBNSXpfa0FRIiwiaWF0IjoxNzkyOTgzMjMwfQ.zVbZ6zZgZdfUoIYuiE0v8FczOa0; HttpOnly; Max-Age=604800; Path=/; SameSite=lax"
     },
     {
       "check": "the preseeded workspace is listed",
@@ -53,6 +53,16 @@
       "detail": "status=422"
     },
     {
+      "check": "a too-short goal is rejected before a run starts",
+      "result": "pass",
+      "detail": "status=400 body={\"detail\":\"请至少输入 4 个字描述你想研读的问题。\"}"
+    },
+    {
+      "check": "an off-topic goal is rejected before a run starts",
+      "result": "pass",
+      "detail": "status=400 body={\"detail\":\"目标与当前工作区（ai-governance）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。\"}"
+    },
+    {
       "check": "starting a run returns its id",
       "result": "pass",
       "detail": "{\"run_id\":\"run-1\"}"
@@ -60,7 +70,7 @@
     {
       "check": "the run detail never leaks a pid, credentials or the data directory",
       "result": "pass",
-      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792981250.0850801,\"terminal\":true,\"conflict"
+      "detail": "{\"run_id\":\"run-1\",\"workspace\":\"ai-governance\",\"goal\":\"check compliance\",\"phase\":\"returned\",\"stop_reason\":\"team_completed\",\"error\":null,\"seq\":1,\"created_at\":1792983230.60178,\"terminal\":true,\"conflicts\""
     },
     {
       "check": "the run list omits the snapshot",

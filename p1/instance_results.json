@@ -5,12 +5,12 @@
     {
       "check": "acquiring the lock writes it",
       "result": "pass",
-      "detail": "C:\\Users\\19468\\AppData\\Local\\Temp\\tmpwn_tr1pp\\instance.lock"
+      "detail": "C:\\Users\\19468\\AppData\\Local\\Temp\\tmpigo2j6ec\\instance.lock"
     },
     {
       "check": "a second live instance is refused",
       "result": "pass",
-      "detail": "another workbench instance (host-a:111) is using C:\\Users\\19468\\AppData\\Local\\Temp\\tmpwn_tr1pp; CloudBase must run a single instance"
+      "detail": "another workbench instance (host-a:111) is using C:\\Users\\19468\\AppData\\Local\\Temp\\tmpigo2j6ec; CloudBase must run a single instance"
     },
     {
       "check": "a stale lock is taken over after a crash",

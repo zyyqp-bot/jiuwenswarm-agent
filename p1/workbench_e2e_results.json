@@ -30,7 +30,7 @@
     {
       "check": "a run starts without a plan in the request",
       "result": "pass",
-      "detail": "status=200 run_id=run-20261026T022144-53cd74"
+      "detail": "status=200 run_id=run-20261026T025449-67559a"
     },
     {
       "check": "the stream delivers a snapshot frame",

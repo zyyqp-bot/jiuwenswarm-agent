@@ -1,0 +1,72 @@
+{
+  "checks_passed": 13,
+  "checks_total": 13,
+  "checks": [
+    {
+      "check": "accepts a relevant goal (学校拟引入一款 AI 作…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (中小学使用生成式人工智能…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (面向公众的生成式 AI …)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (深度合成服务提供者有哪些…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (check compli…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "rejects too short",
+      "result": "pass",
+      "detail": "ok=False reason='请至少输入 4 个字描述你想研读的问题。'"
+    },
+    {
+      "check": "rejects punctuation only",
+      "result": "pass",
+      "detail": "ok=False reason='请至少输入 4 个字描述你想研读的问题。'"
+    },
+    {
+      "check": "rejects repeated characters",
+      "result": "pass",
+      "detail": "ok=False reason='目标看起来是重复字符，请描述一个具体问题。'"
+    },
+    {
+      "check": "rejects off-topic for education",
+      "result": "pass",
+      "detail": "ok=False reason='目标与当前工作区（education-policy）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。'"
+    },
+    {
+      "check": "rejects off-topic for both",
+      "result": "pass",
+      "detail": "ok=False reason='目标与当前工作区（education-policy）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。'"
+    },
+    {
+      "check": "rejects blank",
+      "result": "pass",
+      "detail": "ok=False reason='请至少输入 4 个字描述你想研读的问题。'"
+    },
+    {
+      "check": "rejects the same off-topic goal in the AI workspace",
+      "result": "pass",
+      "detail": "目标与当前工作区（ai-governance）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。"
+    },
+    {
+      "check": "an unknown workspace only gets the basic checks",
+      "result": "pass",
+      "detail": ""
+    }
+  ],
+  "scope": "deterministic goal validation before run creation"
+}
