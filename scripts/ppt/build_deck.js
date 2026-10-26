@@ -505,9 +505,9 @@ function slideArrow(s, x, y) {
   s.background = { color: C.white };
   titleBlock(s, "05 · 真实运行数据", "不预置答案，全部来自真实回合");
   const kpis = [
-    ["39", "离线检查脚本", "630 项断言 · 0 失败"],
-    ["57 KB", "教育评估报告", "returned / team_completed"],
-    ["2", "公网工作区", "AI 治理 59 KB · 教育 57 KB"],
+    ["40", "离线检查脚本", "645 项断言 · 0 失败"],
+    ["55 KB", "教育评估报告", "returned / team_completed"],
+    ["2", "公网工作区", "AI 治理 59 KB · 教育 55 KB"],
   ];
   kpis.forEach(([num, label, sub], i) => {
     const x = 0.85 + i * 4.0;
