@@ -81,7 +81,11 @@ def main() -> int:
         "two distinct sessions",
     )
 
-    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    # Flip a middle character. The final base64 character can carry unused
+    # bits, so changing it may decode to the same signed payload and make this
+    # check fail for a reason unrelated to signature enforcement.
+    index = len(token) // 2
+    tampered = token[:index] + ("A" if token[index] != "A" else "B") + token[index + 1:]
     checks.add(
         "a tampered cookie is rejected",
         codec.decode(tampered) is None,
