@@ -736,6 +736,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-26 | 0.40 | R15 | 两个演示账号密码统一重置（新值只写 `deploy/.env.production.local`，不入库、不写进提交材料）；用 `updateConfig` 只改 `EnvParams`，镜像不变，生成部署 004；提交视频脚本的报告体积改为“约 50 KB”，避免把某一次运行的字节数当固定值 | 部署 004 `Status=normal`、100% 流量；`judge1`/`judge2` 用新密码登录 200，错误密码 401；`judge2` 真实回合 `returned`/`team_completed`，10 条 fact、11 项验收全 pass、无冲突候选，报告 47,186 B；`judge1` 首个 smoke 在轮询阶段 20 秒读超时（同一回合已正常启动），重跑后通过 |
 | 2026-10-26 | 0.39 | R15 | 新增确定性目标校验 `app/goal_guard.py`：长度、可识别文字、重复字符、工作区关键词；`POST /api/runs` 在创建 run 与模型调用前返回 400 与可读原因，乱码/闲聊不再空转出报告 | `p1/goal_guard_check.py` 13/13；`p1/api_check.py` 23/23（新增过短与离题两条）；部署待更新 |
 | 2026-10-26 | 0.38 | R15 | 体验版资源点耗尽导致旧环境隔离（`res_stopped`，服务 `SERVICE_FORBIDDEN`）；新建个人版环境 `workbench-edu-d8gz1f6wxd1145e17`（1 个月），开通云托管并部署；首次构建因镜像仓库 `blob unknown to registry` 失败，重试后部署 002 成功；提交材料与 PPT 链接全部替换为新域名；UI 增加提交后输入栏收起/靠近底部呼出 | 全量离线套件 39 脚本 0 失败；新环境 smoke `returned`/`team_completed`，59 KB；PPT validate 通过 |
 | 2026-10-25 | 0.37 | R15 | 部署 009：落地页→登录→GPT 式提问→Agent 过程卡片；黑色主题；**公网默认域名出现 CloudBase 合规中间页**，点“确定访问”写入 Cookie 后进入，API 不受影响；平台文档确认唯一移除方式是绑定已 ICP 备案的自定义域名，决定保留并在提交说明中告知评委 | 部署 009 smoke `returned`/`team_completed`，报告 66.4 KB；Playwright 验证中间页→Cookie→应用；材料已补充访问提示说明 |
