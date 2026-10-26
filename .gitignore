@@ -47,3 +47,7 @@ scripts/ui/node_modules/
 .local_server.log
 .ui_preview/
 docs/submission/~$*
+
+# Large screen recordings and the exported video stay local
+/屏幕录制*.mp4
+docs/submission/*.mp4
