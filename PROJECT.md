@@ -1,6 +1,6 @@
 # JiuwenSwarm MVP 项目文档
 
-版本：0.37 · 更新日期：2026-10-25（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接上两个预置工作区各完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 59 KB / 68 KB；部署 005）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
+版本：0.38 · 更新日期：2026-10-26（Asia/Shanghai）· 阶段：P0 全部退出条件达成（离线）；P1 工具门禁与真实回合钉子已执行（真实回合 18/18；应用建图→成员执行→结构化回传→`team.completed` 7/7）；Plan 2 在线工作台 14 个任务已落地并通过整支独立审查；**CloudBase 云托管已部署，公网链接上两个预置工作区各完成一次真实回合**（`phase=returned`、`stop_reason=team_completed`、报告 59 KB / 68 KB；部署 005）。D9–D11 已启动：冲突候选检测与面板、第二个工作区 `education-policy`、每语料独立索引已实现并通过离线断言。
 
 本文件统一维护用户需求、工程决策、源码事实、运行流程、验收和变更记录。下一次更新前必须完整阅读本文件；新增或变更需求先记入本文，实施结束再更新实际结果。执行规则见 [AGENTS.md](AGENTS.md)。
 
@@ -40,7 +40,7 @@ MVP 固定一个 Leader 和两个专业 Teammate（Research、Engineering）。�
 | P1 断言收集（脚本重写） | 已执行：父/子进程 + 流内定时快照 + 终止分类；`--dry-run` 8/8；真实回合 **18/18**（20 s、`returned_normally`、39 次流内快照、`tool_count=29` 对物化 10 个 team 工具、usage 14421/131）；不可达端点冒烟 12/18（非回合验收） |
 | Plan 2 在线工作台（离线） | 已实现：登录会话、按运行子进程 + 原子快照、SSE、任务板投影、计划器与确定性回退、证据详情快照、单容器镜像定义、SPA 三个面板；37 个离线脚本 604 项断言全绿；整支审查的 Critical/Important 已修复 |
 | Plan 2 真实模型运行（本地） | 已执行：`p1/live_product_check.py` 10/10——无预置计划，TinyAgent 真实规划 2 任务（research/engineering 各一），成员检索 6 份法规、11 条 fact 全部引用本任务检索到的证据，`team.completed`，结构化验收 complete，报告 37.9 KB；70 次模型请求无一越出工具白名单；`p1/delegation_nail.py` 复跑 7/7 |
-| Plan 2 云托管部署 | **已执行**：CloudBase Run 服务 `workbench`（上海，端口 8000，PUBLIC，单实例）。部署 004 完成首次真实回合；部署 005（D9–D11 批次）后两个工作区各自通过 smoke——`ai-governance` 报告 59 KB、`education-policy` 报告 68 KB，均 `returned`/`team_completed`。**未挂持久卷**：当前凭证无 CFS 权限，且默认 VPC 无出网路由，挂卷会危及模型调用；`/data` 为实例临时层，重启后运行历史与索引重建 |
+| Plan 2 云托管部署 | **已执行**：2026-10-26 因体验版 3000 资源点耗尽（用 3208.59）旧环境 `workbench-prod-d4gy6jsu2ac79a1c9` 被隔离；新建个人版环境 `workbench-edu-d8gz1f6wxd1145e17`（1 个月，2026-11-26 到期），服务 `workbench` 部署 002 成功，新地址 `https://workbench-335317-9-1515867239.sh.run.tcloudbase.com`，smoke `returned`/`team_completed`、报告 59 KB。**未挂持久卷**：凭证无 CFS 权限且默认 VPC 无出网路由；`/data` 为临时层 |
 | 垂直语料内容 | 已放入 6 份公开法规原文（暂行办法 24 条、标识办法 14 条、算法推荐 35 条、深度合成 25 条、个人信息保护法 74 条、数据安全法 55 条），来源与条数见 `corpus/SOURCES.md`；离线导入 6 文档 92 块、0 失败 |
 | 原对话中的 adaptive_composite_agent | 只有历史对话报告；未取得当时沙箱代码，不能据此宣称本地实现完成 |
 | 应用代码、真实模型、真实 RAG、恢复测试 | 应用代码已实现；真实 RAG 检索链路离线可跑，真实模型回合见 P1 记录；恢复测试未执行 |
@@ -734,6 +734,7 @@ P1 第三部分（真实回合）已执行，**并且跑通了**：在隔离 ven
 
 | 日期 | 版本 | 对应需求 | 更新内容 | 验证与限制 |
 |---|---|---|---|---|
+| 2026-10-26 | 0.38 | R15 | 体验版资源点耗尽导致旧环境隔离（`res_stopped`，服务 `SERVICE_FORBIDDEN`）；新建个人版环境 `workbench-edu-d8gz1f6wxd1145e17`（1 个月），开通云托管并部署；首次构建因镜像仓库 `blob unknown to registry` 失败，重试后部署 002 成功；提交材料与 PPT 链接全部替换为新域名；UI 增加提交后输入栏收起/靠近底部呼出 | 全量离线套件 39 脚本 0 失败；新环境 smoke `returned`/`team_completed`，59 KB；PPT validate 通过 |
 | 2026-10-25 | 0.37 | R15 | 部署 009：落地页→登录→GPT 式提问→Agent 过程卡片；黑色主题；**公网默认域名出现 CloudBase 合规中间页**，点“确定访问”写入 Cookie 后进入，API 不受影响；平台文档确认唯一移除方式是绑定已 ICP 备案的自定义域名，决定保留并在提交说明中告知评委 | 部署 009 smoke `returned`/`team_completed`，报告 66.4 KB；Playwright 验证中间页→Cookie→应用；材料已补充访问提示说明 |
 | 2026-10-25 | 0.36 | R15 | 前端交互重构：落地页（黑底、Evidence Workbench、点击进入）→ 登录 → GPT 式提问页 → Agent 过程卡片（状态点、四步进度、任务图/证据折叠、报告与冲突渐进出现）；主按钮改为黑色液态玻璃；停止运行显示“未生成报告”而非空报告；历史抽屉与新建任务；PPT 截图全部换为黑色主题真实运行 | `p1/web_build_check.py` 17/17；停止/历史/新建用 Playwright 实测（已停止）；PPT `validate.py` 通过（19 页 873 KB）；部署 009 待验 |
 | 2026-10-25 | 0.35 | R15 | 前端改为液态玻璃主题：登录卡/顶栏用 SVG 位移 + RGB 色差（`web/src/glass.js`，逐元素滤镜 + resize 重建映射），大面积板保留 blur 回退以避免接缝；深绿氛围、琥珀强调、空状态三步引导；用真实运行重拍深色截图并更新 19 页 PPT；部署 008 | `p1/web_build_check.py` 17/17；PPT `validate.py` 通过（19 页 1.27 MB）；部署 008 smoke `returned`/`team_completed`，报告 45.8 KB |

@@ -182,7 +182,7 @@ function picture(slide, file, x, y, w, h) {
     fontSize: 16,
     color: C.darkMuted,
   });
-  text(s, "https://workbench-334475-5-1515867239.sh.run.tcloudbase.com", {
+  text(s, "https://workbench-335317-9-1515867239.sh.run.tcloudbase.com", {
     x: 0.92,
     y: 6.3,
     w: 11,
@@ -800,7 +800,7 @@ function slideArrow(s, x, y) {
     fontSize: 17,
     color: C.sage,
   });
-  text(s, "https://workbench-334475-5-1515867239.sh.run.tcloudbase.com", {
+  text(s, "https://workbench-335317-9-1515867239.sh.run.tcloudbase.com", {
     x: 0.92,
     y: 4.0,
     w: 11,
