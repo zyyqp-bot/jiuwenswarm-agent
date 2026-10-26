@@ -1,0 +1,286 @@
+{
+ "A": {
+  "claims": 11,
+  "locatable": 11,
+  "locatable_rate": 1.0,
+  "machine_verifiable": 0,
+  "machine_rate": 0.0,
+  "unsupported": 0
+ },
+ "B": {
+  "claims": 14,
+  "locatable": 13,
+  "locatable_rate": 0.929,
+  "machine_verifiable": 14,
+  "machine_rate": 1.0,
+  "unsupported": 1
+ },
+ "a_rows": [
+  {
+   "claim": "1. 场景是否允许：允许教师利用生成式人工智能辅助“课后作业生成与批改以及学情分析”。学校引入批改工具本身属于指南列明的辅助教师教学场景，但定位是辅助，不是替代教师。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 2,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "2. 评价结论与人工复核：AI 批改结果不能直接作为学生成绩、评语或评价结论；应人机协同、教师复核后使用。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 3,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "3. 数据隐私与敏感数据：严禁师生向工具输入考试试题、个人身份信息等敏感数据。若批改流程必须上传考试试题或学生身份信息，则不符合该要求或须调整流程；日常作业也应进行脱敏和权限控制。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md",
+    "中华人民共和国个人信息保护法.md"
+   ],
+   "quotes": 2,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "4. 白名单准入：学校须建立健全生成式人工智能工具“白名单”制度，经严格审核评估，仅允许符合教育场景需求且数据安全合规的工具进入校园使用。未纳入白名单的工具不应直接用于作业批改。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 2,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "5. 供应商与全链条安全：应审查供应商的数据收集、存储、使用、传输流程，并建立覆盖数据安全、伦理审查、内容监管、风险防控的机制。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md",
+    "中小学人工智能通识教育指南（2025年版）.md"
+   ],
+   "quotes": 4,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "6. 产品适配与科学性：应选择适配中小学生认知特点、科学性高的教学工具与产品，不能仅以功能可用为采购标准。",
+   "files": [
+    "中小学人工智能通识教育指南（2025年版）.md"
+   ],
+   "quotes": 1,
+   "locatable": true,
+   "matched_file": "中小学人工智能通识教育指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "7. 学生端使用与分学段管理：若学生直接提交作业并接收 AI 生成反馈，应纳入分学段管理：小学阶段应在教师、家长帮助下适切使用开放式内容生成功能；初中阶段可适度探索生成内容逻辑性分析；高中阶段可结合技术原理开展探究性学习。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 1,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "8. 防止代劳与过度依赖：应禁止学生直接复制 AI 生成内容作为作业或考试答案，限制在创造性任务中滥用人工智能；批改工具不得变相提供可复制答案或代写。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 2,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "9. 教师引导职责：教师应对 AI 批改结果和生成评语进行复核，关注逻辑缺陷、价值倾向及文化偏差，不能把 AI 反馈直接转给学生作为结论。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 2,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "10. 教育公平与特殊需求：采购和应用评估应考虑不同地区和个体平等使用，以及有身体或认知障碍特殊需求群体的无障碍使用。资料未给出作业批改工具的具体无障碍标准，需在选型中核查。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md",
+    "中小学人工智能通识教育指南（2025年版）.md"
+   ],
+   "quotes": 4,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  },
+  {
+   "claim": "11. 需求驱动与学校组织：学校应结合实际，有目的、有计划、有组织地选择、匹配与应用工具，不能因技术潮流盲目引入。",
+   "files": [
+    "中小学生成式人工智能使用指南（2025年版）.md"
+   ],
+   "quotes": 3,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": false,
+   "reason": "manual file+section+quote"
+  }
+ ],
+ "b_rows": [
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "学校引入任何生成式AI工具（含AI作业批改）前须过「白名单+进校审查」双重准入闸门：各中小学校需建立健全生成式AI工具「白名单」制度，经严格审核评估，仅允许符合教育场景需求且数据安全合规的工具进入校园使用，并从功能适用性、数据安全性等多维度评估引入产品（出处：《中小学生成式人工智能使用指南（2025年版）》，教育部基础教育教学指导委员会，2025，「保障机制—数据与隐私保护」段及「中小学校—管理机",
+   "evidence_ids": 3,
+   "resolved": 3,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "作业/试题类文本被明确列入「敏感数据」禁入范围，并伴随行政动态审查义务：严禁师生在使用生成式AI工具时输入考试试题、个人身份信息等敏感数据，从源头杜绝隐私泄露风险；教育行政部门须对技术供应商的数据收集、存储、使用及传输等处理流程实施动态审查，确保其严格遵循《中华人民共和国个人信息保护法》等法律法规（出处：《中小学生成式人工智能使用指南（2025年版）》，教育部基础教育教学指导委员会，2025，「保",
+   "evidence_ids": 2,
+   "resolved": 2,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "AI批改涉及的学生数据按未成年人个人信息处理，处理者（供应商及受托学校端）负有五项法定硬义务：不得强制要求未成年人或其监护人同意非必要个人信息处理（第三十二条）、受理并处理查阅/复制/更正/补充/删除请求且拒绝须书面告知理由（第三十四条）、发生或可能发生泄露篡改丢失时启动应急预案并向网信等部门报告且告知受影响未成年人及其监护人（第三十五条）、对工作人员以最小授权为原则设定访问权限并对访问审批留痕（",
+   "evidence_ids": 4,
+   "resolved": 4,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "自动评分不得直接充当评价结论，教师必须在评价闭环中保留最终审核权：生成式AI仅作为评价体系设计的辅助工具，实现人机协同教育评价，但杜绝直接使用AI输出作为评价结论，且工具在教育场景中仅是「辅助定位」，须坚守师生互动在知识传授、思维培养中的核心地位（出处：《中小学生成式人工智能使用指南（2025年版）》，教育部基础教育教学指导委员会，2025，「应用场景—支撑教育管理·创新教育评价」及「防范过度依赖",
+   "evidence_ids": 2,
+   "resolved": 2,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "作业批改场景须做学段分级与「代劳式使用」切割：小学阶段学生只能在教师、家长帮助下适切使用开放式内容生成功能，且明确禁止学生直接复制AI生成内容作为作业或考试答案、限制在创造性任务中滥用AI，因此产品设计上必须把「教师端批改辅助」与「学生端可用范围」分开授权（出处：《中小学生成式人工智能使用指南（2025年版）》，教育部基础教育教学指导委员会，2025，「学段分级应用」段与「防范过度依赖」段）。",
+   "evidence_ids": 2,
+   "resolved": 2,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T1-research-regulatory-basis",
+   "claim": "内容安全与防沉迷是产品侧法定底线，教育侧须建全链条保障机制：网络产品和服务提供者应建立健全防沉迷制度，不得提供诱导未成年人沉迷的产品和服务、及时修改可能造成沉迷的内容功能规则并每年公布防沉迷工作情况（第四十二条），并须按年龄阶段设置未成年人模式、以醒目便捷方式提供时间/权限/消费管理功能（第四十三条）（出处：《未成年人网络保护条例》，国务院，2024年1月1日施行）；教育侧对应要求构建覆盖数据安全",
+   "evidence_ids": 2,
+   "resolved": 2,
+   "locatable": true,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目1｜选型入库：白名单与进校准入核验（硬性红线）】依据：①《中小学生成式人工智能使用指南（2025年版）》（教育部基础教育教学指导委员会，2025）要求“各中小学校需建立健全生成式人工智能工具‘白名单’制度，经严格审核评估，仅允许符合教育场景需求且数据安全合规的工具进入校园使用”，并要求教育行政部门对“技术供应商的数据收集、存储、使用及传输等处理流程实施动态审查”，确保遵循《个人信息保护法》；",
+   "evidence_ids": 5,
+   "resolved": 5,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目2｜作业/学情数据处理边界与个人信息保护影响评估（硬性红线）】依据：①《中小学生成式人工智能使用指南（2025年版）》明确“严禁师生在使用生成式人工智能工具时输入考试试题、个人身份信息等敏感数据，从源头上杜绝隐私泄露风险”，并对供应商数据收集、存储、使用、传输实施动态审查、遵循《个人信息保护法》；②《未成年人网络保护条例》（国务院，2023年9月20日国务院第15次常务会议通过，2024年1",
+   "evidence_ids": 4,
+   "resolved": 4,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目3｜账号权限最小化、作业数据访问审计与年度合规审计（硬性红线）】依据：①《未成年人网络保护条例》第三十六条：个人信息处理者“对其工作人员应当以最小授权为原则，严格设定信息访问权限，控制未成年人个人信息知悉范围；工作人员访问未成年人个人信息的，应当经过相关负责人或者其授权的管理人员审批，记录访问情况，并采取技术措施，避免违法处理未成年人个人信息”；②同条例第三十七条：个人信息处理者应“自行或者",
+   "evidence_ids": 3,
+   "resolved": 3,
+   "locatable": true,
+   "matched_file": "未成年人网络保护条例.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目4｜教师复核留痕与作业成绩申诉纠错（教师主导＋学业评价公平，硬性红线）】依据：①《中小学生成式人工智能使用指南（2025年版）》将“教师可利用生成式人工智能辅助课后作业生成与批改以及学情分析”列为“辅助教师教学”应用场景，并强调“明确人工智能工具在教育场景中的辅助定位，强调其应用边界，始终坚守师生互动在知识传授、思维培养中的核心地位”；②《中小学人工智能通识教育指南（2025年版）》教学评价",
+   "evidence_ids": 6,
+   "resolved": 6,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目5｜生成内容标识、内容安全审核与“代劳式”使用防范（硬性红线）】依据：①《中小学生成式人工智能使用指南（2025年版）》“明确禁止学生直接复制人工智能生成内容作为作业或考试答案，并限制在创造性任务中滥用人工智能，从源头上杜绝‘代劳式’使用行为”，并按学段差异化限制：小学阶段学生“在教师、家长帮助下适切使用开放式内容生成功能”，初中阶段“可适度探索生成内容的逻辑性分析，指导学生交叉验证生成内容",
+   "evidence_ids": 4,
+   "resolved": 4,
+   "locatable": true,
+   "matched_file": "中小学生成式人工智能使用指南（2025年版）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【条目6｜上线前试点评估、教师培训考核与退出/替换预案（推荐合规项，但退出删除条款建议升格为硬性）】依据：①《中小学人工智能通识教育指南（2025年版）》实施建议第4条“推进试点示范”（统筹开展试点、建立试点学校创新实践共同体）与第6条“健全评价监测”（建立健全动态监测与评价体系，科学评估成效）；②《中小学生成式人工智能使用指南（2025年版）》要求学校“针对不同学段学生，制定精准的应用策略，实施",
+   "evidence_ids": 4,
+   "resolved": 4,
+   "locatable": true,
+   "matched_file": "中小学人工智能通识教育指南（2025年版）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【参照适用说明】条目4中的申诉程序（15个工作日、学生申诉委员会、复核乃至行政复议/诉讼）在原文中适用于“教育惩戒或者纪律处分”情形（《中小学教育惩戒规则（试行）》第十七条、第十八条），并非直接规定“作业成绩/AI批改结果”的申诉。将其移植到AI批改结果申诉属结构性参照（同为校内对学生不利处理的权利救济通道），实施时需在校内制度中明确自设规则，不能援引惩戒规则条文作为直接法律依据。",
+   "evidence_ids": 2,
+   "resolved": 2,
+   "locatable": true,
+   "matched_file": "中小学教育惩戒规则（试行）.md",
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  },
+  {
+   "task": "T2-engineering-actionable-checklist",
+   "claim": "【语料覆盖缺口（待核实清单，供合并成稿时统一标注）】本次检索的语料库实际只覆盖以下文件：中小学生成式人工智能使用指南（2025年版）、中小学人工智能通识教育指南（2025年版）、未成年人网络保护条例、教育信息化2.0行动计划、教育部办公厅关于加强中小学人工智能教育的通知、教师数字素养（JY/T 0646—2022）、义务教育法、教育法、学前教育法、学位法、中小学教育惩戒规则（试行）、湖南省相关地方",
+   "evidence_ids": 3,
+   "resolved": 3,
+   "locatable": false,
+   "matched_file": null,
+   "machine_verifiable": true,
+   "reason": "resolved ids+locator"
+  }
+ ]
+}

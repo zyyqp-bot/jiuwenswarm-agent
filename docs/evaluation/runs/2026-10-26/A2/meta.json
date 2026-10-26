@@ -1,0 +1,19 @@
+{
+ "group": "A",
+ "workspace": "ai-governance",
+ "goal": "深度合成服务提供者有哪些标识义务？不同文件的要求是否一致？",
+ "model": "deepseek-flash",
+ "temperature": 0.2,
+ "queries": [
+  "生成式人工智能",
+  "备案",
+  "深度合成",
+  "标识",
+  "个人信息",
+  "安全评估",
+  "服务提供者"
+ ],
+ "budget": 20,
+ "evidence_count": 20,
+ "created_at": "2026-10-26T11:19:14.297295+00:00"
+}

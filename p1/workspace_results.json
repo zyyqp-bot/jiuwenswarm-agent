@@ -28,14 +28,14 @@
       "detail": "added=1"
     },
     {
-      "check": "the registry exposes two distinct workspaces",
+      "check": "the registry exposes three distinct workspaces",
       "result": "pass",
-      "detail": "workspaces=['ai-governance', 'education-policy']"
+      "detail": "workspaces=['ai-governance', 'education-policy', 'medical-ai-compliance']"
     },
     {
-      "check": "both corpora ship real documents",
+      "check": "all corpora ship real documents",
       "result": "pass",
-      "detail": "ai=6 education=19"
+      "detail": "ai=6 education=19 medical=8"
     }
   ],
   "scope": "per-corpus isolation and workspace registry"

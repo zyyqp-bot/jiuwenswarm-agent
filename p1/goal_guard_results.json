@@ -1,6 +1,6 @@
 {
-  "checks_passed": 13,
-  "checks_total": 13,
+  "checks_passed": 16,
+  "checks_total": 16,
   "checks": [
     {
       "check": "accepts a relevant goal (学校拟引入一款 AI 作…)",
@@ -24,6 +24,16 @@
     },
     {
       "check": "accepts a relevant goal (check compli…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (医院引入 AI 辅助诊断…)",
+      "result": "pass",
+      "detail": ""
+    },
+    {
+      "check": "accepts a relevant goal (互联网诊疗中患者病历和人…)",
       "result": "pass",
       "detail": ""
     },
@@ -61,6 +71,11 @@
       "check": "rejects the same off-topic goal in the AI workspace",
       "result": "pass",
       "detail": "目标与当前工作区（ai-governance）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。"
+    },
+    {
+      "check": "rejects an off-topic goal in the medical workspace",
+      "result": "pass",
+      "detail": "目标与当前工作区（medical-ai-compliance）的主题不相关。请描述该领域的政策、法规或合规问题；也可以换一个工作区。"
     },
     {
       "check": "an unknown workspace only gets the basic checks",

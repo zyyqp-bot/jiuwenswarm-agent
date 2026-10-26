@@ -1,4 +1,4 @@
-"""P1: two workspaces never see each other's corpus.
+"""P1: each workspace has its own corpus and never sees another's chunks.
 
 The knowledge module's contract says one index serves one corpus. Before this
 check existed, every workspace shared ``data/corpus.db`` and the retrieval
@@ -103,18 +103,20 @@ async def _run(checks: Checks) -> None:
 
     # --- the shipped registry and corpora ----------------------------------
     checks.add(
-        "the registry exposes two distinct workspaces",
-        set(WORKSPACES) >= {"ai-governance", "education-policy"}
+        "the registry exposes three distinct workspaces",
+        set(WORKSPACES) >= {"ai-governance", "education-policy", "medical-ai-compliance"}
         and get_workspace("education-policy").corpus == "education-policy"
-        and get_workspace("ai-governance").corpus != "education-policy",
+        and get_workspace("ai-governance").corpus != "education-policy"
+        and get_workspace("medical-ai-compliance").corpus == "medical-ai-compliance",
         f"workspaces={sorted(WORKSPACES)}",
     )
     ai_docs = sorted((ROOT / "corpus" / "ai-governance").glob("*.md"))
     edu_docs = sorted((ROOT / "corpus" / "education-policy").glob("*.md"))
+    med_docs = sorted((ROOT / "corpus" / "medical-ai-compliance").glob("*.md"))
     checks.add(
-        "both corpora ship real documents",
-        len(ai_docs) >= 6 and len(edu_docs) >= 8,
-        f"ai={len(ai_docs)} education={len(edu_docs)}",
+        "all corpora ship real documents",
+        len(ai_docs) >= 6 and len(edu_docs) >= 8 and len(med_docs) >= 8,
+        f"ai={len(ai_docs)} education={len(edu_docs)} medical={len(med_docs)}",
     )
 
 

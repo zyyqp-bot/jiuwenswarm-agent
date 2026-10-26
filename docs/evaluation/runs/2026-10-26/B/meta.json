@@ -1,0 +1,10 @@
+{
+ "group": "B",
+ "run_id": "run-20261026T112758-670ab3",
+ "workspace": "education-policy",
+ "goal": "学校拟引入一款 AI 作业批改工具，请依据教育政策与 AI 教育指南，评估其合规要求并给出依据条文。",
+ "phase": "returned",
+ "stop_reason": "team_completed",
+ "error": null,
+ "created_at": 1793014078.346908
+}

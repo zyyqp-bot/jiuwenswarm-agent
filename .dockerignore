@@ -21,3 +21,13 @@ p1/.live_round
 .superpowers
 events
 .DS_Store
+
+# Local corpora caches, recordings and deck previews are not image inputs.
+.local_data
+.deck_preview
+docs/submission/*.mp4
+/屏幕录制*.mp4
+*.mp4
+logs
+.ui_preview
+docs/submission

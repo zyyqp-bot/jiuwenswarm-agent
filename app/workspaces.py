@@ -34,6 +34,12 @@ WORKSPACES: dict[str, Workspace] = {
         corpus="ai-governance",
         access_scope="public",
     ),
+    "medical-ai-compliance": Workspace(
+        name="medical-ai-compliance",
+        description="医疗健康政策：诊疗、数据与 AI 辅助器械的合规研读",
+        corpus="medical-ai-compliance",
+        access_scope="public",
+    ),
 }
 
 

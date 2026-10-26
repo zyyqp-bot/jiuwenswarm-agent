@@ -25,12 +25,12 @@
     {
       "check": "the workspace registry reaches the client",
       "result": "pass",
-      "detail": "workspaces=['education-policy', 'ai-governance']"
+      "detail": "workspaces=['education-policy', 'ai-governance', 'medical-ai-compliance']"
     },
     {
       "check": "a run starts without a plan in the request",
       "result": "pass",
-      "detail": "status=200 run_id=run-20261026T025449-67559a"
+      "detail": "status=200 run_id=run-20261026T114516-957b2e"
     },
     {
       "check": "the stream delivers a snapshot frame",

@@ -11,3 +11,5 @@
 - 公开链接不提供上传入口；新增资料必须经过 Git 提交和重新部署。
 
 `ai-governance/` 至少放入一份文件后，工作区的检索工具才会返回证据；否则运行仍可提交，但引用校验会让结果失败。
+
+当前三个工作区：`ai-governance/`（6 份）、`education-policy/`（19 份）、`medical-ai-compliance/`（8 份，来源见 `SOURCES.md`）。

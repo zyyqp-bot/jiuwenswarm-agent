@@ -1,0 +1,19 @@
+{
+ "group": "A",
+ "workspace": "education-policy",
+ "goal": "学校拟引入一款 AI 作业批改工具，请依据教育政策与 AI 教育指南，评估其合规要求并给出依据条文。",
+ "model": "deepseek-flash",
+ "temperature": 0.2,
+ "queries": [
+  "课后作业",
+  "生成式人工智能",
+  "教育 人工智能",
+  "白名单",
+  "人机协同",
+  "评价",
+  "未成年人 个人信息"
+ ],
+ "budget": 20,
+ "evidence_count": 20,
+ "created_at": "2026-10-26T11:16:46.333514+00:00"
+}

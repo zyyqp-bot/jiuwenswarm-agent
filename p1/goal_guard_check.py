@@ -29,6 +29,8 @@ def main() -> int:
         ("ai-governance", "面向公众的生成式 AI 客服上线前，需要完成哪些合规动作？"),
         ("ai-governance", "深度合成服务提供者有哪些标识义务？"),
         ("ai-governance", "check compliance for a public generative AI service"),
+        ("medical-ai-compliance", "医院引入 AI 辅助诊断软件，需要满足哪些医疗器械与数据合规要求？"),
+        ("medical-ai-compliance", "互联网诊疗中患者病历和人类遗传资源的使用边界是什么？"),
     ]
     for workspace, goal in accepted:
         ok, reason = validate_goal(goal, workspace)
@@ -48,6 +50,9 @@ def main() -> int:
 
     off_topic_ai, reason_ai = validate_goal("今天天气怎么样", "ai-governance")
     checks.add("rejects the same off-topic goal in the AI workspace", not off_topic_ai, reason_ai)
+
+    off_topic_med, reason_med = validate_goal("今天天气怎么样", "medical-ai-compliance")
+    checks.add("rejects an off-topic goal in the medical workspace", not off_topic_med, reason_med)
 
     unknown_ok, unknown_reason = validate_goal("学校 AI 合规", "no-such-workspace")
     checks.add(

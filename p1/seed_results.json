@@ -10,7 +10,7 @@
     {
       "check": "the corpus database now exists",
       "result": "pass",
-      "detail": "C:\\Users\\19468\\AppData\\Local\\Temp\\tmpujwexp4r\\data\\corpora\\demo-corpus.db"
+      "detail": "C:\\Users\\19468\\AppData\\Local\\Temp\\tmpvfr3oz4n\\data\\corpora\\demo-corpus.db"
     },
     {
       "check": "a second boot does not re-index",
