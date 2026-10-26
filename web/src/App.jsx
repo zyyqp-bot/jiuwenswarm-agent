@@ -288,6 +288,7 @@ function Workbench({ session, onLoggedOut }) {
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(true);
   const unsubscribe = useRef(null);
   const threadEnd = useRef(null);
 
@@ -377,6 +378,7 @@ function Workbench({ session, onLoggedOut }) {
       const created = await api.startRun(workspace, goal);
       setGoal("");
       setHistoryOpen(false);
+      setComposerOpen(false);
       await refreshRuns();
       setSelectedId(created.run_id);
     } catch (failure) {
@@ -410,6 +412,7 @@ function Workbench({ session, onLoggedOut }) {
     setDetail(null);
     setGoal("");
     setHistoryOpen(false);
+    setComposerOpen(true);
   }
 
   const active = Boolean(detail);
@@ -467,16 +470,36 @@ function Workbench({ session, onLoggedOut }) {
         </div>
 
         {active ? (
-          <Composer
-            workspace={workspace}
-            workspaceList={workspaceList}
-            onWorkspace={setWorkspace}
-            goal={goal}
-            onGoal={setGoal}
-            onStart={start}
-            busy={busy}
-            docked
-          />
+          <>
+            <div className="composer-zone" onMouseEnter={() => setComposerOpen(true)} />
+            {!composerOpen ? (
+              <button
+                type="button"
+                className="composer-handle"
+                onMouseEnter={() => setComposerOpen(true)}
+                onClick={() => setComposerOpen(true)}
+              >
+                继续提问
+              </button>
+            ) : null}
+            <div
+              className={composerOpen ? "composer-shell open" : "composer-shell"}
+              onMouseLeave={() => {
+                if (!goal.trim()) setComposerOpen(false);
+              }}
+            >
+              <Composer
+                workspace={workspace}
+                workspaceList={workspaceList}
+                onWorkspace={setWorkspace}
+                goal={goal}
+                onGoal={setGoal}
+                onStart={start}
+                busy={busy}
+                docked
+              />
+            </div>
+          </>
         ) : null}
       </main>
 
