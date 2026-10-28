@@ -1,0 +1,7 @@
+{
+  "envId": "workbench-edu-d8gz1f6wxd1145e17",
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "cloudrun": {
+    "name": "workbench"
+  }
+}
