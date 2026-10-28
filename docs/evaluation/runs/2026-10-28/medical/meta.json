@@ -1,0 +1,10 @@
+{
+ "group": "B",
+ "run_id": "run-20261028T061019-73d298",
+ "workspace": "medical-ai-compliance",
+ "goal": "医院上线 AI 辅助诊断软件前，需要满足哪些医疗器械与患者数据合规要求？",
+ "phase": "returned",
+ "stop_reason": "team_completed",
+ "error": null,
+ "created_at": 1793167819.1819627
+}

@@ -40,7 +40,7 @@ JIUWENSWARM_ARCHIVE=<jiuwenswarm 同提交 tar.gz 的可达地址>
 
 ## 4. 导入语料（一次性，运维执行）
 
-镜像**已包含** `corpus/` 下两个工作区的公开文件（`ai-governance` 6 份法规、`education-policy` 9 份教育政策，来源见 [corpus/SOURCES.md](../corpus/SOURCES.md)），随镜像进入 `/app/corpus`。**首次启动会自动建立索引**：每个工作区在 `/data/corpora/<corpus>.db` 不存在时各自导入，互不覆盖（设置 `WORKBENCH_SEED_CORPUS=0` 可关闭）。只有新增资料或重建索引时才需要手动执行：
+镜像**已包含** `corpus/` 下三个工作区的公开文件（`ai-governance` 6 份法规、`education-policy` 19 份教育政策、`medical-ai-compliance` 8 份医疗健康法规，来源见 [corpus/SOURCES.md](../corpus/SOURCES.md)），随镜像进入 `/app/corpus`。**首次启动会自动建立索引**：每个工作区在 `/data/corpora/<corpus>.db` 不存在时各自导入，互不覆盖（设置 `WORKBENCH_SEED_CORPUS=0` 可关闭）。只有新增资料或重建索引时才需要手动执行：
 
 ```bash
 python scripts/import_corpus.py \
